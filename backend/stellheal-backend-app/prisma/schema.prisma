@@ -1,0 +1,152 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model compartment_medications {
+  compartment_med_id       Int                       @id @default(autoincrement())
+  fill_time                DateTime?                 @db.Timestamp(6)
+  filled_by                Int?
+  compartment_id           Int?
+  open_time                DateTime?                 @db.Timestamp(6)
+  prescription_med_id      Int?
+  compartments             compartments?             @relation(fields: [compartment_id], references: [compartment_id], onDelete: Cascade)
+  users                    users?                    @relation(fields: [filled_by], references: [user_id])
+  prescription_medications prescription_medications? @relation(fields: [prescription_med_id], references: [prescription_med_id])
+}
+
+model compartments {
+  compartment_id          Int                       @id @default(autoincrement())
+  compartment_number      Int?
+  container_id            Int?
+  compartment_medications compartment_medications[]
+  containers              containers?               @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+}
+
+model containers {
+  container_id     Int             @id @default(autoincrement())
+  container_number Int?
+  status           String?         @db.VarChar(50)
+  patient_id       Int?
+  compartments     compartments[]
+  users            users?          @relation(fields: [patient_id], references: [user_id])
+  notifications    notifications[]
+}
+
+model medical_staff {
+  staff_id       Int       @id
+  specialization String?   @db.VarChar(100)
+  shift          String?   @db.VarChar(50)
+  admission_date DateTime? @db.Date
+  users          users     @relation(fields: [staff_id], references: [user_id], onDelete: Cascade)
+}
+
+model medications {
+  medication_id            Int                        @id @default(autoincrement())
+  name                     String?                    @db.VarChar(100)
+  description              String?
+  type                     String?                    @db.VarChar(50)
+  manufacturer             String?                    @db.VarChar(100)
+  dosage                   String?                    @db.VarChar(50)
+  prescription_medications prescription_medications[]
+}
+
+model notification_recipients {
+  notification_id Int
+  user_id         Int
+  is_read         Boolean?      @default(false)
+  notifications   notifications @relation(fields: [notification_id], references: [notification_id], onDelete: Cascade)
+  users           users         @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([notification_id, user_id])
+}
+
+model notifications {
+  notification_id         Int                       @id @default(autoincrement())
+  notification_type       String                    @db.VarChar(100)
+  message                 String?
+  sent_time               DateTime?                 @db.Time(6)
+  sent_date               DateTime?                 @db.Date
+  container_id            Int?
+  notification_recipients notification_recipients[]
+  containers              containers?               @relation(fields: [container_id], references: [container_id])
+}
+
+model prescription_medications {
+  prescription_med_id     Int                       @id @default(autoincrement())
+  quantity                Int?
+  intake_date             DateTime?                 @db.Date
+  intake_time             DateTime?                 @db.Time(6)
+  frequency               String?                   @db.VarChar(100)
+  prescription_id         Int?
+  medication_id           Int?
+  intake_status           Boolean?
+  compartment_medications compartment_medications[]
+  medications             medications?              @relation(fields: [medication_id], references: [medication_id])
+  prescriptions           prescriptions?            @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade)
+}
+
+model prescriptions {
+  prescription_id                       Int                        @id @default(autoincrement())
+  date_issued                           DateTime?                  @db.Date
+  duration                              Int?
+  patient_id                            Int?
+  doctor_id                             Int?
+  diagnosis                             String?                    @db.VarChar(255)
+  ward_id                               Int?
+  end_date                              DateTime?                  @db.Date
+  prescription_medications              prescription_medications[]
+  users_prescriptions_doctor_idTousers  users?                     @relation("prescriptions_doctor_idTousers", fields: [doctor_id], references: [user_id])
+  users_prescriptions_patient_idTousers users?                     @relation("prescriptions_patient_idTousers", fields: [patient_id], references: [user_id], onDelete: Cascade)
+  wards                                 wards?                     @relation(fields: [ward_id], references: [ward_id])
+}
+
+model roles {
+  role_id   Int     @id @default(autoincrement())
+  role_name String  @db.VarChar(100)
+  users     users[]
+}
+
+model users {
+  user_id                                       Int                       @id @default(autoincrement())
+  first_name                                    String                    @db.VarChar(100)
+  last_name                                     String                    @db.VarChar(100)
+  contact_info                                  String?                   @db.VarChar(255)
+  role_id                                       Int?
+  login                                         String                    @unique @db.VarChar(100)
+  password                                      String                    @db.VarChar(100)
+  date_of_birth                                 DateTime?                 @db.Date
+  avatar                                        String?                   @db.VarChar(255)
+  patronymic                                    String?                   @db.VarChar(100)
+  phone                                         String?                   @db.VarChar(50)
+  firebase_token                                String?
+  compartment_medications                       compartment_medications[]
+  containers                                    containers[]
+  medical_staff                                 medical_staff?
+  notification_recipients                       notification_recipients[]
+  password_reset_tokens                         password_reset_tokens[]
+  prescriptions_prescriptions_doctor_idTousers  prescriptions[]           @relation("prescriptions_doctor_idTousers")
+  prescriptions_prescriptions_patient_idTousers prescriptions[]           @relation("prescriptions_patient_idTousers")
+  roles                                         roles?                    @relation(fields: [role_id], references: [role_id])
+}
+
+model wards {
+  ward_id       Int             @id @default(autoincrement())
+  ward_number   String?         @db.VarChar(50)
+  capacity      Int?
+  prescriptions prescriptions[]
+}
+
+model password_reset_tokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  token      String    @unique
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}

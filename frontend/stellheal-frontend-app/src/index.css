@@ -1,68 +1,51 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* 🌞 LIGHT THEME */
+@theme {
+    /* FONT */
+    --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+    /* PRIMARY */
+    --color-primary: #3B82F6;
+    --color-primary-hover: #2175BB;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+    /* BACKGROUND */
+    --color-bg: #FFFFFF;
+    --color-surface: #F7F7F7;
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    /* TEXT */
+    --color-text: #232323;
+    --color-text-secondary: #575757;
+
+    /* BORDER */
+    --color-border: #DADADA;
+
+    /* STATES */
+    --color-success: #00AD0C;
+    --color-warning: #FFAE00;
+    --color-error: #B70B0B;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* 🌙 DARK THEME */
+.dark {
+    --color-bg: #0f172a;
+    --color-surface: #1e293b;
+
+    --color-text: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+
+    --color-border: #334155;
+
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* BASE */
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
 }

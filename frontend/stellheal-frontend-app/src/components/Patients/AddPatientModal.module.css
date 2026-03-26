@@ -1,0 +1,95 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal {
+    background-color: #f1f1f1;
+    border-radius: 12px;
+    padding: 20px 30px;
+    width: 600px;
+    max-width: 90%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.title {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.row input {
+    flex: 1 1 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    min-width: 0;
+}
+
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.confirm {
+    background-color: #1976d2 !important;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.cancel {
+    border: 1px solid #ccc;
+    background-color: white;
+    color: black;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.errorMessage {
+    color: #d93025;
+    background-color: #fbe9e7;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 0px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
+
+    .row input,
+    .datePickerWrapper {
+        width: 100%;
+    }
+}

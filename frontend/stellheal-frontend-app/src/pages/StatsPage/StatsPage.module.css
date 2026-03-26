@@ -1,0 +1,119 @@
+.container {
+    background-color: #ffffff;
+    font-family: 'Arial', sans-serif;
+}
+
+/* ---------- ШАПКА ---------- */
+.headerPanel {
+    background-color: #fff;
+    margin-bottom: 20px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+}
+
+.pageTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px 0px 10px;
+}
+
+.titleBlock {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.counts {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.countItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    min-width: 100px;
+}
+
+.countValue {
+    font-size: 35px;
+    font-weight: bold;
+}
+
+.countLabel {
+    font-size: 15px;
+    color: #666;
+}
+
+.divider {
+    height: 40px;
+    width: 1px;
+    background-color: #ddd;
+}
+
+/* ---------- СТАТИСТИКА ЛІКАРІВ ---------- */
+.panel {
+    margin-bottom: 32px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+
+}
+
+.sectionTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px 0px 10px;
+}
+
+.doctorStats {
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 8px 0;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+@media (max-width: 950px) {
+    .headerPanel {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .divider {
+        display: none;
+    }
+
+    .counts {
+        justify-content: center;
+        gap: 32px;
+    }
+
+    .pageTitle {
+        text-align: center;
+    }
+
+    .countItem {
+        min-width: 100px;
+    }
+
+    .doctorStats {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+}

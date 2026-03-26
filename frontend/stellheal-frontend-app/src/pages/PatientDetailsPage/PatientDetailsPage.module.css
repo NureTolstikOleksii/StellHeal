@@ -1,0 +1,272 @@
+.pageWrapper {
+    display: flex;
+    gap: 24px;
+    padding-top: 10px;
+    background-color: #ffffff;
+}
+
+.sidebar {
+    width: 300px;
+    background-color: #F0F0F5;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.15);
+}
+
+.mainContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.section {
+    background-color: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+}
+
+.section h3 {
+    margin-top: 0;
+}
+
+.historyHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.loading,
+.error {
+    font-size: 18px;
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+
+.patientInfoCard {
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0;
+}
+
+.name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    margin-top: 0;
+}
+
+.info {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.buttonBlock {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.editButton, .deleteButton {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #ffffff;
+}
+
+.editButton {
+    background-color: #ffffff;
+    color: #1967D2;
+    border: 1px solid #1967D2;
+}
+
+.deleteButton {
+    background-color: #ffffff;
+    color: #D32F2F;
+    border: 1px solid #D32F2F;
+}
+
+.primaryButton {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 16px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.secondaryButton {
+    border: 1px solid #0d6efd;
+    background-color: white;
+    color: #0d6efd;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.card {
+    background-color: #f8f8f8;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.15);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.cardTitle {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.actions button {
+    margin-left: 8px;
+    padding: 4px 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.deleteBtn {
+    background-color: #ffffff;
+    color: #d32f2f;
+    border: 1px solid #fd0000 !important;
+}
+
+.statusDone {
+    color: #28a745;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.statusIcon {
+    font-size: 18px;
+}
+
+.medicationsList {
+    margin-bottom: 12px;
+}
+
+.medicationItem {
+    background-color: #1976d2;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin: 6px 0;
+    width: fit-content;
+}
+
+.detailsRow {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #000000;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.yearSelector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yearButton {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 6px;
+    color: #1976d2;
+    transition: transform 0.1s ease-in-out;
+}
+
+.yearButton:hover {
+    transform: scale(1.1);
+}
+
+.yearText {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+@media (max-width: 900px) {
+    .pageWrapper {
+        flex-direction: column-reverse;
+        gap: 16px;
+        padding: 10px;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 16px;
+    }
+
+    .mainContent {
+        gap: 24px;
+    }
+
+    .section {
+        padding: 16px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .cardHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .detailsRow {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+        width: 100%;
+    }
+
+    .editButton, .deleteButton {
+        width: 100%;
+    }
+
+    .yearSelector {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}

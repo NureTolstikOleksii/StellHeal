@@ -1,84 +1,85 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const sendEmail = async (to, subject, html) => {
-    try {
-        const response = await resend.emails.send({
-            from: process.env.MAIL_FROM,
-            to,
-            subject,
-            html,
-            tracking_settings: {
-                click: {
-                    enabled: false,
-                },
-            },
-        });
-
-        console.log(`✅ Email sent to ${to}`, response);
-        return response;
-
-    } catch (error) {
-        console.error(`❌ Email error to ${to}`, error);
-        throw error;
-    }
-};
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+    },
+});
 
 export const sendWelcomeEmail = async (to, password) => {
-    const html = `
-        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
-            <h2 style="color:#2a7de1;">Welcome to StellHeal 💙</h2>
+    const htmlContent = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #e0e0e0;border-radius:10px;">
+            <h3 style="color:#2a7de1;">Вітаємо у StellHeal!</h3>
+            <p>Дякуємо, що приєдналися до нашої цифрової медичної системи <strong>StellHeal</strong> — платформи для керування призначеннями, нагадуваннями та медичними даними.</p>
+            
+            <h3>🎉 Ваш обліковий запис створено успішно! Для входу у мобільний застосунок скористайтесь наступними данними:</h3>
+            <p><strong>Електронна пошта:</strong> ${to}<br/>
+            <strong>Тимчасовий пароль:</strong> ${password}</p>
 
-            <p>Your account has been created successfully.</p>
+            <p style="color:#d93025;"><strong>‼️З міркувань безпеки рекомендуємо змінити пароль після першого входу.</strong></p>
 
-            <p><strong>Email:</strong> ${to}</p>
-            <p><strong>Password:</strong> ${password}</p>
+            <p>Якщо у вас виникли питання, наша команда підтримки завжди готова допомогти.</p>
 
-            <p style="color:red;"><strong>Please change your password after login!</strong></p>
+            <p>З повагою,<br/>
+            Команда <strong>StellHeal</strong> 💙</p>
         </div>
     `;
 
-    return sendEmail(to, 'Welcome to StellHeal', html);
+    await transporter.sendMail({
+        from: `"StellHeal" <${process.env.MAIL_USER}>`,
+        to,
+        subject: 'Вітаємо у StellHeal!',
+        html: htmlContent,
+    });
 };
 
 export const sendStaffCredentialsEmail = async (to, password) => {
-    const html = `
-        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
-            <h2 style="color:#2a7de1;">Access to StellHeal</h2>
+    const htmlContent = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #e0e0e0;border-radius:10px;">
+            <h3 style="color:#2a7de1;">Ваш доступ до системи StellHeal</h3>
+            <p>Вас додано до медичної команди в цифровій системі <strong>StellHeal</strong>.</p>
+            
+            <p><strong>Електронна пошта:</strong> ${to}<br/>
+            <strong>Тимчасовий пароль:</strong> ${password}</p>
 
-            <p>You have been added to the system.</p>
+            <p style="color:#d93025;"><strong>‼️Будь ласка, змініть пароль після першого входу!</strong></p>
 
-            <p><strong>Email:</strong> ${to}</p>
-            <p><strong>Password:</strong> ${password}</p>
-
-            <p style="color:red;"><strong>Change password after login!</strong></p>
+            <p>З повагою,<br/>
+            Команда <strong>StellHeal</strong></p>
         </div>
     `;
 
-    return sendEmail(to, 'Your StellHeal access', html);
+    await transporter.sendMail({
+        from: `"StellHeal" <${process.env.MAIL_USER}>`,
+        to,
+        subject: 'Доступ до системи StellHeal',
+        html: htmlContent,
+    });
 };
 
 export const sendResetPasswordEmail = async (to, token) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    const html = `
-        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
-            <h2 style="color:#2a7de1;">Reset your password</h2>
-
-            <p>Click the button below to reset your password:</p>
-
-            <a href="${resetUrl}" 
-               style="display:inline-block;background:#2a7de1;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
-               Reset Password
-            </a>
-
-            <p>This link is valid for 1 hour.</p>
-        </div>
+    const htmlContent = `
+        <h3>Запит на відновлення пароля</h3>
+        <p>Вітаємо!</p>
+        <p>Ви надіслали запит на відновлення пароля до вашого облікового запису <strong>StellHeal</strong>.</p>
+        <p>Якщо ви не ініціювали цю дію — просто проігноруйте цей лист. Ваші дані залишаться в безпеці.</p>
+        <p>Щоб створити новий пароль, перейдіть за наступним посиланням:</p>
+        <p><a href="${resetUrl}">Натисніть тут для відновлення пароля</a></p>
+        <p>Зверніть увагу: посилання буде активним протягом 1 години.</p>
+        <br />
+        <p>З повагою,<br />
+        Команда StellHeal</p>
     `;
-
-    return sendEmail(to, 'Reset your password', html);
+    await transporter.sendMail({
+        from: `"StellHeal" <${process.env.MAIL_USER}>`,
+        to,
+        subject: 'Інструкції для відновлення пароля',
+        html: htmlContent,
+    });
 };

@@ -56,9 +56,9 @@ const Header = ({ role, onToggleMenu }) => {
 
                 <div className={styles.leftSide}>
                     <div className={styles.logoBlock}>
-                        <img src={logo} alt="Healthy Helper" className={styles.logo} />
+                        <img src={logo} alt="StellHeal" className={styles.logo} />
                         <div className={styles.titleBlock}>
-                            <h1 className={styles.title}>Healthy Helper</h1>
+                            <h1 className={styles.title}>StellHeal</h1>
                             {role === 'admin' && <span className={styles.subtitle}>admin-panel</span>}
                             {role === 'doctor' && <span className={styles.subtitle}>doctor-panel</span>}
                         </div>

@@ -40,8 +40,8 @@ const Login = () => {
         <div className={styles.loginPage}>
             <div className={styles.loginContainer}>
                 <div className={styles.logoBlock}>
-                    <img src={logo} alt="Healthy Helper" className={styles.logo} />
-                    <h1>HealthyHelper</h1>
+                    <img src={logo} alt="StellHeal" className={styles.logo} />
+                    <h1>StellHeal</h1>
                     <p>Medical Service</p>
                 </div>
 

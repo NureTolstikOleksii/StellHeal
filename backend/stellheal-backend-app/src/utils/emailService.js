@@ -7,7 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
     try {
-        await resend.emails.send({
+        const response = await resend.emails.send({
             from: process.env.MAIL_FROM,
             to,
             subject,
@@ -19,10 +19,11 @@ const sendEmail = async (to, subject, html) => {
             },
         });
 
-        console.log(`Email sent to ${to}`, response);
+        console.log(`✅ Email sent to ${to}`, response);
         return response;
+
     } catch (error) {
-        console.error(`Email error to ${to}`, error);
+        console.error(`❌ Email error to ${to}`, error);
         throw error;
     }
 };

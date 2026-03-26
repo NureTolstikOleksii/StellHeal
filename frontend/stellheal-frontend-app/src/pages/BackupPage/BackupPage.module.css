@@ -1,0 +1,54 @@
+.container {
+    background-color: #ffffff;
+    font-family: 'Arial', sans-serif;
+}
+
+.card {
+    background-color: #fff;
+    margin-bottom: 20px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+}
+
+.title {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px 0px 10px;
+}
+
+.text {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.backupButton {
+    background-color: #1976d2;
+    width: 200px;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    text-align: center;
+}
+
+.backupButton:hover {
+    background-color: #156bd1;
+}
+
+.icon {
+    margin-right: 8px;
+    font-size: 18px;
+}

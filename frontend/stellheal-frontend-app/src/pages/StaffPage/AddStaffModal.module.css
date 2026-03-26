@@ -1,0 +1,116 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modalContent {
+    background-color: #F1F1F1;
+    padding: 20px 30px;
+    border-radius: 12px;
+    width: 720px;
+    max-width: 90%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.modalTitle {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.row > * {
+    flex: 1;
+    min-width: 0;
+}
+
+input,
+select {
+    padding: 10px 32px 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.submitButton {
+    background-color: #0056b3 !important;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.submitButton:hover {
+    background-color: #508ae4 !important;
+    color: #ffffff !important;
+}
+
+.cancelButton {
+    border: 1px solid #ccc;
+    background-color: white;
+    color: black;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.cancelButton:hover {
+    background-color: #1976d2;
+    color: white;
+}
+
+.errorMessage {
+    color: #d93025;
+    background-color: #fbe9e7;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+
+@media (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
+
+    .row input,
+    .datePickerWrapper {
+        width: 100%;
+    }
+}
+

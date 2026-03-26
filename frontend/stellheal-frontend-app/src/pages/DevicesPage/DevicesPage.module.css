@@ -1,0 +1,141 @@
+/* Основний контейнер */
+.container {
+    background-color: #ffffff;
+    font-family: 'Arial', sans-serif;
+}
+
+.headerPanel {
+    background-color: #fff;
+    margin-bottom: 20px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+}
+
+.pageTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px 0px 10px;
+}
+
+.titleBlock {
+    display: flex;
+    flex-direction: column;
+}
+
+.counts {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 10px;
+}
+
+.countItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.countValue {
+    font-size: 35px;
+    font-weight: bold;
+}
+
+.countLabel {
+    font-size: 15px;
+    color: #666;
+}
+
+.divider {
+    height: 40px;
+    width: 1px;
+    background-color: #ddd;
+}
+
+.actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+/* ---------- КНОПКА ЕКСПОРТУ ---------- */
+.exportBtn {
+    border: 1px solid #1976d2;
+    width: 200px;
+    color: #1976d2;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.exportBtn:hover {
+    background-color: #f1f6ff;
+}
+
+.icon {
+    font-size: 16px;
+}
+
+/* ---------- СЕКЦІЯ ЗАПОВНЕНЬ ---------- */
+.section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+}
+
+.sectionTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px 0px 10px;
+}
+
+.logList {
+    list-style: none;
+    padding-left: 0;
+    color: #333;
+}
+.logItem {
+    margin-bottom: 8px;
+}
+
+.logText {
+    display: block;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+}
+/* ---------- АДАПТИВНІСТЬ ---------- */
+@media (max-width: 950px) {
+    .headerPanel {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .counts {
+        justify-content: center;
+        gap: 32px;
+    }
+
+    .actions {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .exportBtn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,498 @@
+.container {
+    padding: 0;
+}
+
+.rightBlock {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.titleBlock {
+    display: flex;
+    flex-direction: column;
+}
+
+.pageTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.counter {
+    font-size: 16px;
+    color: #666;
+}
+
+.countItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.countValue {
+    font-size: 35px;
+    font-weight: bold;
+}
+
+.countLabel {
+    font-size: 15px;
+    color: #666;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.addButton,
+.rolesButton {
+    background-color: #1976d2;
+    width: 200px;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    text-align: center;
+}
+
+.exportButton {
+    border: 1px solid #1976d2;
+    width: 200px;
+    color: #1976d2;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.addButton:hover,
+.rolesButton:hover {
+    background-color: white;
+    color: #0d6efd;
+    border: 1px solid #1976d2;
+}
+
+.exportButton:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.icon {
+    font-size: 18px;
+}
+
+.content {
+    display: flex;
+    margin-top: 20px;
+    gap: 24px;
+}
+
+.filters {
+    width: 240px;
+    padding: 15px;
+    background-color: #fff;;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.12);
+}
+
+.filters h3 {
+    margin: 0;
+}
+
+.filterGroup {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filterLabel {
+    font-weight: 600;
+    color: #222;
+    font-size: 14px;
+}
+
+.filterGroup label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.filterGroup label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #007aff;
+    cursor: pointer;
+}
+
+.filterGroup label span {
+    font-size: 13px;
+    color: #777;
+    margin-left: 4px;
+}
+
+.clearButton {
+    margin-top: 30px;
+    width: 100%;
+    padding: 10px;
+    background-color: #fff;
+    border: 1.5px solid #1976D2;
+    border-radius: 20px;
+    font-weight: 500;
+    color: #1976D2;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+    background-color: #1976D2;
+    border-color: #fff;
+    color: #ffffff;
+}
+
+
+.searchBar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+    text-align: left;
+    flex-wrap: wrap;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.12);
+}
+
+.searchBar h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.titleBlock {
+    display: flex;
+    flex-direction: column;
+}
+
+.searchInput {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.sortPanel {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+}
+
+.sortLabel {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #333;
+    min-width: 90px;
+}
+
+.sortSelect {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.searchButton {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+    background-color: #0b5ed7;
+}
+
+.searchInput {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.sortSelect {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.searchButton {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+    background-color: #0b5ed7;
+}
+
+
+.tableWrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.12);
+}
+
+.staffTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.staffTable thead {
+    background-color: #E0EDFF;
+}
+
+.staffTable th,
+.staffTable td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.userCell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatarSmall {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.moreButton {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+}
+.moreButton:hover {
+    color: #979393;
+    background-color: #e3dede;
+}
+.noDataText {
+    text-align: center;
+    font-size: 18px;
+    color: #777;
+    padding: 20px;
+}
+
+@media (max-width: 1200px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .titleBlock {
+        align-items: flex-start;
+    }
+
+    .actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .addButton,
+    .rolesButton,
+    .exportButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .searchBar {
+        padding: 12px;
+        flex-direction: column;
+    }
+
+    .searchInput,
+    .sortSelect {
+        width: 100%;
+    }
+
+    .sortPanel {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .sortLabel {
+        min-width: unset;
+        margin-bottom: 4px;
+    }
+
+    .filters {
+        width: 100%;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+
+    .clearButton {
+        width: 100%;
+    }
+
+    .content {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .tableWrapper {
+        overflow-x: auto;
+    }
+
+    /* Table becomes block-like on mobile */
+    .staffTable {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .staffTable tr {
+        display: block;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 12px;
+    }
+
+    .staffTable td {
+        display: flex;
+        position: relative;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: none;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .staffTable td::before {
+        display: none;
+    }
+
+    .staffTable thead {
+        display: none;
+    }
+
+    .userCell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .avatarSmall {
+        width: 40px;
+        height: 40px;
+    }
+
+    .moreButton {
+        position: absolute;
+        right: 0;
+        top: -130px;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #666;
+        padding: 4px;
+    }
+}
+
+/* Extra-small screens */
+@media (max-width: 480px) {
+    .countValue {
+        font-size: 28px;
+    }
+
+    .countLabel {
+        font-size: 13px;
+    }
+
+    .pageTitle {
+        font-size: 18px;
+    }
+
+    .addButton,
+    .rolesButton,
+    .exportButton {
+        font-size: 13px;
+        padding: 10px 16px;
+    }
+
+    .searchInput,
+    .sortSelect {
+        font-size: 13px;
+    }
+
+    .sortLabel {
+        font-size: 12px;
+    }
+
+    .searchBar h4 {
+        font-size: 15px;
+    }
+}

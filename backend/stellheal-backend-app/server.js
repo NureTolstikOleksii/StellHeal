@@ -43,13 +43,14 @@ async function main() {
     });
 
     app.use(session({
-        secret: process.env.SESSION_SECRET,
+        secret: process.env.SESSION_SECRET || 'fallback_secret_for_local_dev',
         resave: false,
-        saveUninitialized: true,
-        cookie: { 
-            secure: false, 
-            maxAge: 60 * 60 * 1000    
-        } 
+        saveUninitialized: false,
+        cookie: {
+            secure: false,
+            httpOnly: true,
+            maxAge: 60 * 60 * 1000
+        }
     }));
 
     //Маршрути

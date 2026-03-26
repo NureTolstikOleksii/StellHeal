@@ -7,11 +7,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
     try {
-        const response = await resend.emails.send({
+        await resend.emails.send({
             from: process.env.MAIL_FROM,
             to,
             subject,
             html,
+            tracking_settings: {
+                click: {
+                    enabled: false,
+                },
+            },
         });
 
         console.log(`Email sent to ${to}`, response);

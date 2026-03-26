@@ -4,16 +4,17 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // обов'язково true для 465
+    port: 465, // Порт для захищеного з'єднання SSL
+    secure: true, // Обов'язково true для 465
     auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        pass: process.env.MAIL_PASS, // Тут має бути 16-значний App Password
     },
-    // Додаємо таймаути, щоб Render не "висів" вічно
-    connectionTimeout: 10000, // 10 сек
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    tls: {
+        // Це допоможе, якщо Render має проблеми з перевіркою сертифікатів
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 10000, // 10 секунд на спробу
 });
 
 export const sendWelcomeEmail = async (to, password) => {

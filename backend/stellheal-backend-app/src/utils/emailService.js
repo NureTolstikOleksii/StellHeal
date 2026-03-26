@@ -3,11 +3,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        pass: process.env.MAIL_PASS, // Сюди прийде 16-значний код з Render Env
     },
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 export const sendWelcomeEmail = async (to, password) => {

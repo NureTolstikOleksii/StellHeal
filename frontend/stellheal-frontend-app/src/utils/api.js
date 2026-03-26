@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 const instance = axios.create({
-    baseURL: 'https://stellheal.onrender.com',
+     // baseURL: 'https://stellheal.onrender.com',
     // baseURL: 'https://healthyhelperback.onrender.com',
-    //baseURL: 'http://localhost:4200',
+    baseURL: 'http://localhost:4200',
 });
 
 instance.interceptors.request.use((config) => {

@@ -3,16 +3,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-    host: '74.125.131.108', // Прямой IP адрес smtp.gmail.com (IPv4)
-    port: 465,
-    secure: true,
+    service: 'gmail',
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
     },
-    tls: {
-        rejectUnauthorized: false // Помогает, если есть проблемы с сертификатами на сервере
-    }
 });
 
 export const sendWelcomeEmail = async (to, password) => {

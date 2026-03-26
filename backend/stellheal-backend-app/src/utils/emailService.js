@@ -4,8 +4,8 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, // Порт для захищеного з'єднання SSL
-    secure: true, // Обов'язково true для 465
+    port: 587, // Порт для захищеного з'єднання SSL
+    secure: false, // Обов'язково true для 465
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS, // Тут має бути 16-значний App Password

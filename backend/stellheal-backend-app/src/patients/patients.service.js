@@ -833,9 +833,9 @@ export class PatientsService {
 
         doc.moveDown(2);
         doc.fontSize(10).fillColor('gray')
-            .text('HealthyHelper — Медична інформаційна система', { align: 'center' });
+            .text('StellHeal — Медична інформаційна система', { align: 'center' });
         doc.fontSize(8).fillColor('gray')
-            .text('© 2025 HealthyHelper. Усі права захищено.', { align: 'center' });
+            .text('© 2025 StellHeal. Усі права захищено.', { align: 'center' });
 
         doc.end();
     }

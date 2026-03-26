@@ -43,12 +43,11 @@ async function main() {
     });
 
     app.use(session({
-        secret: process.env.SESSION_SECRET || 'fallback_secret_for_local_dev',
+        secret: process.env.SESSION_SECRET,
         resave: false,
-        saveUninitialized: false,
+        saveUninitialized: true,
         cookie: {
             secure: false,
-            httpOnly: true,
             maxAge: 60 * 60 * 1000
         }
     }));
@@ -86,7 +85,7 @@ async function main() {
     });
 
     app.listen(process.env.PORT || 4200, '0.0.0.0', () => {
-        console.log(`Server is running on port ${process.env.PORT || 4200} http://localhost:${process.env.PORT || 4200}`);
+        console.log(`Server is running on port ${process.env.PORT || 4200}`);
     });
 }
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-    baseURL: 'https://stellhealback-production.up.railway.app',
+    baseURL: 'https://stellheal.onrender.com',
     //baseURL: 'http://localhost:4200',
 });
 

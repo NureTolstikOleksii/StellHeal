@@ -3,11 +3,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // обов'язково true для 465
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
     },
+    // Додаємо таймаути, щоб Render не "висів" вічно
+    connectionTimeout: 10000, // 10 сек
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
 });
 
 export const sendWelcomeEmail = async (to, password) => {
@@ -62,24 +68,46 @@ export const sendStaffCredentialsEmail = async (to, password) => {
 };
 
 export const sendResetPasswordEmail = async (to, token) => {
+    // 1. Логуємо початок процесу
+    console.log(`[Email Service] Спроба ініціювати відновлення пароля для: ${to}`);
+
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     const htmlContent = `
-        <h3>Запит на відновлення пароля</h3>
-        <p>Вітаємо!</p>
-        <p>Ви надіслали запит на відновлення пароля до вашого облікового запису <strong>StellHeal</strong>.</p>
-        <p>Якщо ви не ініціювали цю дію — просто проігноруйте цей лист. Ваші дані залишаться в безпеці.</p>
-        <p>Щоб створити новий пароль, перейдіть за наступним посиланням:</p>
-        <p><a href="${resetUrl}">Натисніть тут для відновлення пароля</a></p>
-        <p>Зверніть увагу: посилання буде активним протягом 1 години.</p>
-        <br />
-        <p>З повагою,<br />
-        Команда StellHeal</p>
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;border:1px solid #e0e0e0;border-radius:10px;">
+            <h3 style="color:#2a7de1;">Запит на відновлення пароля</h3>
+            <p>Вітаємо!</p>
+            <p>Ви надіслали запит на відновлення пароля до вашого облікового запису <strong>StellHeal</strong>.</p>
+            <p>Якщо ви не ініціювали цю дію — просто проігноруйте цей лист. Ваші дані залишаться в безпеці.</p>
+            <p>Щоб створити новий пароль, перейдіть за наступним посиланням:</p>
+            <div style="margin: 20px 0;">
+                <a href="${resetUrl}" style="background-color:#2a7de1;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">Натисніть тут для відновлення пароля</a>
+            </div>
+            <p>Зверніть увагу: посилання буде активним протягом 1 години.</p>
+            <br />
+            <p>З повагою,<br />
+            Команда <strong>StellHeal</strong></p>
+        </div>
     `;
-    await transporter.sendMail({
-        from: `"StellHeal" <${process.env.MAIL_USER}>`,
-        to,
-        subject: 'Інструкції для відновлення пароля',
-        html: htmlContent,
-    });
+
+    try {
+        // 2. Логуємо саму відправку
+        const info = await transporter.sendMail({
+            from: `"StellHeal" <${process.env.MAIL_USER}>`,
+            to,
+            subject: 'Інструкції для відновлення пароля',
+            html: htmlContent,
+        });
+
+        console.log(`✅ [Email Success] Лист відновлення пароля надіслано до ${to}. ID: ${info.messageId}`);
+        return info;
+    } catch (error) {
+        // 3. Детально логуємо помилку для Render
+        console.error(`❌ [Email Error] Помилка при відправці на ${to}:`);
+        console.error(`Повідомлення: ${error.message}`);
+        console.error(`Код помилки: ${error.code}`); // Наприклад, EAUTH або ETIMEDOUT
+
+        // Важливо прокинути помилку далі, щоб API повернуло 500 помилку, а не 200
+        throw error;
+    }
 };

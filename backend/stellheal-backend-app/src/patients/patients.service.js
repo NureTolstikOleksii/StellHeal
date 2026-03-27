@@ -363,7 +363,7 @@ export class PatientsService {
     }
 
     // cтворення призначення
-     async createPrescription(db, doctorId, patientId, data) {
+    async createPrescription(db, doctorId, patientId, data) {
         const { diagnosis, wardId, medications } = data;
 
         if (!diagnosis || !wardId || !Array.isArray(medications) || medications.length === 0) {
@@ -850,7 +850,7 @@ function getIntakeTimes(timesPerDay) {
         case 2:
             return ['10:00', '15:00'];
         case 3:
-            return ['5:20', '14:00', '20:00'];
+            return ['08:00', '14:00', '20:00'];
         case 4:
             return ['08:00', '12:00', '16:00', '20:00'];
         case 5:

@@ -528,7 +528,7 @@ export class ContainerService {
     async getNextIntake(containerId) {
         const now = new Date();
         const { start: startOfDayUTC, end: endOfDayUTC } = getUTCDayRange(now);
-        const intakeTimeFilter = new Date(now.getTime() + (3 * 60 * 60 * 1000));
+        const intakeTimeFilter = now;
 
         /*console.log(intakeTimeFilter);
         console.log(startOfDayUTC);

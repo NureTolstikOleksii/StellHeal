@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "957900589792",
+    "project_id": "healthyhelpernotific",
+    "storage_bucket": "healthyhelpernotific.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957900589792:android:fe34be607eafc45afd9e85",
+        "android_client_info": {
+          "package_name": "com.example.healthyhelper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCj9zO5zo0FfXoP_BwW97Pkl6pltWcrzQw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

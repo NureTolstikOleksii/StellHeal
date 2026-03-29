@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="checked">#3EBBB9</color>
+    <color name="unchecked">#354949</color>
+    <color name="navcolor">#CFE2E2</color>
+    <color name="light_blue">#D8F2F6</color>
+    <color name="teal_700">#00796B</color>
+    <color name="orange">#FFA500</color>
+    <color name="red">#FF5252</color>
+    <color name="green">#41D17D</color>
+    <color name="light_gray">#404040</color>
+    <color name="teal">#37B9BD</color>
+    <color name="gray">#262525</color>
+</resources>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.MainFragment">
+
+    <ImageView
+        android:id="@+id/logoImage"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="104dp"
+        android:contentDescription="@string/app_logo"
+        android:src="@drawable/ic_logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="280dp"
+        android:layout_height="75dp"
+        android:layout_marginTop="25dp"
+        android:fontFamily="@font/montserrat_black"
+        android:gravity="center"
+        android:text="@string/welcome_text"
+        android:textColor="@color/black"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/logoImage"
+        tools:ignore="TextSizeCheck" />
+
+    <TextView
+        android:id="@+id/subtitleText"
+        android:layout_width="280dp"
+        android:layout_height="65dp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/montserrat_light_italic"
+        android:gravity="center"
+        android:text="@string/subtitle_text"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="italic"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleText"
+        tools:ignore="TextSizeCheck" />
+
+    <android.widget.Button
+        android:id="@+id/startButton"
+        android:layout_width="263dp"
+        android:layout_height="48dp"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="248dp"
+        android:background="@drawable/button_gradient"
+        android:fontFamily="@font/montserrat_semibold"
+        android:text="@string/start_button"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/subtitleText" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

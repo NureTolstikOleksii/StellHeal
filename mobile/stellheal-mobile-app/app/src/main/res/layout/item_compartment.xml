@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/light_blue"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:backgroundTint="@color/light_blue"
+    android:elevation="2dp">
+
+    <!-- Назва -->
+    <TextView
+        android:id="@+id/compartmentTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="№1"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/black"/>
+
+    <!-- Статус -->
+    <TextView
+        android:id="@+id/compartmentStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="не заповнено"
+        android:textColor="@color/black"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Інфо про ліки -->
+    <TextView
+        android:id="@+id/medicationInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Нокамен - 2 табл. - 12:00"
+        android:textColor="@color/black"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <!-- Кнопка Додати -->
+    <Button
+        android:id="@+id/btnAddMed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Додати препарат"
+        android:backgroundTint="@color/teal_700"
+        android:textColor="@android:color/white"
+        app:backgroundTint="@null" />
+
+
+    <!-- Кнопка Очистити -->
+    <Button
+        android:id="@+id/btnClearMed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Очистити"
+        android:background="@drawable/outline_button"
+        android:textColor="@color/teal_700"
+        android:visibility="gone"
+        android:layout_marginTop="4dp"
+        app:backgroundTint="@null" />
+
+</LinearLayout>
+

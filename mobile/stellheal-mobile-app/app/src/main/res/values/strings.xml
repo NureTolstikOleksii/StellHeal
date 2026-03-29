@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">StellHeal</string>
+    <string name="app_logo">App Logo</string>
+    <string name="welcome_text">Welcome to\nStellHeal</string>
+    <string name="subtitle_text">Your personal companion for a healthier life!</string>
+    <string name="hello_blank_fragment">Profile fragment</string>
+    <string name="start_button">Get started</string>
+    <string name="back_button">back-button</string>
+    <string name="enter_login_data">Please enter your\nlogin data</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="log_in">Log in</string>
+    <string name="enter_your_email">Enter your email</string>
+    <string name="enter_your_password">Enter your password</string>
+    <string name="toggle_password_visibility">Show or hide password</string>
+
+    <string name="role_text">"First of all\nwe need to know\nyour role"</string>
+    <string name="patient_text">"I'm a patient"</string>
+    <string name="medical_staff_text">"I'm a medical staff"</string>
+    <string name="home">Home</string>
+    <string name="calendar">Calendar</string>
+    <string name="notifications">Notifications</string>
+    <string name="profile">Profile</string>
+    <string name="profile_picture">profile_picture</string>
+    <string name="edit_avatar">edit_avatar</string>
+    <string name="device">device</string>
+    <string name="patients">Ambulatory patients</string>
+    <string name="patient_list_description">Список пацієнтів</string>
+
+    <string-array name="sort_options">
+        <item>прізвищем</item>
+        <item>датою народження</item>
+    </string-array>
+</resources>

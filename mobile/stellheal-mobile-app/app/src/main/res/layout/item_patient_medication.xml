@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_background"
+    android:padding="12dp"
+    android:layout_marginBottom="12dp"
+    android:backgroundTint="@color/teal">
+
+    <!-- Верхній рядок: Назва, Частота, Тривалість -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/medName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="1. Назва"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/medDosage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2р/день"
+            android:textColor="@color/white"
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:id="@+id/medDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20 days"
+            android:textColor="@color/white"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Intake Times -->
+    <TextView
+        android:id="@+id/medTimes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

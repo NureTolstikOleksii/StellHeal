@@ -1,73 +1,102 @@
 import { Router } from 'express';
 import { NotificationService } from './notifications.service.js';
 
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { authorizeRoles } from '../../middleware/role.middleware.js';
+import { AppError } from '../../shared/errors/AppError.js';
+import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+
 const router = Router();
 const notificationService = new NotificationService();
 
-// отримання сповіщень користувача
-router.post('/get-by-user', async (req, res) => {
-    const { userId } = req.body;
+// отримання сповіщень (тільки свої)
+router.get(
+    '/my',
+    authenticateToken,
+    authorizeRoles(3, 2, 1, 4),
+    async (req, res, next) => {
+        try {
+            const userId = req.user.userId;
 
-    if (!userId || isNaN(userId)) {
-        return res.status(400).json({ error: 'Invalid userId' });
+            const notifications = await notificationService.getUserNotifications(userId);
+            res.json(notifications);
+
+        } catch (err) {
+            next(err);
+        }
     }
+);
 
-    try {
-        const notifications = await notificationService.getUserNotifications(parseInt(userId));
-        res.json(notifications);
-    } catch (err) {
-        console.error('Error fetching notifications:', err);
-        res.status(500).json({ error: 'Failed to fetch notifications' });
+// позначити прочитаними
+router.post(
+    '/mark-read',
+    authenticateToken,
+    async (req, res, next) => {
+        try {
+            const userId = req.user.userId;
+
+            await notificationService.markNotificationsRead(userId);
+
+            res.json({ message: 'Notifications marked as read' });
+
+        } catch (err) {
+            next(err);
+        }
     }
-});
+);
 
-// позначити прочитаним
-router.post('/mark-read', async (req, res) => {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'userId is required' });
+// відправка FCM (тільки система / admin)
+router.post(
+    '/send',
+    authenticateToken,
+    authorizeRoles(1, 4),
+    async (req, res, next) => {
+        try {
+            const { token, title, body } = req.body;
 
-    try {
-        await notificationService.markNotificationsRead(userId);
-        res.status(200).json({ message: 'Notifications marked as read' });
-    } catch (err) {
-        console.error('Error marking notifications as read:', err);
-        res.status(500).json({ error: 'Failed to mark notifications as read' });
+            if (!token || !title || !body) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Token, title, and body are required',
+                    400
+                ));
+            }
+
+            await notificationService.sendNotification(token, title, body);
+
+            res.json({ message: 'Notification sent successfully' });
+
+        } catch (err) {
+            next(err);
+        }
     }
-});
+);
 
-// відправка сповіщення
-router.post('/send-notification', async (req, res) => {
-    const { token, title, body } = req.body;
+// збереження FCM токена (тільки для себе)
+router.post(
+    '/fcm-token',
+    authenticateToken,
+    async (req, res, next) => {
+        try {
+            const userId = req.user.userId;
+            const { token } = req.body;
 
-    if (!token || !title || !body) {
-        return res.status(400).json({ message: 'Token, title, and body are required' });
+            if (!token) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Token is required',
+                    400
+                ));
+            }
+
+            await notificationService.saveFcmToken(userId, token);
+
+            res.json({ message: 'FCM token updated' });
+
+        } catch (err) {
+            next(err);
+        }
     }
-
-    try {
-        await notificationService.sendNotification(token, title, body);
-        res.status(200).json({ message: 'Notification sent successfully' });
-    } catch (error) {
-        console.error('Send notification error:', error);
-        res.status(500).json({ message: 'Failed to send notification' });
-    }
-});
-
-// збереження токену
-router.post('/users/:id/fcm-token', async (req, res) => {
-    const userId = parseInt(req.params.id);
-    const { token } = req.body;
-
-    if (!token || isNaN(userId)) {
-        return res.status(400).json({ message: 'Невірні дані' });
-    }
-
-    try {
-        await notificationService.saveFcmToken(userId, token);
-        res.status(200).json({ message: 'FCM токен оновлено' });
-    } catch (error) {
-        console.error('Помилка оновлення токена:', error);
-        res.status(500).json({ message: 'Помилка сервера' });
-    }
-});
+);
 
 export const notificationRouter = router;

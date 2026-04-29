@@ -2,59 +2,91 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import dotenv from 'dotenv';
-import * as os from "node:os";
+import * as os from 'node:os';
+
+import { AppError } from '../../shared/errors/AppError.js';
+import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+import { logAction } from '../../shared/logger/auditLogger.js';
+import { ACTIONS } from '../../shared/constants/actions.js';
 
 dotenv.config();
 
 export class BackupService {
-     // отриманння останнього бекапу
+
+    // останній backup
     async getLastBackup() {
         const logFile = path.join('backups', 'last-backup.txt');
+
         if (fs.existsSync(logFile)) {
-            const timestamp = fs.readFileSync(logFile, 'utf-8');
-            return timestamp;
+            return fs.readFileSync(logFile, 'utf-8');
         }
+
         return null;
     }
 
-    // створення бекапу
-    async createBackup(type = 'manual') {
+    // створення backup
+    async createBackup(type = 'manual', req) {
+
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const backupDir = path.join('backups');
-        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
+
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir);
+        }
 
         const dbFile = path.join(backupDir, `backup-${timestamp}.sql`);
-        const envFile = path.join(backupDir, `env-backup-${timestamp}.env`);
 
         const dbUrl = process.env.DATABASE_URL;
+
+        if (!dbUrl) {
+            throw new AppError(
+                ERROR_CODES.INTERNAL_ERROR,
+                'DATABASE_URL not configured',
+                500
+            );
+        }
+
         const isWindows = os.platform() === 'win32';
+
         const pgDumpPath = isWindows
             ? `"C:\\Program Files\\PostgreSQL\\17\\bin\\pg_dump.exe"`
             : 'pg_dump';
 
-        const dbDumpCommand = `${pgDumpPath} --dbname="${dbUrl}" -f "${dbFile}"`;
+        const command = `${pgDumpPath} --dbname="${dbUrl}" -f "${dbFile}"`;
 
-        // 1. Створити SQL dump
+        // створення dump
         await new Promise((resolve, reject) => {
-            exec(dbDumpCommand, (error, stdout, stderr) => {
+            exec(command, (error) => {
                 if (error) {
-                    console.error('Помилка при створенні дампу БД:', error);
-                    return reject(error);
+                    return reject(new AppError(
+                        ERROR_CODES.INTERNAL_ERROR,
+                        'Failed to create DB dump',
+                        500
+                    ));
                 }
                 resolve();
             });
         });
 
-        // 2. Копіювати .env
-        const sourceEnv = path.resolve('.env');
-        if (fs.existsSync(sourceEnv)) {
-            fs.copyFileSync(sourceEnv, envFile);
-        }
+        // ❌ ВАЖЛИВО: НЕ копіюємо .env
+        // (залишаємо як рекомендацію)
 
-        // 3. Записати лог останнього резервного копіювання
         const logFile = path.join(backupDir, 'last-backup.txt');
         fs.writeFileSync(logFile, new Date().toISOString());
 
-        return { timestamp: new Date().toISOString(), type };
+        // audit log
+        await logAction({
+            userId: req?.user?.userId,
+            action: ACTIONS.SECURITY_EVENT,
+            entity: 'BACKUP',
+            entityId: null,
+            description: `Backup created (${type})`,
+            req
+        });
+
+        return {
+            timestamp: new Date().toISOString(),
+            type
+        };
     }
 }

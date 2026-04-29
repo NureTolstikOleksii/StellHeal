@@ -1,101 +1,135 @@
 import { Router } from 'express';
 import { MedicationService } from './medication.service.js';
 
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { authorizeRoles } from '../../middleware/role.middleware.js';
+import { AppError } from '../../shared/errors/AppError.js';
+import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+
 const router = Router();
 const medicationService = new MedicationService();
 
-// отримання випадаючого списку препаратів
-router.get('/', async (req, res) => {
-    try {
-        const medications = await req.db.medications.findMany({
-            select: {
-                medication_id: true,
-                name: true
+// список препаратів
+router.get(
+    '/',
+    authenticateToken,
+    authorizeRoles(1, 2, 4), // admin, doctor, staff
+    async (req, res, next) => {
+        try {
+            const medications = await medicationService.getAll();
+            res.json(medications);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// додавання препарату
+router.post(
+    '/add',
+    authenticateToken,
+    authorizeRoles(1, 2), // admin + doctor
+    async (req, res, next) => {
+        try {
+            const {
+                medication_name,
+                medication_type,
+                description,
+                quantity,
+                manufacturer,
+                expiration_date
+            } = req.body;
+
+            if (!medication_name || !medication_type || !description) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'All required fields must be provided',
+                    400
+                ));
             }
-        });
 
-        res.json(medications.map(m => ({
-            id: m.medication_id,
-            name: m.name
-        })));
-    } catch (err) {
-        console.error('Помилка при отриманні препаратів:', err);
-        res.status(500).json({ message: 'Не вдалося завантажити препарати' });
-    }
-});
+            const newMedication = await medicationService.addMedication(
+                {
+                    medication_name,
+                    medication_type,
+                    description,
+                    quantity,
+                    manufacturer,
+                    expiration_date
+                },
+                req
+            );
 
-// додавання нового препарату
-router.post('/add', async (req, res) => {
-    const { medication_name, medication_type, description, quantity, manufacturer, expiration_date } = req.body;
+            res.status(201).json({
+                message: 'The medication has been added successfully',
+                medication: newMedication
+            });
 
-    if (!medication_name || !medication_type || !description ) {
-        return res.status(400).json({ message: 'All fields are required!.' });
-    }
-
-    try {
-        const newMedication = await medicationService.addMedication(
-            req.db, 
-            medication_name, 
-            medication_type, 
-            description, 
-            quantity, 
-            manufacturer, 
-            expiration_date
-        );
-        
-        res.status(201).json({ message: 'The medication has been added successfully', medication: newMedication });
-    } catch (error) {
-        console.error('Error when adding the medication:', error);
-        res.status(500).json({ message: 'An error occurred on the server' });
-    }
-});
-
-// видалення препарату
-router.delete('/delete/:id', async (req, res) => {
-    const { id } = req.params;
-
-    if (!id) {
-        return res.status(400).json({ message: 'Medication ID is required.' });
-    }
-
-    try {
-        const deletedMedication = await medicationService.deleteMedication(req.db, id);
-        
-        if (!deletedMedication) {
-            return res.status(404).json({ message: 'Medication not found.' });
+        } catch (err) {
+            next(err);
         }
-
-        res.status(200).json({ message: 'Medication has been successfully deleted.', medication: deletedMedication });
-    } catch (error) {
-        console.error('Error when deleting the medication:', error);
-        res.status(500).json({ message: 'An error occurred on the server' });
     }
-});
+);
 
-// оновлення кількості препарату
-router.put('/update-quantity/:id', async (req, res) => {
-    const { id } = req.params;
-    const { quantity } = req.body;
+// видалення
+router.delete(
+    '/delete/:id',
+    authenticateToken,
+    authorizeRoles(1), // тільки admin
+    async (req, res, next) => {
+        try {
+            const id = Number(req.params.id);
 
-    if (!id || quantity === undefined) {
-        return res.status(400).json({ message: 'Medication ID and quantity are required.' });
-    }
+            if (!id) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Medication ID is required',
+                    400
+                ));
+            }
 
-    try {
-        const updatedMedication = await medicationService.updateMedicationQuantity(req.db, id, quantity);
+            const deleted = await medicationService.deleteMedication(id, req);
 
-        if (!updatedMedication) {
-            return res.status(404).json({ message: 'Medication not found.' });
+            res.json({
+                message: 'Medication has been successfully deleted',
+                medication: deleted
+            });
+
+        } catch (err) {
+            next(err);
         }
-
-        res.status(200).json({
-            message: 'Medication quantity has been successfully updated.',
-            medication: updatedMedication,
-        });
-    } catch (error) {
-        console.error('Error updating medication quantity:', error);
-        res.status(500).json({ message: 'An error occurred on the server' });
     }
-});
+);
+
+// оновлення кількості
+router.put(
+    '/update-quantity/:id',
+    authenticateToken,
+    authorizeRoles(1, 2),
+    async (req, res, next) => {
+        try {
+            const id = Number(req.params.id);
+            const { quantity } = req.body;
+
+            if (!id || quantity === undefined) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Medication ID and quantity are required',
+                    400
+                ));
+            }
+
+            const updated = await medicationService.updateMedicationQuantity(id, quantity, req);
+
+            res.json({
+                message: 'Medication quantity has been successfully updated',
+                medication: updated
+            });
+
+        } catch (err) {
+            next(err);
+        }
+    }
+);
 
 export const medicationRouter = router;

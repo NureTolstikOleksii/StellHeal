@@ -1,14 +1,23 @@
-import { randomBytes } from 'crypto';
-
+import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
-import ExcelJS from 'exceljs';
-import {sendWelcomeEmail} from "../../integrations/resend/emailService.js";
+import {randomBytes} from 'crypto';
+
+import { AppError } from "../../shared/errors/AppError.js";
+import { ERROR_CODES } from "../../shared/constants/errorCodes.js";
+import { logAction } from "../../shared/logger/auditLogger.js";
+import { ACTIONS } from "../../shared/constants/actions.js";
+
+import { sendWelcomeEmail } from "../../integrations/resend/emailService.js";
+import {generatePatientsExcel} from "../../integrations/reports/patientsExcel.service.js";
+import {generateTreatmentExcel} from "../../integrations/reports/treatmentReport.service.js";
+import {generatePrescriptionPdf} from "../../integrations/reports/prescriptionPdf.service.js";
 
 export class PatientsService {
-    // отримання всіх пацієнтів
-    async getAllPatients(db) {
-        const patients = await db.users.findMany({
-            where: {role_id: 3},
+
+    // get all patients
+    async getAllPatients() {
+        const patients = await prisma.users.findMany({
+            where: { role_id: 3 },
             select: {
                 user_id: true,
                 first_name: true,
@@ -33,18 +42,16 @@ export class PatientsService {
         }));
     }
 
-    // отримання пацієнтів на лікуванні для медсестер
-    async getAllPatientsForStaff(db) {
+    // receiving patients for treatment for nurses
+    async getAllPatientsForStaff() {
         const now = new Date();
 
-        const patients = await db.users.findMany({
+        const patients = await prisma.users.findMany({
             where: {
                 role_id: 3,
                 prescriptions_prescriptions_patient_idTousers: {
                     some: {
-                        end_date: {
-                            gt: now
-                        }
+                        end_date: { gt: now }
                     }
                 }
             },
@@ -60,7 +67,6 @@ export class PatientsService {
                 date_of_birth: true,
                 prescriptions_prescriptions_patient_idTousers: {
                     select: {
-                        ward_id: true,
                         wards: {
                             select: {
                                 ward_number: true
@@ -87,36 +93,53 @@ export class PatientsService {
         }));
     }
 
-    // підрахунок кількості пацієнтів
-    async getCounts(db) {
-        const totalPatients = await db.users.count({
-            where: {role_id: 3}
+    // count the number of patients
+    async getCounts() {
+        const totalPatients = await prisma.users.count({
+            where: { role_id: 3 }
         });
 
-        const onTreatment = await db.prescriptions.count({
+        const onTreatment = await prisma.prescriptions.count({
             where: {
-                patient_id: {not: null},
-                end_date: {gte: new Date()},
+                patient_id: { not: null },
+                end_date: { gte: new Date() },
                 users_prescriptions_patient_idTousers: {
                     role_id: 3
                 }
             }
         });
 
-        return {totalPatients, onTreatment};
+        return { totalPatients, onTreatment };
     }
 
-    // створення пацієнта
-    async createPatient(db, data) {
-        const { last_name, first_name, patronymic, email, birth_date, phone, address } = data;
+    // create patient
+    async createPatient(data, req) {
+        const {
+            last_name,
+            first_name,
+            patronymic,
+            email,
+            birth_date,
+            phone,
+            address
+        } = data;
 
-        const exists = await db.users.findUnique({ where: { login: email } });
-        if (exists) throw new Error('Користувач з такою поштою вже існує');
+        const exists = await prisma.users.findUnique({
+            where: { login: email }
+        });
 
-        const plainPassword = randomBytes(4).toString('hex'); // 8-символьний
+        if (exists) {
+            throw new AppError(
+                ERROR_CODES.USER_EXISTS,
+                'Користувач з такою поштою вже існує',
+                400
+            );
+        }
+
+        const plainPassword = randomBytes(4).toString('hex');
         const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-        const user = await db.users.create({
+        const user = await prisma.users.create({
             data: {
                 first_name,
                 last_name,
@@ -130,25 +153,37 @@ export class PatientsService {
             },
         });
 
-        // відправка на пошту
+        // email
         await sendWelcomeEmail(email, plainPassword);
 
+        // notification
         const now = new Date();
-        const notification = await db.notifications.create({
+
+        const notification = await prisma.notifications.create({
             data: {
                 notification_type: 'success',
                 message: `Вітаємо вас у системі, ${user.last_name} ${user.first_name}!`,
                 sent_date: now,
-                sent_time: new Date(now.getTime() + (3 * 60 * 60 * 1000)) // +3 години (UTC+3)
+                sent_time: new Date(now.getTime() + (3 * 60 * 60 * 1000))
             }
         });
 
-        await db.notification_recipients.create({
+        await prisma.notification_recipients.create({
             data: {
                 notification_id: notification.notification_id,
                 user_id: user.user_id,
                 is_read: false
             }
+        });
+
+        // audit log
+        await logAction({
+            userId: req.user?.userId,
+            action: ACTIONS.CREATE,
+            entity: 'PATIENT',
+            entityId: user.user_id,
+            description: 'Patient created with email and notification',
+            req
         });
 
         return {
@@ -158,99 +193,18 @@ export class PatientsService {
         };
     }
 
-    // звіт про пацієнтів Excel
-    async exportPatientsToExcel(db) {
-        const patients = await db.users.findMany({
-            where: { role_id: 3 },
-            select: {
-                user_id: true,
-                first_name: true,
-                last_name: true,
-                patronymic: true,
-                login: true,
-                phone: true,
-                contact_info: true,
-                date_of_birth: true
-            }
+    // Excel patient report
+    async exportPatientsToExcel() {
+        const patients = await prisma.users.findMany({
+            where: { role_id: 3 }
         });
 
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Пацієнти');
-        const now = new Date().toLocaleString('uk-UA', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        });
-
-
-        // === Назва звіту ===
-        sheet.mergeCells('A1:F1');
-        const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Звіт про зареєстрованих пацієнтів';
-        titleCell.font = { size: 16, bold: true };
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        // === Дата формування ===
-        sheet.mergeCells('A2:F2');
-        const dateCell = sheet.getCell('A2');
-        dateCell.value = `Дата формування звіту: ${now}`;
-        dateCell.font = { italic: true };
-        dateCell.alignment = { horizontal: 'left' };
-
-        // === Заголовки таблиці ===
-        const headers = ['ID', 'ПІБ', 'Email', 'Телефон', 'Адреса', 'Дата народження'];
-        const columnWidths = [7, 30, 30, 20, 30, 18];
-
-        const headerRow = sheet.addRow(headers);
-        headerRow.font = { bold: true };
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-
-        headerRow.eachCell((cell, colNumber) => {
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFFFE599' }
-            };
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
-            sheet.getColumn(colNumber).width = columnWidths[colNumber - 1];
-        });
-
-        // === Додавання даних про пацієнтів ===
-        patients.forEach(p => {
-            const row = sheet.addRow([
-                p.user_id,
-                `${p.last_name} ${p.first_name} ${p.patronymic || ''}`.trim(),
-                p.login,
-                p.phone || '',
-                p.contact_info || '',
-                p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString('uk-UA') : ''
-            ]);
-
-            row.alignment = { vertical: 'top', wrapText: true };
-            row.eachCell(cell => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-            });
-        });
-
-        return await workbook.xlsx.writeBuffer();
+        return generatePatientsExcel(patients);
     }
 
-    // отримання пацієнта по id
-    async getById(db, id) {
-        const user = await db.users.findUnique({
+    // get patient by id
+    async getById(id) {
+        const user = await prisma.users.findUnique({
             where: { user_id: id },
             select: {
                 user_id: true,
@@ -265,7 +219,13 @@ export class PatientsService {
             }
         });
 
-        if (!user) throw new Error('Пацієнт не знайдений');
+        if (!user) {
+            throw new AppError(
+                ERROR_CODES.USER_NOT_FOUND,
+                'Пацієнт не знайдений',
+                404
+            );
+        }
 
         return {
             id: user.user_id,
@@ -274,13 +234,16 @@ export class PatientsService {
             phone: user.phone,
             address: user.contact_info,
             avatar: user.avatar,
-            dob: user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('uk-UA') : ''
+            dob: user.date_of_birth
+                ? new Date(user.date_of_birth).toLocaleDateString('uk-UA')
+                : ''
         };
     }
 
-    // отримання поточного призначення
-    async getCurrentTreatment(db, patientId) {
-        const prescriptions = await db.prescriptions.findMany({
+    // get current treatment
+    async getCurrentTreatment(patientId) {
+
+        const prescriptions = await prisma.prescriptions.findMany({
             where: {
                 patient_id: patientId,
                 end_date: { gte: new Date() }
@@ -294,6 +257,10 @@ export class PatientsService {
                 }
             }
         });
+
+        if (!prescriptions.length) {
+            return []; // НЕ кидаємо помилку — це норм ситуація
+        }
 
         return prescriptions.map(p => {
             const uniqueMeds = [];
@@ -323,9 +290,10 @@ export class PatientsService {
         });
     }
 
-    // отримання історії призначень
-    async getTreatmentHistory(db, patientId) {
-        const prescriptions = await db.prescriptions.findMany({
+    // отримання історії лікування
+    async getTreatmentHistory(patientId) {
+
+        const prescriptions = await prisma.prescriptions.findMany({
             where: {
                 patient_id: patientId,
                 end_date: { lt: new Date() }
@@ -340,10 +308,16 @@ export class PatientsService {
             }
         });
 
+        if (!prescriptions.length) {
+            return [];
+        }
+
         return prescriptions.map(p => {
             const seen = new Map();
+
             p.prescription_medications.forEach(pm => {
                 const med = pm.medications;
+
                 if (med && !seen.has(med.name)) {
                     seen.set(med.name, `${med.name} - ${pm.frequency || ''}`);
                 }
@@ -362,47 +336,51 @@ export class PatientsService {
         });
     }
 
-    // cтворення призначення
-    async createPrescription(db, doctorId, patientId, data) {
+    // get treatment history
+    async createPrescription(doctorId, patientId, data, req) {
+
         const { diagnosis, wardId, medications } = data;
 
         if (!diagnosis || !wardId || !Array.isArray(medications) || medications.length === 0) {
-            throw new Error('Невірні дані для створення призначення');
+            throw new AppError(
+                ERROR_CODES.VALIDATION_ERROR,
+                'Невірні дані для створення призначення',
+                400
+            );
         }
 
-        const prescription = await db.prescriptions.create({
+        const prescription = await prisma.prescriptions.create({
             data: {
                 diagnosis,
                 ward_id: wardId,
-                patient_id: parseInt(patientId),
-                duration: parseInt(medications[0].duration),
+                patient_id: Number(patientId),
+                duration: Number(medications[0].duration),
                 doctor_id: doctorId,
                 date_issued: new Date(),
             }
         });
 
+        const startDate = new Date();
+
         for (const med of medications) {
             const { medicationId, quantity, timesPerDay, duration } = med;
+
             const times = getIntakeTimes(Number(timesPerDay));
-            const startDate = new Date();
 
             for (let day = 0; day < Number(duration); day++) {
                 const date = addDays(startDate, day);
 
                 for (const timeStr of times) {
                     const [hours, minutes] = timeStr.split(':');
+
                     const intakeTime = new Date(date);
                     intakeTime.setHours(Number(hours), Number(minutes), 0, 0);
 
-                    await db.prescription_medications.create({
+                    await prisma.prescription_medications.create({
                         data: {
-                            prescriptions: {
-                                connect: { prescription_id: prescription.prescription_id }
-                            },
-                            medications: {
-                                connect: { medication_id: medicationId }
-                            },
-                            quantity: parseInt(quantity),
+                            prescription_id: prescription.prescription_id,
+                            medication_id: medicationId,
+                            quantity: Number(quantity),
                             frequency: `${timesPerDay} раз(и) на день`,
                             intake_date: date,
                             intake_time: intakeTime
@@ -412,46 +390,89 @@ export class PatientsService {
             }
         }
 
+        await logAction({
+            userId: doctorId,
+            action: ACTIONS.CREATE,
+            entity: 'PRESCRIPTION',
+            entityId: prescription.prescription_id,
+            description: 'Prescription created with generated schedule',
+            req
+        });
+
         return {
             message: 'Призначення успішно створено',
             prescriptionId: prescription.prescription_id
         };
     }
 
-    // видалення призначення
-    async deletePrescription(db, prescriptionId) {
+    // delete destination
+    async deletePrescription(prescriptionId, req) {
         const id = Number(prescriptionId);
 
-        await db.prescription_medications.deleteMany({
+        const exists = await prisma.prescriptions.findUnique({
             where: { prescription_id: id }
         });
 
-        await db.prescriptions.delete({
+        if (!exists) {
+            throw new AppError(
+                ERROR_CODES.NOT_FOUND,
+                'Призначення не знайдено',
+                404
+            );
+        }
+
+        await prisma.prescription_medications.deleteMany({
             where: { prescription_id: id }
+        });
+
+        await prisma.prescriptions.delete({
+            where: { prescription_id: id }
+        });
+
+        await logAction({
+            userId: req.user?.userId,
+            action: ACTIONS.DELETE,
+            entity: 'PRESCRIPTION',
+            entityId: id,
+            description: 'Prescription deleted',
+            req
         });
     }
 
-    // видалення пацієнта
-    async deletePatient(db, patientId) {
+    // delete patient
+    async deletePatient(patientId, req) {
         const id = Number(patientId);
 
-        const patient = await db.users.findUnique({
+        const patient = await prisma.users.findUnique({
             where: { user_id: id },
         });
 
         if (!patient) {
-            throw new Error('Пацієнта не знайдено');
+            throw new AppError(
+                ERROR_CODES.USER_NOT_FOUND,
+                'Пацієнта не знайдено',
+                404
+            );
         }
 
-        await db.users.delete({
+        await prisma.users.delete({
             where: { user_id: id }
+        });
+
+        await logAction({
+            userId: req.user?.userId,
+            action: ACTIONS.DELETE,
+            entity: 'PATIENT',
+            entityId: id,
+            description: 'Patient deleted',
+            req
         });
 
         return { message: 'Пацієнта успішно видалено' };
     }
 
-    // редагування
-    async updatePatient(db, id, data) {
+    // patient editing
+    async updatePatient(id, data, req) {
         const {
             last_name,
             first_name,
@@ -462,15 +483,19 @@ export class PatientsService {
             birth_date,
         } = data;
 
-        const existing = await db.users.findUnique({
+        const existing = await prisma.users.findUnique({
             where: { user_id: id },
         });
 
         if (!existing) {
-            throw new Error('Пацієнта не знайдено');
+            throw new AppError(
+                ERROR_CODES.USER_NOT_FOUND,
+                'Пацієнта не знайдено',
+                404
+            );
         }
 
-        const updated = await db.users.update({
+        const updated = await prisma.users.update({
             where: { user_id: id },
             data: {
                 last_name,
@@ -481,6 +506,15 @@ export class PatientsService {
                 contact_info,
                 date_of_birth: birth_date ? new Date(birth_date) : null,
             },
+        });
+
+        await logAction({
+            userId: req.user?.userId,
+            action: ACTIONS.UPDATE,
+            entity: 'PATIENT',
+            entityId: id,
+            description: 'Patient updated',
+            req
         });
 
         return {
@@ -496,17 +530,21 @@ export class PatientsService {
         };
     }
 
-    // звіт з лікування для доктора
-    async generateTreatmentReport(db, patientId) {
-        const patient = await db.users.findUnique({
+    // treatment report
+    async generateTreatmentReport(patientId) {
+        const patient = await prisma.users.findUnique({
             where: { user_id: patientId }
         });
 
         if (!patient) {
-            throw new Error(`Пацієнта з ID ${patientId} не знайдено`);
+            throw new AppError(
+                ERROR_CODES.USER_NOT_FOUND,
+                'Пацієнта не знайдено',
+                404
+            );
         }
 
-        const prescriptions = await db.prescriptions.findMany({
+        const prescriptions = await prisma.prescriptions.findMany({
             where: { patient_id: patientId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
@@ -517,126 +555,24 @@ export class PatientsService {
             orderBy: { date_issued: 'desc' }
         });
 
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Звіт з лікування');
-
-        const now = new Date().toLocaleString('uk-UA', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        });
-
-        // === Назва звіту ===
-        sheet.mergeCells('A1:H1');
-        const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Звіт про лікування пацієнта';
-        titleCell.font = { size: 16, bold: true };
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        // === Пацієнт ===
-        sheet.mergeCells('A2:H2');
-        const patientInfoCell = sheet.getCell('A2');
-        patientInfoCell.value = `Пацієнт: ${patient.last_name} ${patient.first_name}`;
-        patientInfoCell.font = { italic: true };
-        patientInfoCell.alignment = { horizontal: 'left' };
-
-        // === Дата та час формування ===
-        sheet.mergeCells('A3:H3');
-        const dateCell = sheet.getCell('A3');
-        dateCell.value = `Дата формування звіту: ${now}`;
-        dateCell.font = { italic: true };
-        dateCell.alignment = { horizontal: 'left' };
-
-        // === Колонки ===
-        const headers = [
-            '№',
-            'Дата призначення',
-            'Дата завершення',
-            'Діагноз',
-            'Палата',
-            'Лікар',
-            'Тривалість (днів)',
-            'Призначені препарати'
-        ];
-
-        const columnWidths = [5, 15, 15, 20, 10, 20, 15, 60];
-        sheet.columns = columnWidths.map(width => ({ width }));
-
-        // === Заголовок таблиці
-        const headerRow = sheet.addRow(headers);
-        headerRow.font = { bold: true };
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        headerRow.eachCell(cell => {
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFFFE599' }
-            };
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
-        });
-
-        // === Призначення ===
-        prescriptions.forEach((p, index) => {
-            const uniqueMedMap = new Map();
-            (p.prescription_medications || []).forEach(pm => {
-                const name = pm?.medications?.name || 'Невідомо';
-                const freq = pm?.frequency || 'н/д';
-                const key = `${name}__${freq}`;
-                if (!uniqueMedMap.has(key)) {
-                    uniqueMedMap.set(key, `${name} — ${freq}`);
-                }
-            });
-
-            const meds = Array.from(uniqueMedMap.values())
-                .map((text, i) => `${i + 1}. ${text}`)
-                .join('\n');
-
-            const row = sheet.addRow([
-                index + 1,
-                p.date_issued ? new Date(p.date_issued).toLocaleDateString('uk-UA') : '',
-                p.end_date ? new Date(p.end_date).toLocaleDateString('uk-UA') : '',
-                p.diagnosis || '',
-                p.ward_id || '-',
-                `${p.users_prescriptions_doctor_idTousers?.last_name || ''} ${p.users_prescriptions_doctor_idTousers?.first_name || ''}`,
-                p.duration || 0,
-                meds
-            ]);
-
-            const medLines = meds.split('\n').length;
-            row.height = Math.max(20, medLines * 18); // більше висоти для читабельності
-
-            row.alignment = { vertical: 'top', wrapText: true };
-            row.eachCell(cell => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-            });
-        });
-
-        return await workbook.xlsx.writeBuffer();
+        return generateTreatmentExcel(patient, prescriptions);
     }
 
     // --- mobile ---
 
 
-    // історія лікувань для фронтенду (patient)
-    async getPrescriptionHistoryByPatient(db, patientId) {
+    // treatment history
+    async getPrescriptionHistoryByPatient(patientId) {
+
         if (!patientId) {
-            throw new Error('patientId is required');
+            throw new AppError(
+                ERROR_CODES.VALIDATION_ERROR,
+                'patientId is required',
+                400
+            );
         }
 
-        const history = await db.prescriptions.findMany({
+        const history = await prisma.prescriptions.findMany({
             where: { patient_id: patientId },
             select: {
                 prescription_id: true,
@@ -655,9 +591,10 @@ export class PatientsService {
         }));
     }
 
-    // історія лікувань для фронтенду (patient)
-    async getPrescriptionDetails(db, prescriptionId) {
-        const prescription = await db.prescriptions.findUnique({
+    // destination details
+    async getPrescriptionDetails(prescriptionId) {
+
+        const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: prescriptionId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
@@ -669,7 +606,13 @@ export class PatientsService {
             }
         });
 
-        if (!prescription) return null;
+        if (!prescription) {
+            throw new AppError(
+                ERROR_CODES.NOT_FOUND,
+                'Prescription not found',
+                404
+            );
+        }
 
         const formatDate = (date) =>
             new Date(date).toLocaleDateString('uk-UA');
@@ -678,10 +621,9 @@ export class PatientsService {
 
         for (const pm of prescription.prescription_medications) {
             const name = pm.medications?.name || "Unknown";
-            const key = name;
 
-            if (!medsMap[key]) {
-                medsMap[key] = {
+            if (!medsMap[name]) {
+                medsMap[name] = {
                     name,
                     frequency: pm.frequency,
                     duration: prescription.duration,
@@ -689,47 +631,48 @@ export class PatientsService {
                 };
             }
 
-            // Форматуємо час
             if (pm.intake_time && pm.quantity !== null) {
-                const timeStr = pm.intake_time.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-                const existing = medsMap[key].intake_times;
+                const timeStr = pm.intake_time.toLocaleTimeString('uk-UA', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
-                // Додаємо тільки якщо немає дубліката
-                const alreadyExists = existing.some(it => it.time === timeStr && it.quantity === pm.quantity);
-                if (!alreadyExists) {
-                    existing.push({ time: timeStr, quantity: pm.quantity });
+                const exists = medsMap[name].intake_times.some(
+                    it => it.time === timeStr && it.quantity === pm.quantity
+                );
+
+                if (!exists) {
+                    medsMap[name].intake_times.push({
+                        time: timeStr,
+                        quantity: pm.quantity
+                    });
                 }
             }
         }
+
+        const totalTaken = await prisma.prescription_medications.aggregate({
+            where: {
+                prescription_id: prescriptionId,
+                intake_status: true
+            },
+            _sum: {
+                quantity: true
+            }
+        }).then(res => res._sum.quantity || 0);
 
         return {
             diagnosis: prescription.diagnosis || "N/A",
             date: formatDate(prescription.date_issued),
             doctor: `${prescription.users_prescriptions_doctor_idTousers.last_name} ${prescription.users_prescriptions_doctor_idTousers.first_name.charAt(0)}.`,
-            total_taken: await db.prescription_medications.aggregate({
-                where: {
-                    prescription_id: prescriptionId,
-                    intake_status: true
-                },
-                _sum: {
-                    quantity: true
-                }
-            }).then(result => result._sum.quantity || 0),
+            total_taken: totalTaken,
             medications: Object.values(medsMap)
         };
     }
 
-    // звіт в пдф для користувача (patient)
-    async generatePrescriptionReport(req, res) {
-        const { prescriptionId } = req.body;
+    // PDF report
+    async generatePrescriptionReport(prescriptionId) {
 
-        if (!prescriptionId) {
-            return res.status(400).json({ message: 'Prescription ID is required' });
-        }
-
-        const db = req.db;
-
-        const prescription = await db.prescriptions.findUnique({
+        const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: prescriptionId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
@@ -742,12 +685,15 @@ export class PatientsService {
             }
         });
 
-        if (!prescription) return res.status(404).json({ message: 'Prescription not found' });
+        if (!prescription) {
+            throw new AppError(
+                ERROR_CODES.NOT_FOUND,
+                'Prescription not found',
+                404
+            );
+        }
 
-        const formatDate = (date) => new Date(date).toLocaleDateString('uk-UA');
-        const formatDateTime = (date) => new Date(date).toLocaleString('uk-UA');
-
-        const totalTaken = await db.prescription_medications.aggregate({
+        const totalTaken = await prisma.prescription_medications.aggregate({
             where: {
                 prescription_id: prescriptionId,
                 intake_status: true
@@ -757,92 +703,11 @@ export class PatientsService {
             }
         }).then(res => res._sum.quantity || 0);
 
-        const medsMap = {};
-
-        for (const pm of prescription.prescription_medications) {
-            const name = pm.medications?.name || "Unknown";
-            const key = name;
-
-            if (!medsMap[key]) {
-                medsMap[key] = {
-                    name,
-                    frequency: pm.frequency,
-                    duration: prescription.duration,
-                    intake_times: []
-                };
-            }
-
-            if (pm.intake_time && pm.quantity !== null) {
-                const timeStr = pm.intake_time.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-                const alreadyExists = medsMap[key].intake_times.some(it => it.time === timeStr && it.quantity === pm.quantity);
-                if (!alreadyExists) {
-                    medsMap[key].intake_times.push({ time: timeStr, quantity: pm.quantity });
-                }
-            }
-        }
-
-        const PDFDocument = (await import('pdfkit')).default;
-        const doc = new PDFDocument({ margin: 50 });
-
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=prescription-report.pdf');
-
-        doc.pipe(res);
-
-        doc.registerFont('Roboto', 'fonts/Roboto-Regular.ttf');
-        doc.font('Roboto');
-
-        doc.image('public/logo.png', doc.page.width / 2 - 40, 40, { width: 70 }).moveDown(4);
-
-        doc.fontSize(20).text('Звiт про призначення', { align: 'center' }).moveDown();
-
-        const patient = prescription.users_prescriptions_patient_idTousers;
-        const fullName = `${patient.last_name} ${patient.first_name} ${patient.patronymic || ''}`.trim();
-        const now = new Date();
-
-        doc.fontSize(12)
-            .text(`ПIБ пацiєнта: ${fullName}`)
-            .text(`Дiагноз: ${prescription.diagnosis || '—'}`)
-            .text(`Дата призначення: ${formatDate(prescription.date_issued)}`)
-            .text(`Лiкар: ${prescription.users_prescriptions_doctor_idTousers.last_name} ${prescription.users_prescriptions_doctor_idTousers.first_name.charAt(0)}.`)
-            .text(`Всього прийнято лiкiв: ${totalTaken}`)
-            .text(`Дата формування звiту: ${formatDateTime(now)}`)
-            .moveDown();
-
-        doc.fontSize(13).text('Препарати:', { underline: true }).moveDown(0.5);
-
-        let counter = 1;
-        for (const med of Object.values(medsMap)) {
-            doc.font('Roboto').text(`${counter}. ${med.name}`);
-            doc.font('Roboto')
-                .text(`   Частота: ${med.frequency}`)
-                .text(`   Тривалiсть: ${med.duration} днiв`)
-                .text(`   Час прийому:`);
-
-            if (med.intake_times.length === 0) {
-                doc.text(`     —`);
-            } else {
-                med.intake_times.forEach((intake) => {
-                    doc.text(`     • ${intake.time} — ${intake.quantity} табл.`);
-                });
-            }
-
-            doc.moveDown();
-            counter++;
-        }
-
-        doc.moveDown(2);
-        doc.fontSize(10).fillColor('gray')
-            .text('StellHeal — Медична інформаційна система', { align: 'center' });
-        doc.fontSize(8).fillColor('gray')
-            .text('© 2025 StellHeal. Усі права захищено.', { align: 'center' });
-
-        doc.end();
+        return generatePrescriptionPdf(prescription, totalTaken);
     }
-
 }
 
-// допоміжні функції
+// helper functions
 function getIntakeTimes(timesPerDay) {
     switch (timesPerDay) {
         case 1:
@@ -870,7 +735,7 @@ function getIntakeTimes(timesPerDay) {
     }
 }
 
-// додавання днів до дати
+// adding days to the date
 function addDays(date, days) {
     const result = new Date(date);
     result.setDate(result.getDate() + days);

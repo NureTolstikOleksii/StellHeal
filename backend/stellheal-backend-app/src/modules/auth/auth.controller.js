@@ -28,10 +28,12 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
     try {
-        const user = await authService.loginUser(req.body.email, req.body.password, req);
+        const { email, password, platform } = req.body;
+
+        const user = await authService.loginUser(email, password, platform, req);
 
         const accessToken = jwt.sign(
-            { userId: user.user_id, roleId: user.role_id },
+            { userId: user.user_id, roleId: user.role_id, platform },
             JWT_SECRET,
             { expiresIn: '15m' }
         );

@@ -1,58 +1,93 @@
+import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
+import { AppError } from '../../shared/errors/AppError.js';
+import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+import { logAction } from '../../shared/logger/auditLogger.js';
+import { ACTIONS } from '../../shared/constants/actions.js';
 
 export class ProfileService {
 
-    // отримання профілю
-    async getProfile(db, userId) {
-        return await db.users.findUnique({
+    async getProfile(userId, req) {
+        const user = await prisma.users.findUnique({
             where: { user_id: userId },
             include: {
                 roles: true,
                 medical_staff: true
             }
         });
+
+        if (!user) {
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'User not found', 404);
+        }
+
+        return user;
     }
 
-    // зміна пароля
-    async changePassword(db, userId, currentPassword, newPassword) {
-        const user = await db.users.findUnique({
+    async updateAvatar(userId, avatarUrl, req) {
+        const user = await prisma.users.update({
+            where: { user_id: userId },
+            data: { avatar: avatarUrl }
+        });
+
+        await logAction({
+            userId,
+            action: ACTIONS.SECURITY_EVENT,
+            entity: 'USER',
+            entityId: userId,
+            description: 'Avatar updated',
+            req
+        });
+
+        return user;
+    }
+
+    async changePassword(userId, currentPassword, newPassword, req) {
+        const user = await prisma.users.findUnique({
             where: { user_id: userId }
         });
 
         if (!user) {
-            const error = new Error('Користувача не знайдено');
-            error.statusCode = 404;
-            throw error;
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'User not found', 404);
         }
 
         const isMatch = await bcrypt.compare(currentPassword, user.password);
+
         if (!isMatch) {
-            const error = new Error('Неправильний поточний пароль');
-            error.statusCode = 400;
-            throw error;
+            throw new AppError(ERROR_CODES.INVALID_PASSWORD, 'Invalid current password', 400);
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await db.users.update({
+
+        await prisma.users.update({
             where: { user_id: userId },
             data: { password: hashedPassword }
         });
-    }
 
-    // оновлення профілю
-    async updateProfile(db, userId, data) {
-        console.log(data)
-        return await db.users.update({
-            where: { user_id: userId },
-            data: {
-                first_name: data.first_name,
-                last_name: data.last_name,
-                patronymic: data.patronymic,
-                phone: data.phone,
-                login: data.login,
-                contact_info: data.contact_info
-            }
+        await logAction({
+            userId,
+            action: ACTIONS.SECURITY_EVENT,
+            entity: 'USER',
+            entityId: userId,
+            description: 'Password changed',
+            req
         });
     }
 
+    async updateProfile(userId, data, req) {
+        const updatedUser = await prisma.users.update({
+            where: { user_id: userId },
+            data
+        });
+
+        await logAction({
+            userId,
+            action: ACTIONS.SECURITY_EVENT,
+            entity: 'USER',
+            entityId: userId,
+            description: 'Profile updated',
+            req
+        });
+
+        return updatedUser;
+    }
 }

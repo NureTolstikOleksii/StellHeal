@@ -20,6 +20,8 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
 // 🔥 ДОЗВОЛЕНІ РОЛІ (під себе налаштуй)
 const ALLOWED_ROLES = [1, 2, 3]; // наприклад: Patient, Doctor, Nurse
+const WEB_ROLES = [1, 4];     // doctor, admin (підстав свої)
+const MOBILE_ROLES = [2, 3]
 
 export class AuthService {
 
@@ -119,7 +121,11 @@ export class AuthService {
         return newUser;
     }
 
-    async loginUser(email, password, req) {
+    async loginUser(email, password, platform, req) {
+
+        if (!platform) {
+            throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Platform is required', 400);
+        }
 
         const user = await prisma.users.findUnique({
             where: { login: email },
@@ -168,6 +174,15 @@ export class AuthService {
             throw new AppError(ERROR_CODES.INVALID_PASSWORD, 'Invalid password', 401);
         }
 
+        if (platform === 'web' && !WEB_ROLES.includes(user.role_id)) {
+            throw new AppError(ERROR_CODES.FORBIDDEN, 'Access denied for web', 403);
+        }
+
+        if (platform === 'mobile' && !MOBILE_ROLES.includes(user.role_id)) {
+            throw new AppError(ERROR_CODES.FORBIDDEN, 'Access denied for mobile', 403);
+        }
+
+        // reset attempts
         await prisma.users.update({
             where: { user_id: user.user_id },
             data: {
@@ -181,7 +196,7 @@ export class AuthService {
             action: ACTIONS.LOGIN,
             entity: 'USER',
             entityId: user.user_id,
-            description: 'User logged in',
+            description: `User logged in via ${platform}`,
             req
         });
 

@@ -3,29 +3,17 @@ import { AppError } from "../../shared/errors/AppError.js";
 
 export const validateEmail = (req, res, next) => {
     const { email, login } = req.body;
+    const emailToValidate = email || login;
 
-    if (!email && !login) {
-        return next(
-            new AppError(
-                ERROR_CODES.VALIDATION_ERROR,
-                'Email is required',
-                400
-            )
-        );
+    // Якщо поле не передане — просто йдемо далі (для PATCH це ок)
+    if (!emailToValidate) {
+        return next();
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (
-        (email && !emailRegex.test(email)) ||
-        (login && !emailRegex.test(login))
-    ) {
+    if (!emailRegex.test(emailToValidate)) {
         return next(
-            new AppError(
-                ERROR_CODES.VALIDATION_ERROR,
-                'Invalid email format',
-                400
-            )
+            new AppError(ERROR_CODES.VALIDATION_ERROR, 'Invalid email format', 400)
         );
     }
 

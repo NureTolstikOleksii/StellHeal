@@ -1,9 +1,7 @@
 import { Router } from 'express';
 
 import authRouter from '../modules/auth/auth.routes.js';
-
-
-import { profileRouter } from '../modules/profile/profile.controller.js';
+import profileRouter from '../modules/profile/profile.controller.js';
 import { medicationRouter } from '../modules/medication/medication.controller.js';
 import { mainRouter } from '../modules/patients/patients.controller.js';
 import { containerRouter } from '../modules/container/container.controller.js';
@@ -17,11 +15,14 @@ const router = Router();
 
 // 🔥 всі маршрути тут
 router.use('/auth', authRouter);
+router.use('/profile', profileRouter);
+
 router.use('/medication', medicationRouter);
 router.use('/patients', mainRouter);
 router.use('/wards', wardsRouter);
 router.use('/containers', containerRouter);
-router.use('/profile', profileRouter);
+
+
 router.use('/notification', notificationRouter);
 router.use('/staff', staffRouter);
 router.use('/stats', statsRouter);

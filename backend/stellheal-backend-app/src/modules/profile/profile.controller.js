@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { ProfileService } from './profile.service.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import streamifier from 'streamifier';
-import {validatePasswordStrength} from "../middleware/validatePasswordStrength.js";
-import {validateEmail} from "../middleware/validateEmail.js";
+import {validatePasswordStrength} from "../../middleware/validation/validatePasswordStrength.js";
+import {validateEmail} from "../../middleware/validation/validateEmail.js";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

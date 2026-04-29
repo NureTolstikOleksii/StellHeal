@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-import { sendStaffCredentialsEmail } from '../utils/emailService.js';
+import { sendStaffCredentialsEmail } from '../../integrations/resend/emailService.js';
 import ExcelJS from 'exceljs';
-import admin from "../firebase/firebase.js";
+import admin from "../../integrations/firebase/firebaseConfig.js";
 
 export class StaffService {
     // отримати список мед. працівників

@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { PatientsService } from './patients.service.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import { authorizeRoles } from '../middleware/role.middleware.js';
-import { validateEmail } from '../middleware/validateEmail.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { authorizeRoles } from '../../middleware/role.middleware.js';
+import { validateEmail } from '../../middleware/validation/validateEmail.js';
 
 const router = Router();
 const patientsService = new PatientsService();

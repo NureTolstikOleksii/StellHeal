@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { StaffService } from './staff.service.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import {validateEmail} from "../middleware/validateEmail.js";
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import {validateEmail} from "../../middleware/validation/validateEmail.js";
 
 const router = Router();
 const staffService = new StaffService();

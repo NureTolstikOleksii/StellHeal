@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 
 import bcrypt from 'bcryptjs';
 import ExcelJS from 'exceljs';
-import {sendWelcomeEmail} from "../utils/emailService.js";
+import {sendWelcomeEmail} from "../../integrations/resend/emailService.js";
 
 export class PatientsService {
     // отримання всіх пацієнтів

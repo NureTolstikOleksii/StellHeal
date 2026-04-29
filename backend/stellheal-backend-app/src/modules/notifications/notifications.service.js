@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import admin from "../firebase/firebase.js";
+import admin from "../../integrations/firebase/firebaseConfig.js";
 const prisma = new PrismaClient();
 
 export class NotificationService {

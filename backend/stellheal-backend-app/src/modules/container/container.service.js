@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import admin from '../firebase/firebase.js'; // вже є
+import admin from '../../integrations/firebase/firebaseConfig.js'; // вже є
 import ExcelJS from 'exceljs';
 
 export class ContainerService {

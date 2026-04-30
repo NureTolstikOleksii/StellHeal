@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.transform.CircleCropTransformation
 import com.example.healthyhelper.R
 
 class PatientAdapter(
@@ -36,9 +37,10 @@ class PatientAdapter(
         holder.name.text = patient.name
         holder.dob.text = patient.dob ?: "Невідомо"
         holder.ward.text = "Палата: ${patient.ward}"
-        holder.avatar.load(patient.avatar) {
+        holder.avatar.load(patient.avatar ?: "") {
             placeholder(R.drawable.ic_default_avatar)
             error(R.drawable.ic_default_avatar)
+            transformations(CircleCropTransformation())
         }
         holder.btnView.setOnClickListener {
             onDetailClick(patient)

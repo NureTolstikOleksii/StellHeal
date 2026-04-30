@@ -2,7 +2,7 @@ import prisma from '../../config/prisma.js';
 
 export class StatsService {
 
-    // статистика клініки
+    // clinic statistics ok
     async getClinicStats() {
         const now = new Date();
         const weekAgo = new Date(now);
@@ -54,11 +54,11 @@ export class StatsService {
         };
     }
 
-    // статистика лікарів
+    // doctor statistics ok
     async getDoctorStats() {
 
         const doctors = await prisma.users.findMany({
-            where: { role_id: 1 }, // doctor
+            where: { role_id: 1 },
             include: {
                 prescriptions_prescriptions_doctor_idTousers: {
                     include: {

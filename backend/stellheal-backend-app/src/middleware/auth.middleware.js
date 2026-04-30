@@ -23,9 +23,9 @@ export const authenticateToken = (req, res, next) => {
     } catch (err) {
         return next(
             new AppError(
-                ERROR_CODES.FORBIDDEN,
+                ERROR_CODES.UNAUTHORIZED,
                 'Invalid token',
-                403
+                401
             )
         );
     }

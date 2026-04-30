@@ -7,7 +7,7 @@ import { authorizeRoles } from '../../middleware/role.middleware.js';
 const router = Router();
 const statsService = new StatsService();
 
-// статистика клініки
+// clinic statistics ok
 router.get(
     '/clinic',
     authenticateToken,
@@ -22,7 +22,7 @@ router.get(
     }
 );
 
-// статистика лікарів
+// doctor statistics ok
 router.get(
     '/doctors',
     authenticateToken,

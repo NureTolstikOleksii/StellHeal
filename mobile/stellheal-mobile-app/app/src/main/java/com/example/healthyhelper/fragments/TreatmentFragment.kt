@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import coil.load
+import coil.transform.CircleCropTransformation
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.container.AssignContainerRequest
@@ -17,6 +18,7 @@ import com.example.healthyhelper.network.treatment.TreatmentResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Locale
 
 class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
@@ -64,6 +66,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                     avatar.load(patient.avatar) {
                         placeholder(R.drawable.ic_default_avatar)
                         error(R.drawable.ic_default_avatar)
+                        transformations(CircleCropTransformation())
                     }
                     fullName.text = "${patient.name} (${formatDate(patient.dob)})"
                     email.text = patient.email
@@ -84,7 +87,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                     val treatment = response.body()?.firstOrNull()
                     if (treatment != null) {
                         diagnosis.text = treatment.name
-                        dateRange.text = "Application date: ${treatment.date}\nDuration: ${treatment.duration} days"
+                        dateRange.text = "Application date: ${formatDatePretty(treatment.date)}\nDuration: ${treatment.duration} days"
                         textDoctor.text = "Doctor: ${treatment.doctor}"
                         textWard.text = "Ward: ${treatment.ward}"
                         medsContainer.removeAllViews()
@@ -182,39 +185,63 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
     }
 
     private fun getContainerDetails(containerId: Int) {
+
         val containerCard = view?.findViewById<LinearLayout>(R.id.containerCard) ?: return
         val containerTitle = view?.findViewById<TextView>(R.id.containerTitle) ?: return
         val containerStatus = view?.findViewById<TextView>(R.id.containerStatus) ?: return
         val containerNetwork = view?.findViewById<TextView>(R.id.containerNetwork) ?: return
         val compartmentsInfo = view?.findViewById<LinearLayout>(R.id.compartmentsInfo) ?: return
 
-        val body = mapOf("containerId" to containerId)
-        RetrofitClient.containerApi.getContainerDetails(body).enqueue(object : Callback<ContainerDetailsResponse> {
-            override fun onResponse(call: Call<ContainerDetailsResponse>, response: Response<ContainerDetailsResponse>) {
-                if (response.isSuccessful) {
-                    val data = response.body() ?: return
-                    containerCard.visibility = View.VISIBLE
-                    containerTitle.text = "Container №${data.container_number}"
-                    containerStatus.text = "Status: ${data.status}"
-                    containerNetwork.text = if (data.status.lowercase() == "active") "Network: Connected" else "Network: Not connected"
-                    compartmentsInfo.removeAllViews()
-                    data.compartments.forEach { info ->
-                        val textView = TextView(requireContext())
-                        textView.text = info
-                        textView.setTextColor(resources.getColor(R.color.black, null))
-                        textView.setPadding(0, 4, 0, 4)
-                        compartmentsInfo.addView(textView)
+        RetrofitClient.containerApi.getContainerDetails(containerId)
+            .enqueue(object : Callback<ContainerDetailsResponse> {
+
+                override fun onResponse(
+                    call: Call<ContainerDetailsResponse>,
+                    response: Response<ContainerDetailsResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val data = response.body() ?: return
+
+                        containerCard.visibility = View.VISIBLE
+                        containerTitle.text = "Container №${data.container_number}"
+                        containerStatus.text = "Status: ${data.status}"
+                        containerNetwork.text =
+                            if (data.status.lowercase() == "active")
+                                "Network: Connected"
+                            else
+                                "Network: Not connected"
+
+                        compartmentsInfo.removeAllViews()
+
+                        data.compartments.forEach { info ->
+                            val textView = TextView(requireContext())
+                            textView.text = info
+                            textView.setTextColor(resources.getColor(R.color.black, null))
+                            textView.setPadding(0, 4, 0, 4)
+                            compartmentsInfo.addView(textView)
+                        }
                     }
                 }
-            }
 
-            override fun onFailure(call: Call<ContainerDetailsResponse>, t: Throwable) {
-                Toast.makeText(requireContext(), "Помилка при завантаженні контейнера", Toast.LENGTH_SHORT).show()
-            }
-        })
+                override fun onFailure(call: Call<ContainerDetailsResponse>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Помилка при завантаженні контейнера", Toast.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun formatDate(input: String?): String {
         return input?.split("T")?.get(0) ?: "—"
+    }
+
+    private fun formatDatePretty(input: String?): String {
+        return try {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            val date = parser.parse(input ?: "") ?: return "—"
+
+            val formatter = java.text.SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+            formatter.format(date)
+        } catch (e: Exception) {
+            input?.substringBefore("T") ?: "—"
+        }
     }
 }

@@ -9,11 +9,11 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const backupService = new BackupService();
 
-// останній backup
+// last backup ok
 router.get(
     '/last',
     authenticateToken,
-    authorizeRoles(4), // admin
+    authorizeRoles(4),
     async (req, res, next) => {
         try {
             const last = await backupService.getLastBackup();
@@ -24,11 +24,11 @@ router.get(
     }
 );
 
-// ручний backup
+// create backup (not ok)
 router.post(
     '/manual',
     authenticateToken,
-    authorizeRoles(4), // тільки admin
+    authorizeRoles(4), // admin
     async (req, res, next) => {
         try {
             const backup = await backupService.createBackup('manual', req);

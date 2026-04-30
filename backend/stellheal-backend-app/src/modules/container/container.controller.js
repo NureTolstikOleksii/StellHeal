@@ -76,7 +76,24 @@ router.get(
 
 // --- mobile ---
 
-// вільні контейнери
+// всі контейнери (для адміна/панелі) ok
+router.get(
+    '/all-container-details',
+    authenticateToken,
+    authorizeRoles(1, 2, 4), // doctor, admin
+    async (req, res, next) => {
+        try {
+            const result = await containerService.getAllContainerDetails();
+            res.json(result);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+
+
+// вільні контейнери ok
 router.get(
     '/free',
     authenticateToken,
@@ -91,7 +108,7 @@ router.get(
     }
 );
 
-// закріплення
+// закріплення ok
 router.post(
     '/assign',
     authenticateToken,
@@ -122,7 +139,7 @@ router.post(
     }
 );
 
-// відкріплення
+// відкріплення ok
 router.post(
     '/unassign',
     authenticateToken,
@@ -153,7 +170,7 @@ router.post(
     }
 );
 
-// всі контейнери
+// всі контейнери ok
 router.get(
     '/',
     authenticateToken,
@@ -168,7 +185,7 @@ router.get(
     }
 );
 
-// деталі контейнера
+// деталі контейнера ok
 router.get(
     '/:id',
     authenticateToken,
@@ -194,7 +211,7 @@ router.get(
     }
 );
 
-// очищення відсіку
+// очищення відсіку ok
 router.post(
     '/compartments/clear',
     authenticateToken,
@@ -224,7 +241,7 @@ router.post(
     }
 );
 
-// заповнені відсіки
+// заповнені відсіки ok
 router.get(
     '/:id/compartments',
     authenticateToken,
@@ -242,7 +259,7 @@ router.get(
     }
 );
 
-// призначення на сьогодні
+// призначення на сьогодні ok
 router.get(
     '/patient/:id/today',
     authenticateToken,
@@ -266,7 +283,7 @@ router.get(
     }
 );
 
-// заповнення
+// заповнення ok
 router.post(
     '/compartments/fill',
     authenticateToken,
@@ -297,7 +314,7 @@ router.post(
     }
 );
 
-// статистика прийому за дату
+// статистика прийому за дату ok
 router.get(
     '/patients/:id/intake',
     authenticateToken,
@@ -324,7 +341,7 @@ router.get(
     }
 );
 
-// діапазон дат лікування
+// діапазон дат лікування ok
 router.get(
     '/patients/:id/date-range',
     authenticateToken,
@@ -350,20 +367,6 @@ router.get(
     }
 );
 
-// всі контейнери (для адміна/панелі)
-router.get(
-    '/all-container-details',
-    authenticateToken,
-    authorizeRoles(1, 4), // doctor, admin
-    async (req, res, next) => {
-        try {
-            const result = await containerService.getAllContainerDetails();
-            res.json(result);
-        } catch (err) {
-            next(err);
-        }
-    }
-);
 
 
 // --- ІоТ ---

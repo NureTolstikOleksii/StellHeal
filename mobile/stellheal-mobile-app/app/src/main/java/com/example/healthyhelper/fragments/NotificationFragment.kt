@@ -1,12 +1,15 @@
 package com.example.healthyhelper.fragments
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.View
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.notification.NotificationResponse
@@ -14,29 +17,47 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 
 class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
     private lateinit var notificationList: LinearLayout
 
+    // 🔥 Receiver для real-time оновлення
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val v = view ?: return
+            loadNotifications(v)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         notificationList = view.findViewById(R.id.notificationList)
 
-        val userId = requireContext().getSharedPreferences("prefs", 0).getInt("user_id", -1)
+        loadNotifications(view)
+    }
 
-        if (userId == -1) {
-            Toast.makeText(requireContext(), "User not found", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun loadNotifications(view: View) {
 
-        RetrofitClient.notificationApi.getUserNotifications(mapOf("userId" to userId))
+        // 🔥 очищаємо перед завантаженням
+        notificationList.removeAllViews()
+
+        RetrofitClient.notificationApi.getUserNotifications()
             .enqueue(object : Callback<List<NotificationResponse>> {
+
                 override fun onResponse(
                     call: Call<List<NotificationResponse>>,
                     response: Response<List<NotificationResponse>>
                 ) {
-                    val notifications = response.body() ?: return
+                    if (!response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Помилка сервера", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
+                    val notifications = response.body() ?: emptyList()
+
                     val emptyText = view.findViewById<TextView>(R.id.emptyText)
 
                     if (notifications.isEmpty()) {
@@ -61,8 +82,8 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                         read.forEach { addNotificationItem(it) }
                     }
 
-                    val userId = requireContext().getSharedPreferences("prefs", 0).getInt("user_id", -1)
-                    RetrofitClient.notificationApi.markNotificationsRead(mapOf("userId" to userId))
+                    // 🔥 автоматично позначаємо як прочитані
+                    RetrofitClient.notificationApi.markNotificationsRead()
                         .enqueue(object : Callback<Void> {
                             override fun onResponse(call: Call<Void>, response: Response<Void>) {}
                             override fun onFailure(call: Call<Void>, t: Throwable) {}
@@ -70,13 +91,18 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                 }
 
                 override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Error loading notifications", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Помилка: ${t.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             })
     }
 
     private fun addNotificationItem(notification: NotificationResponse) {
         val item = layoutInflater.inflate(R.layout.item_notification, notificationList, false)
+
         val icon = item.findViewById<ImageView>(R.id.icon)
         val message = item.findViewById<TextView>(R.id.message)
         val time = item.findViewById<TextView>(R.id.timeText)
@@ -84,11 +110,17 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
         val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-        val parsedDate = inputFormat.parse(notification.date)
+
+        val parsedDate = try {
+            inputFormat.parse(notification.date)
+        } catch (e: Exception) {
+            null
+        }
+
         val formattedDate = parsedDate?.let { outputFormat.format(it) } ?: notification.date
 
         message.text = notification.message
-        time.text = "${notification.time.substring(11, 16)}"
+        time.text = notification.time.substring(11, 16)
         date.text = formattedDate
 
         when (notification.type) {
@@ -106,11 +138,7 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
             }
         }
 
-        if (!notification.is_read) {
-            item.alpha = 1.0f
-        } else {
-            item.alpha = 0.5f
-        }
+        item.alpha = if (!notification.is_read) 1.0f else 0.5f
 
         notificationList.addView(item)
     }
@@ -119,5 +147,30 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         val header = layoutInflater.inflate(R.layout.item_section_header, notificationList, false)
         header.findViewById<TextView>(R.id.headerText).text = title
         notificationList.addView(header)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // 🔥 Android 13 fix
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(
+                receiver,
+                IntentFilter("NEW_NOTIFICATION"),
+                Context.RECEIVER_NOT_EXPORTED
+            )
+        } else {
+            ContextCompat.registerReceiver(
+                requireContext(),
+                receiver,
+                IntentFilter("NEW_NOTIFICATION"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireContext().unregisterReceiver(receiver)
     }
 }

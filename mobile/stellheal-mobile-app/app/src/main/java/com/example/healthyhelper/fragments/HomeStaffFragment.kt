@@ -36,7 +36,6 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
         editText.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         editText.background = null
 
-
         val sortSpinner = view.findViewById<Spinner>(R.id.sortSpinner)
         val notificationBtn = view.findViewById<ImageButton>(R.id.notificationBtn)
         val notificationBadge = view.findViewById<View>(R.id.notificationBadge)
@@ -49,24 +48,21 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
         }
 
         // Перевірка наявності нових сповіщень
-        val prefs = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val userId = prefs.getInt("user_id", -1)
-        if (userId != -1) {
-            RetrofitClient.notificationApi.getUserNotifications(mapOf("userId" to userId))
-                .enqueue(object : Callback<List<NotificationResponse>> {
-                    override fun onResponse(
-                        call: Call<List<NotificationResponse>>,
-                        response: Response<List<NotificationResponse>>
-                    ) {
-                        if (response.isSuccessful) {
-                            val hasUnread = response.body()?.any { !it.is_read } == true
-                            notificationBadge.visibility = if (hasUnread) View.VISIBLE else View.GONE
-                        }
+        RetrofitClient.notificationApi.getUserNotifications()
+            .enqueue(object : Callback<List<NotificationResponse>> {
+                override fun onResponse(
+                    call: Call<List<NotificationResponse>>,
+                    response: Response<List<NotificationResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val hasUnread = response.body()?.any { !it.is_read } == true
+                        notificationBadge.visibility = if (hasUnread) View.VISIBLE else View.GONE
                     }
+                }
 
-                    override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) { }
-                })
-        }
+                override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) { }
+            })
+
 
         RetrofitClient.getPatientsApi().getAllPatients()
             .enqueue(object : Callback<List<PatientResponse>> {

@@ -5,6 +5,10 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface AuthApi {
-    @POST("/login/mobile")
+
+    @POST("auth/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
+
+    @POST("auth/refresh")
+    fun refresh(@Body request: RefreshRequest): Call<LoginResponse>
 }

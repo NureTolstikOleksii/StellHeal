@@ -2,7 +2,7 @@ package com.example.healthyhelper.fragments
 
 import AvatarResponse
 import UserProfileResponse
-import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,12 +10,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.edit
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import coil.load
 import coil.transform.CircleCropTransformation
 import com.example.healthyhelper.R
+import com.example.healthyhelper.auth.AuthEvents
+import com.example.healthyhelper.auth.AuthManager
 import com.example.healthyhelper.network.RetrofitClient
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -25,6 +25,8 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.navigation.fragment.findNavController
+import com.example.healthyhelper.MyApp
 
 class ProfileFragment : Fragment() {
 
@@ -41,32 +43,38 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    private val avatarLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            uploadAvatarToServer(it)
+    private val avatarLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { uploadAvatarToServer(it) }
         }
-    }
 
     private fun uploadAvatarToServer(uri: Uri) {
         val contentResolver = requireContext().contentResolver
         val inputStream = contentResolver.openInputStream(uri) ?: return
         val bytes = inputStream.readBytes()
-        val requestFile = RequestBody.create("image/*".toMediaTypeOrNull(), bytes)
-        val body = MultipartBody.Part.createFormData("avatar", "avatar.jpg", requestFile)
-        val token = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-            .getString("jwt_token", null) ?: return
 
-        RetrofitClient.profileApi.uploadAvatar(body, "Bearer $token")
+        val requestFile = RequestBody.create(
+            "image/*".toMediaTypeOrNull(),
+            bytes
+        )
+        val body = MultipartBody.Part.createFormData("avatar", "avatar.jpg", requestFile)
+
+        RetrofitClient.profileApi.uploadAvatar(body)
             .enqueue(object : Callback<AvatarResponse> {
-                override fun onResponse(call: Call<AvatarResponse>, response: Response<AvatarResponse>) {
+                override fun onResponse(
+                    call: Call<AvatarResponse>,
+                    response: Response<AvatarResponse>
+                ) {
                     if (response.isSuccessful) {
                         val avatarUrl = response.body()?.avatar ?: return
+
                         view?.findViewById<ImageView>(R.id.imageAvatar)?.load(avatarUrl) {
                             placeholder(R.drawable.ic_default_avatar)
                             error(R.drawable.ic_default_avatar)
                             transformations(CircleCropTransformation())
                             crossfade(true)
                         }
+
                         Toast.makeText(context, "Фото оновлено", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "Помилка завантаження", Toast.LENGTH_SHORT).show()
@@ -87,9 +95,6 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val prefs = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val token = prefs.getString("jwt_token", null)
-
         val textFullName = view.findViewById<TextView>(R.id.textFullName)
         val textEmail = view.findViewById<TextView>(R.id.textEmail)
         val textPhone = view.findViewById<TextView>(R.id.textPhone)
@@ -108,56 +113,64 @@ class ProfileFragment : Fragment() {
             avatarLauncher.launch("image/*")
         }
 
-        if (token != null) {
-            RetrofitClient.profileApi.getProfile("Bearer $token")
-                .enqueue(object : Callback<UserProfileResponse> {
-                    override fun onResponse(
-                        call: Call<UserProfileResponse>,
-                        response: Response<UserProfileResponse>
-                    ) {
-                        if (response.isSuccessful) {
-                            val user = response.body()
-                            user?.let {
-                                view.findViewById<ImageView>(R.id.imageAvatar).load(it.avatar) {
-                                    placeholder(R.drawable.ic_default_avatar)
-                                    error(R.drawable.ic_default_avatar)
-                                    transformations(CircleCropTransformation())
-                                    crossfade(true)
-                                }
+        RetrofitClient.profileApi.getProfile()
+            .enqueue(object : Callback<UserProfileResponse> {
+                override fun onResponse(
+                    call: Call<UserProfileResponse>,
+                    response: Response<UserProfileResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val user = response.body()
 
-                                val fullName = "${it.last_name} ${it.first_name} ${it.patronymic.orEmpty()}"
-                                textFullName.text = fullName.trim()
-                                textEmail.text = it.login
-                                textPhone.text = it.phone.orEmpty()
-                                textBirthDate.text = formatDate(user.date_of_birth)
-
-                                if (it.roles.role_name == "staff") {
-                                    staffSection.visibility = View.VISIBLE
-                                    patientSection.visibility = View.GONE
-                                    textSpecialization.text = it.medical_staff?.specialization.orEmpty()
-                                    textShift.text = it.medical_staff?.shift.orEmpty()
-                                    textAdmissionDate.text = formatDate(user.medical_staff?.admission_date)
-                                } else if (it.roles.role_name == "patient") {
-                                    staffSection.visibility = View.GONE
-                                    patientSection.visibility = View.VISIBLE
-                                    textAddress.text = it.contact_info.orEmpty()
-                                }
+                        user?.let {
+                            view.findViewById<ImageView>(R.id.imageAvatar).load(it.avatar) {
+                                placeholder(R.drawable.ic_default_avatar)
+                                error(R.drawable.ic_default_avatar)
+                                transformations(CircleCropTransformation())
+                                crossfade(true)
                             }
-                        } else {
-                            Toast.makeText(context, "Не вдалося завантажити профіль", Toast.LENGTH_SHORT).show()
-                        }
-                    }
 
-                    override fun onFailure(call: Call<UserProfileResponse>, t: Throwable) {
-                        Toast.makeText(context, "Помилка з'єднання: ${t.message}", Toast.LENGTH_SHORT).show()
+                            val fullName =
+                                "${it.last_name} ${it.first_name} ${it.patronymic.orEmpty()}"
+                            textFullName.text = fullName.trim()
+                            textEmail.text = it.login
+                            textPhone.text = it.phone.orEmpty()
+                            textBirthDate.text = formatDate(it.date_of_birth)
+
+                            if (it.roles.role_name == "staff") {
+                                staffSection.visibility = View.VISIBLE
+                                patientSection.visibility = View.GONE
+
+                                textSpecialization.text =
+                                    it.medical_staff?.specialization.orEmpty()
+                                textShift.text = it.medical_staff?.shift.orEmpty()
+                                textAdmissionDate.text =
+                                    formatDate(it.medical_staff?.admission_date)
+
+                            } else if (it.roles.role_name == "patient") {
+                                staffSection.visibility = View.GONE
+                                patientSection.visibility = View.VISIBLE
+
+                                textAddress.text = it.contact_info.orEmpty()
+                            }
+                        }
+
+                    } else {
+                        Toast.makeText(context, "Не вдалося завантажити профіль", Toast.LENGTH_SHORT).show()
                     }
-                })
-        }
+                }
+
+                override fun onFailure(call: Call<UserProfileResponse>, t: Throwable) {
+                    Toast.makeText(context, "Помилка з'єднання: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+
 
         logoutButton.setOnClickListener {
-            prefs.edit { remove("jwt_token") }
-            findNavController().navigate(R.id.mainFragment)
             Toast.makeText(context, "Ви вийшли з акаунту", Toast.LENGTH_SHORT).show()
+            val intent = Intent(AuthEvents.ACTION_LOGOUT)
+            intent.setPackage(requireContext().packageName)
+            requireContext().sendBroadcast(intent)
         }
 
         changePasswordButton.setOnClickListener {

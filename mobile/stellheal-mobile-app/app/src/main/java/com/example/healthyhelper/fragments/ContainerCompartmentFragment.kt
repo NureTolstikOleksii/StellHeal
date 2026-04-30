@@ -39,7 +39,7 @@ class ContainerCompartmentFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        RetrofitClient.containerApi.getContainerDetails(mapOf("containerId" to containerId))
+        RetrofitClient.containerApi.getContainerDetails(containerId)
             .enqueue(object : Callback<ContainerDetailsResponse> {
                 override fun onResponse(
                     call: Call<ContainerDetailsResponse>,
@@ -58,7 +58,7 @@ class ContainerCompartmentFragment : Fragment() {
                 }
             })
 
-        RetrofitClient.containerApi.getFilledCompartments(mapOf("containerId" to containerId))
+        RetrofitClient.containerApi.getFilledCompartments(containerId)
             .enqueue(object : Callback<List<FilledCompartmentResponse>> {
                 override fun onResponse(
                     call: Call<List<FilledCompartmentResponse>>,

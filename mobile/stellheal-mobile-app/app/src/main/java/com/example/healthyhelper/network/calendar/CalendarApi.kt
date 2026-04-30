@@ -7,7 +7,7 @@ import retrofit2.http.POST
 import retrofit2.http.Streaming
 
 interface CalendarApi {
-    @POST("/patients/prescription-history")
+    @POST("patients/prescription-history")
     fun getPrescriptionHistory(@Body body: Map<String, Int>): Call<List<PrescriptionHistoryItem>>
 
     @POST("patients/prescription-details")

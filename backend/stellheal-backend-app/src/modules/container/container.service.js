@@ -824,6 +824,143 @@ export class ContainerService {
         return { message: 'Compartment cleared successfully' };
     }
 
+    async addMedicationToCompartment(compartmentId, prescription_med_id, req) {
+
+        const userId = req.user.userId;
+
+        // 🔍 перевірка відсіку
+        const compartment = await prisma.compartments.findUnique({
+            where: { compartment_id: compartmentId }
+        });
+
+        if (!compartment) {
+            throw new AppError(
+                ERROR_CODES.COMPARTMENT_NOT_FOUND,
+                'Compartment not found',
+                404
+            );
+        }
+
+        // 🔍 перевірка призначення
+        const prescription = await prisma.prescription_medications.findUnique({
+            where: { prescription_med_id },
+            include: {
+                prescriptions: true
+            }
+        });
+
+        if (!prescription) {
+            throw new AppError(
+                ERROR_CODES.PRESCRIPTION_NOT_FOUND,
+                'Prescription medication not found',
+                404
+            );
+        }
+
+        // ❗ не дозволяємо повторне заповнення (останній запис)
+        const existing = await prisma.compartment_medications.findFirst({
+            where: { compartment_id: compartmentId },
+            orderBy: { fill_time: 'desc' }
+        });
+
+        if (existing) {
+            throw new AppError(
+                ERROR_CODES.COMPARTMENT_ALREADY_FILLED,
+                'Compartment already filled',
+                400
+            );
+        }
+
+        // 🕒 час
+        const now = new Date();
+        const ukraineOffset = 3 * 60;
+        const fill_time = new Date(now.getTime() + ukraineOffset * 60 * 1000);
+
+        const open_time = new Date(fill_time);
+
+        if (prescription.intake_time) {
+            open_time.setHours(prescription.intake_time.getHours());
+            open_time.setMinutes(prescription.intake_time.getMinutes());
+            open_time.setSeconds(0);
+            open_time.setMilliseconds(0);
+        }
+
+        const created = await prisma.compartment_medications.create({
+            data: {
+                compartment_id: compartmentId,
+                prescription_med_id,
+                filled_by: userId,
+                fill_time,
+                open_time
+            }
+        });
+
+        // 🔥 audit log
+        await logAction({
+            userId,
+            action: ACTIONS.FILL_COMPARTMENT,
+            entity: 'COMPARTMENT',
+            entityId: compartmentId,
+            description: `Medication filled into compartment`,
+            req
+        });
+
+        return created;
+    }
+
+    async getFilledCompartments(containerId) {
+
+        const container = await prisma.containers.findUnique({
+            where: { container_id: containerId }
+        });
+
+        if (!container) {
+            throw new AppError(
+                ERROR_CODES.CONTAINER_NOT_FOUND,
+                'Container not found',
+                404
+            );
+        }
+
+        const compartments = await prisma.compartments.findMany({
+            where: { container_id: containerId },
+            include: {
+                compartment_medications: {
+                    orderBy: { fill_time: 'desc' },
+                    take: 1,
+                    include: {
+                        prescription_medications: {
+                            include: {
+                                medications: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { compartment_number: 'asc' }
+        });
+
+        return compartments.map(comp => {
+
+            const med = comp.compartment_medications?.[0];
+
+            return {
+                compartment_id: comp.compartment_id,
+                compartment_number: comp.compartment_number,
+
+                isFilled: !!med,
+
+                fill_time: med?.fill_time || null,
+
+                medication: med?.prescription_medications?.medications?.name || null,
+
+                quantity: med?.prescription_medications?.quantity || null,
+
+                intake_time: med?.prescription_medications?.intake_time || null
+            };
+        });
+    }
+
 }
 
 function getUTCDayRange(date = new Date()) {

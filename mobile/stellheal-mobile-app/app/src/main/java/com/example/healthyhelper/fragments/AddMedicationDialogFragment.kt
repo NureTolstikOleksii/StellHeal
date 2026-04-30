@@ -39,7 +39,7 @@ class AddMedicationDialogFragment(
         val sharedPref = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
         val filledBy = sharedPref.getInt("user_id", -1)
 
-        RetrofitClient.containerApi.getTodaysPrescriptions(mapOf("patientId" to patientId))
+        RetrofitClient.containerApi.getTodaysPrescriptions(patientId)
             .enqueue(object : Callback<List<PrescriptionOption>> {
                 override fun onResponse(
                     call: Call<List<PrescriptionOption>>,

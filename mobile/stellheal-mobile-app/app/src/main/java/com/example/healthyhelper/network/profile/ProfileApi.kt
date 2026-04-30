@@ -7,19 +7,18 @@ import retrofit2.Call
 import retrofit2.http.*
 
 interface ProfileApi {
+
     @GET("profile")
-    fun getProfile(@Header("Authorization") token: String): Call<UserProfileResponse>
+    fun getProfile(): Call<UserProfileResponse>
 
     @PUT("profile/change-password")
     fun changePassword(
-        @Header("Authorization") token: String,
         @Body body: Map<String, String>
     ): Call<Void>
 
     @Multipart
-    @PUT("/profile/avatar")
+    @PUT("profile/avatar")
     fun uploadAvatar(
-        @Part avatar: MultipartBody.Part,
-        @Header("Authorization") token: String
+        @Part avatar: MultipartBody.Part
     ): Call<AvatarResponse>
 }

@@ -26,6 +26,21 @@ router.get(
     }
 );
 
+// a list of patients (nurses)
+router.get(
+    '/staff',
+    authenticateToken,
+    authorizeRoles(2),
+    async (req, res, next) => {
+        try {
+            const result = await patientsService.getAllPatientsForStaff();
+            res.json(result);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
 // get the number of patients ok
 router.get(
     '/stats',
@@ -272,22 +287,7 @@ router.get(
 
 // --- mobile ---
 
-// a list of patients (nurses)
-router.get(
-    '/staff',
-    authenticateToken,
-    authorizeRoles(2),
-    async (req, res, next) => {
-        try {
-            const result = await patientsService.getAllPatientsForStaff();
-            res.json(result);
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-// treatment history (patient)
+// treatment history (patient) ok
 router.post(
     '/prescription-history',
     authenticateToken,
@@ -313,7 +313,7 @@ router.post(
     }
 );
 
-// appointment details (patient)
+// appointment details (patient) ok
 router.post(
     '/prescription-details',
     authenticateToken,
@@ -340,7 +340,7 @@ router.post(
     }
 );
 
-// PDF report
+// PDF report ok
 router.post(
     '/prescription-report',
     authenticateToken,
@@ -350,6 +350,9 @@ router.post(
             const buffer = await patientsService.generatePrescriptionReport(req.body.prescriptionId);
 
             res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Length', buffer.length); // 🔥 ОЦЕ ГОЛОВНЕ
+            res.setHeader('Content-Disposition', 'attachment; filename=prescription-report.pdf'); // 🔥 опціонально
+
             res.send(buffer);
 
         } catch (err) {

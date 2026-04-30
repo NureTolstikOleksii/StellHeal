@@ -60,7 +60,7 @@
         tools:layout="@layout/fragment_notification" />
     <fragment
         android:id="@+id/changePasswordDialogFragment"
-        android:name="ChangePasswordDialogFragment"
+        android:name="com.example.healthyhelper.fragments.ChangePasswordDialogFragment"
         android:label="ChangePasswordDialogFragment" />
     <fragment
         android:id="@+id/deviceFragment"

@@ -26,8 +26,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import android.util.Log
+import android.widget.Toast
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
+
     private lateinit var calendarContainer: LinearLayout
     private lateinit var intakeList: LinearLayout
     private lateinit var progressText: TextView
@@ -37,10 +39,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var allDates: List<Date> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+
         calendarContainer = view.findViewById(R.id.calendarContainer)
         intakeList = view.findViewById(R.id.intakeList)
         progressText = view.findViewById(R.id.progressText)
         circleProgress = view.findViewById(R.id.circleProgress)
+
         val notificationBtn = view.findViewById<ImageButton>(R.id.notificationBtn)
         val notificationBadge = view.findViewById<View>(R.id.notificationBadge)
 
@@ -48,64 +52,75 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             findNavController().navigate(R.id.action_homeFragment_to_notificationFragment)
         }
 
+        // 🔥 ТІЛЬКИ це викликаємо
         loadDateRangeAndBuildCalendar()
-        loadDataForDate(selectedDate)
 
-        val prefs = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val userId = prefs.getInt("user_id", -1)
-        if (userId != -1) {
-            RetrofitClient.notificationApi.getUserNotifications(mapOf("userId" to userId))
-                .enqueue(object : Callback<List<NotificationResponse>> {
-                    override fun onResponse(
-                        call: Call<List<NotificationResponse>>,
-                        response: Response<List<NotificationResponse>>
-                    ) {
-                        if (response.isSuccessful) {
-                            val hasUnread = response.body()?.any { !it.is_read } == true
-                            notificationBadge.visibility = if (hasUnread) View.VISIBLE else View.GONE
-                        }
-                    }
-
-                    override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {
-                    }
-                })
-        }
+        // 🔥 badge
+        loadNotificationBadge(notificationBadge)
     }
+
+    // =========================
+    // 🔥 ДАТИ
+    // =========================
 
     private fun loadDateRangeAndBuildCalendar() {
         val patientId = getPatientId()
-        RetrofitClient.containerApi.getPrescriptionDateRange(mapOf("patientId" to patientId))
+
+        RetrofitClient.containerApi
+            .getPrescriptionDateRange(patientId)
             .enqueue(object : Callback<PrescriptionDateRange> {
+
                 override fun onResponse(
                     call: Call<PrescriptionDateRange>,
                     response: Response<PrescriptionDateRange>
                 ) {
+                    if (!response.isSuccessful) return
+
                     val range = response.body() ?: return
+
                     val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
                     val startDate = sdf.parse(range.minDate)
                     val endDate = sdf.parse(range.maxDate)
+
                     if (startDate != null && endDate != null) {
+
                         allDates = getDatesInRange(startDate, endDate)
+
+                        // 🔥 виставляємо today
+                        selectedDate = Date()
+
                         buildCalendarFromDates(allDates)
+
+                        // 🔥 ТЕПЕР викликаємо API
+                        loadDataForDate(selectedDate)
                     }
                 }
 
-                override fun onFailure(call: Call<PrescriptionDateRange>, t: Throwable) {}
+                override fun onFailure(call: Call<PrescriptionDateRange>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Помилка завантаження дат", Toast.LENGTH_SHORT).show()
+                }
             })
     }
 
     private fun buildCalendarFromDates(dates: List<Date>) {
+
         val sdf = SimpleDateFormat("d", Locale.getDefault())
         val dowFormat = SimpleDateFormat("EEE", Locale.getDefault())
+
         calendarContainer.removeAllViews()
 
         dates.forEach { date ->
+
             val dayView = layoutInflater.inflate(R.layout.item_calendar_day, calendarContainer, false)
+
             dayView.findViewById<TextView>(R.id.dayNumber).text = sdf.format(date)
-            dayView.findViewById<TextView>(R.id.dayName).text = dowFormat.format(date).uppercase()
+            dayView.findViewById<TextView>(R.id.dayName).text =
+                dowFormat.format(date).uppercase()
 
             if (isSameDay(date, selectedDate)) {
-                dayView.background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_selected_day)
+                dayView.background =
+                    ContextCompat.getDrawable(requireContext(), R.drawable.bg_selected_day)
             }
 
             dayView.setOnClickListener {
@@ -118,24 +133,41 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    // =========================
+    // 🔥 ІНТЕЙКИ
+    // =========================
+
     private fun loadDataForDate(date: Date) {
+
         val patientId = getPatientId()
+
         val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-        RetrofitClient.containerApi.getIntakeStatistics(IntakeRequest(patientId, formatted))
+
+        RetrofitClient.containerApi
+            .getIntakeStatistics(patientId, formatted)
             .enqueue(object : Callback<List<PrescriptionOption>> {
+
                 override fun onResponse(
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
                 ) {
+                    if (!response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Помилка", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
                     val list = response.body() ?: emptyList()
                     renderIntakeList(list)
                 }
 
-                override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {}
+                override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
+                }
             })
     }
 
     private fun renderIntakeList(meds: List<PrescriptionOption>) {
+
         intakeList.removeAllViews()
 
         val taken = meds.count { it.isTaken == true }
@@ -144,17 +176,24 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         progressText.text = "$taken/$total"
 
         val progressPercent = if (total != 0) (taken * 100 / total) else 0
-        val animator = ObjectAnimator.ofInt(circleProgress, "progress", circleProgress.progress, progressPercent)
-        animator.duration = 500
-        animator.start()
+
+        ObjectAnimator.ofInt(circleProgress, "progress", circleProgress.progress, progressPercent).apply {
+            duration = 500
+            start()
+        }
 
         meds.forEach { med ->
+
             val item = layoutInflater.inflate(R.layout.item_intake, intakeList, false)
 
             item.findViewById<TextView>(R.id.medName).text = med.medication
-            item.findViewById<TextView>(R.id.medQuantity).text = "${med.quantity} pill" + if (med.quantity != 1) "s" else ""
-            item.findViewById<TextView>(R.id.timeText).text = med.intake_time.substringAfter("T").substring(0, 5)
-            Log.d("DEBUG", "isTaken = ${med.isTaken} (${med.medication})")
+            item.findViewById<TextView>(R.id.medQuantity).text =
+                "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
+
+            // 🔥 SAFE TIME
+            val time = med.intake_time.substringAfter("T", "").take(5)
+            item.findViewById<TextView>(R.id.timeText).text = time
+
             val statusIcon = when (med.isTaken) {
                 true -> R.drawable.ic_check_circle
                 false -> R.drawable.ic_close_circle
@@ -162,12 +201,40 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
 
             item.findViewById<ImageView>(R.id.iconStatus).setImageResource(statusIcon)
+
             intakeList.addView(item)
         }
     }
 
+    // =========================
+    // 🔥 NOTIFICATIONS
+    // =========================
+
+    private fun loadNotificationBadge(badge: View) {
+
+        RetrofitClient.notificationApi.getUserNotifications()
+            .enqueue(object : Callback<List<NotificationResponse>> {
+
+                override fun onResponse(
+                    call: Call<List<NotificationResponse>>,
+                    response: Response<List<NotificationResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val hasUnread = response.body()?.any { !it.is_read } == true
+                        badge.visibility = if (hasUnread) View.VISIBLE else View.GONE
+                    }
+                }
+
+                override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {}
+            })
+    }
+
+    // =========================
+
     private fun getPatientId(): Int {
-        return requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE).getInt("user_id", -1)
+        return requireContext()
+            .getSharedPreferences("prefs", Context.MODE_PRIVATE)
+            .getInt("user_id", -1)
     }
 
     private fun isSameDay(date1: Date, date2: Date): Boolean {
@@ -179,6 +246,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val result = mutableListOf<Date>()
         val cal = Calendar.getInstance()
         cal.time = start
+
         while (!cal.time.after(end)) {
             result.add(cal.time)
             cal.add(Calendar.DATE, 1)

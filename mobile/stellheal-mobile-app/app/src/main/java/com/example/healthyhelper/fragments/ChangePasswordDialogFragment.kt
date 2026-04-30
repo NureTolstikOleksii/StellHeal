@@ -90,21 +90,12 @@ class ChangePasswordDialogFragment : DialogFragment() {
                 return@setOnClickListener
             }
 
-            val prefs = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-            val token = prefs.getString("jwt_token", null)
-
-            if (token == null) {
-                textError.text = "Користувач не авторизований"
-                textError.visibility = View.VISIBLE
-                return@setOnClickListener
-            }
-
             val payload = mapOf(
                 "currentPassword" to current,
                 "newPassword" to newPass
             )
 
-            RetrofitClient.profileApi.changePassword("Bearer $token", payload)
+            RetrofitClient.profileApi.changePassword(payload)
                 .enqueue(object : Callback<Void> {
                     override fun onResponse(call: Call<Void>, response: Response<Void>) {
                         if (response.isSuccessful) {

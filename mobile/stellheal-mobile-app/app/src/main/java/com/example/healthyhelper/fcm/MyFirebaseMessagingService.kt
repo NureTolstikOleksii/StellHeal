@@ -2,6 +2,7 @@ package com.example.healthyhelper.fcm
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -22,9 +23,16 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+
         val title = remoteMessage.notification?.title ?: "Сповіщення"
         val body = remoteMessage.notification?.body ?: "Ви отримали повідомлення"
+
         showNotification(title, body)
+
+        // 🔥 ДОДАТИ ОЦЕ
+        val intent = Intent("NEW_NOTIFICATION")
+        intent.setPackage(packageName)
+        sendBroadcast(intent)
     }
 
     private fun showNotification(title: String, message: String) {
@@ -44,15 +52,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendTokenToServer(token: String) {
-        val prefs = getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val userId = prefs.getInt("user_id", -1)
-        val jwt = prefs.getString("jwt_token", null)
 
-        if (userId != -1 && jwt != null) {
-            val api = RetrofitClient.notificationApi
-            val call = api.sendFcmToken(userId, FcmTokenRequest(token))
+        val api = RetrofitClient.notificationApi
 
-            call.enqueue(object : Callback<Void> {
+        api.sendFcmToken(FcmTokenRequest(token))
+            .enqueue(object : Callback<Void> {
+
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if (response.isSuccessful) {
                         Log.d("FCM_SEND", "FCM токен оновлено")
@@ -65,25 +70,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     Log.e("FCM_SEND", "Помилка надсилання токена", t)
                 }
             })
-        }
     }
-
     companion object {
         fun sendTokenToServer(context: Context, token: String) {
-            val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
-            val userId = prefs.getInt("user_id", -1)
-            val jwt = prefs.getString("jwt_token", null)
 
-            if (userId != -1 && jwt != null) {
-                val api = RetrofitClient.notificationApi
-                val call = api.sendFcmToken(userId, FcmTokenRequest(token))
+            RetrofitClient.notificationApi
+                .sendFcmToken(FcmTokenRequest(token))
+                .enqueue(object : Callback<Void> {
 
-                call.enqueue(object : Callback<Void> {
                     override fun onResponse(call: Call<Void>, response: Response<Void>) {
                         if (response.isSuccessful) {
                             Log.d("FCM_SEND", "FCM токен оновлено після логіну")
-                        } else {
-                            Log.w("FCM_SEND", "Сервер відхилив токен: ${response.code()}")
                         }
                     }
 
@@ -91,7 +88,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         Log.e("FCM_SEND", "Помилка надсилання токена", t)
                     }
                 })
-            }
         }
     }
 }

@@ -8,7 +8,7 @@ import {generateContainerExcel} from "../../integrations/reports/containerExcel.
 
 export class ContainerService {
 
-    // статистика контейнерів
+    // container statistics ok
     async getContainerStats() {
         const activeCount = await prisma.containers.count({
             where: { status: 'active' }
@@ -21,12 +21,12 @@ export class ContainerService {
         return { activeCount, inactiveCount };
     }
 
-    // кількість контейнерів
+    // number of containers ok
     async getTotalContainers() {
         return await prisma.containers.count();
     }
 
-    // останні заповнення
+    // last fills ok
     async getLatestFillings() {
 
         const fillings = await prisma.compartment_medications.findMany({
@@ -67,6 +67,47 @@ export class ContainerService {
             };
         });
     }
+
+    // report from containers ok
+    async exportContainersToExcel(req) {
+
+        const containers = await prisma.containers.findMany({
+            orderBy: { container_number: 'asc' },
+            include: {
+                users: true,
+                compartments: {
+                    orderBy: { compartment_number: 'asc' },
+                    include: {
+                        compartment_medications: {
+                            orderBy: { compartment_med_id: 'asc' },
+                            include: {
+                                prescription_medications: {
+                                    include: { medications: true }
+                                },
+                                users: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const buffer = await generateContainerExcel(containers);
+
+        // audit log
+        await logAction({
+            userId: req.user.userId,
+            action: ACTIONS.EXPORT_CONTAINERS,
+            entity: 'CONTAINER',
+            description: 'Container report exported',
+            req
+        });
+
+        return buffer;
+    }
+
+
+    // --- mobile ---
 
     // вільні контейнери
     async getFreeContainers() {
@@ -392,43 +433,6 @@ export class ContainerService {
                 compartments: compartmentDescriptions
             };
         });
-    }
-
-    async exportContainersToExcel(req) {
-
-        const containers = await prisma.containers.findMany({
-            orderBy: { container_number: 'asc' },
-            include: {
-                users: true,
-                compartments: {
-                    orderBy: { compartment_number: 'asc' },
-                    include: {
-                        compartment_medications: {
-                            orderBy: { compartment_med_id: 'asc' },
-                            include: {
-                                prescription_medications: {
-                                    include: { medications: true }
-                                },
-                                users: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        const buffer = await generateContainerExcel(containers);
-
-        // 🔥 audit log
-        await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.EXPORT,
-            entity: 'CONTAINER',
-            description: 'Container report exported',
-            req
-        });
-
-        return buffer;
     }
 
     //--- ІоТ ---

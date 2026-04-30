@@ -9,7 +9,7 @@ import {AppError} from "../../shared/errors/AppError.js";
 const router = Router();
 const containerService = new ContainerService();
 
-// кількість контейнерів
+// number of containers ok
 router.get(
     '/count',
     authenticateToken,
@@ -24,7 +24,7 @@ router.get(
     }
 );
 
-// статистика
+// container statistics ok
 router.get(
     '/stats',
     authenticateToken,
@@ -39,7 +39,7 @@ router.get(
     }
 );
 
-// останні заповнення
+// last fills ok
 router.get(
     '/fillings',
     authenticateToken,
@@ -53,6 +53,28 @@ router.get(
         }
     }
 );
+
+// report from containers ok
+router.get(
+    '/export',
+    authenticateToken,
+    authorizeRoles(1, 4),
+    async (req, res, next) => {
+        try {
+            const buffer = await containerService.exportContainersToExcel(req);
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=containers-report.xlsx');
+
+            res.send(buffer);
+
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// --- mobile ---
 
 // вільні контейнери
 router.get(
@@ -343,25 +365,6 @@ router.get(
     }
 );
 
-// звіт по контейнерам
-router.get(
-    '/export',
-    authenticateToken,
-    authorizeRoles(1, 4),
-    async (req, res, next) => {
-        try {
-            const buffer = await containerService.exportContainersToExcel(req);
-
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', 'attachment; filename=containers-report.xlsx');
-
-            res.send(buffer);
-
-        } catch (err) {
-            next(err);
-        }
-    }
-);
 
 // --- ІоТ ---
 

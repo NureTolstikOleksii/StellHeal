@@ -55,7 +55,7 @@ router.put(
     }
 );
 
-// UPDATE PROFILE
+// UPDATE PROFILE ok
 router.patch('/', authenticateToken, validateEmail, async (req, res, next) => {
     try {
         const updatedUser = await profileService.updateProfile(

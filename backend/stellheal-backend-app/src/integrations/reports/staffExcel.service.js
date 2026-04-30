@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 
-export const generateStaffExcel = (doctors, nurses) => {
+export const generateStaffExcel = async (doctors, nurses) => {
 
     const formatDate = (date) => {
         if (!date) return '';
@@ -35,6 +35,7 @@ export const generateStaffExcel = (doctors, nurses) => {
     const dateCell = sheet.getCell('A2');
     dateCell.value = `Дата формування звіту: ${now}`;
     dateCell.font = { italic: true };
+    dateCell.alignment = { horizontal: 'left' };
 
     let currentRow = 3;
 
@@ -64,15 +65,28 @@ export const generateStaffExcel = (doctors, nurses) => {
             });
         }
 
+        if (options.alignment) {
+            row.alignment = {
+                vertical: 'middle',
+                horizontal: options.alignment
+            };
+        }
+
         return row;
     };
 
     const headers = [
-        'Прізвище','Ім’я','По-батькові','Дата народження',
-        'Телефон','Пошта','Адреса','Спеціалізація','Зміна','Дата працевлаштування'
+        'Прізвище', 'Ім’я', 'По-батькові',
+        'Дата народження', 'Телефон', 'Пошта',
+        'Адреса', 'Спеціалізація', 'Зміна', 'Дата працевлаштування'
     ];
 
-    const headerOptions = { bold: true, fill: 'FFF4CC', border: true };
+    const headerOptions = {
+        bold: true,
+        fill: 'FFF4CC',
+        border: true,
+        alignment: 'center'
+    };
 
     // === Лікарі ===
     addStyledRow(['Лікарі'], { bold: true });
@@ -93,9 +107,9 @@ export const generateStaffExcel = (doctors, nurses) => {
         ], { border: true });
     });
 
-    currentRow++;
+    currentRow++; // пропуск
 
-    // === Медсестри ===
+    // === Медперсонал (як було!) ===
     addStyledRow(['Медперсонал'], { bold: true });
     addStyledRow(headers, headerOptions);
 
@@ -114,7 +128,19 @@ export const generateStaffExcel = (doctors, nurses) => {
         ], { border: true });
     });
 
-    sheet.columns = new Array(10).fill({ width: 20 });
+    // === ОРИГІНАЛЬНІ ширини колонок ===
+    sheet.columns = [
+        { width: 20 },
+        { width: 20 },
+        { width: 20 },
+        { width: 25 },
+        { width: 20 },
+        { width: 30 },
+        { width: 40 },
+        { width: 25 },
+        { width: 20 },
+        { width: 30 },
+    ];
 
-    return workbook.xlsx.writeBuffer();
+    return await workbook.xlsx.writeBuffer();
 };

@@ -10,7 +10,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const staffService = new StaffService();
 
-// список працівників
+// get list of medical workers ok
 router.get(
     '/',
     authenticateToken,
@@ -24,7 +24,22 @@ router.get(
     }
 );
 
-// створення
+// number of employees ok
+router.get(
+    '/count',
+    authenticateToken,
+    authorizeRoles(4),
+    async (req, res, next) => {
+        try {
+            const count = await staffService.getStaffCount();
+            res.json({ count });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// add employee ok
 router.post(
     '/',
     authenticateToken,
@@ -40,22 +55,37 @@ router.post(
     }
 );
 
-// count
-router.get(
-    '/count',
+// update employee ok
+router.put(
+    '/:id',
     authenticateToken,
     authorizeRoles(4),
+    validateEmail,
     async (req, res, next) => {
         try {
-            const count = await staffService.getStaffCount();
-            res.json({ count });
+            res.json(await staffService.updateStaff(Number(req.params.id), req.body, req));
         } catch (err) {
             next(err);
         }
     }
 );
 
-// roles
+// delete employee ok
+router.delete(
+    '/:id',
+    authenticateToken,
+    authorizeRoles(4),
+    async (req, res, next) => {
+        try {
+            await staffService.deleteStaff(Number(req.params.id), req);
+            res.status(204).end();
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// get user roles ok
 router.get(
     '/roles',
     authenticateToken,
@@ -69,6 +99,7 @@ router.get(
     }
 );
 
+// create role ok
 router.post(
     '/roles',
     authenticateToken,
@@ -88,6 +119,7 @@ router.post(
     }
 );
 
+// delete role ok
 router.delete(
     '/roles/:id',
     authenticateToken,
@@ -102,6 +134,7 @@ router.delete(
     }
 );
 
+// update role ok
 router.put(
     '/roles/:id',
     authenticateToken,
@@ -116,44 +149,14 @@ router.put(
     }
 );
 
-// update staff
-router.put(
-    '/:id',
-    authenticateToken,
-    authorizeRoles(4),
-    validateEmail,
-    async (req, res, next) => {
-        try {
-            res.json(await staffService.updateStaff(Number(req.params.id), req.body, req));
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-// delete staff
-router.delete(
-    '/:id',
-    authenticateToken,
-    authorizeRoles(4),
-    async (req, res, next) => {
-        try {
-            await staffService.deleteStaff(Number(req.params.id), req);
-            res.status(204).end();
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-// Excel
+// get report ok
 router.get(
     '/export',
     authenticateToken,
     authorizeRoles(4),
     async (req, res, next) => {
         try {
-            const buffer = await staffService.exportStaffToExcel();
+            const buffer = await staffService.exportStaffToExcel(req);
 
             res.setHeader('Content-Disposition', 'attachment; filename="staff_export.xlsx"');
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

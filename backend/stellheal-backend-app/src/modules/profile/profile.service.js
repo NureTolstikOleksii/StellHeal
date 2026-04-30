@@ -31,7 +31,7 @@ export class ProfileService {
 
         await logAction({
             userId,
-            action: ACTIONS.SECURITY_EVENT,
+            action: ACTIONS.UPLOAD_AVATAR,
             entity: 'USER',
             entityId: userId,
             description: 'Avatar updated',
@@ -65,7 +65,7 @@ export class ProfileService {
 
         await logAction({
             userId,
-            action: ACTIONS.SECURITY_EVENT,
+            action: ACTIONS.CHANGE_PASSWORD,
             entity: 'USER',
             entityId: userId,
             description: 'Password changed',
@@ -73,6 +73,7 @@ export class ProfileService {
         });
     }
 
+    // ok
     async updateProfile(userId, data, req) {
         const updatedUser = await prisma.users.update({
             where: { user_id: userId },
@@ -81,7 +82,7 @@ export class ProfileService {
 
         await logAction({
             userId,
-            action: ACTIONS.SECURITY_EVENT,
+            action: ACTIONS.UPDATE_PROFILE,
             entity: 'USER',
             entityId: userId,
             description: 'Profile updated',

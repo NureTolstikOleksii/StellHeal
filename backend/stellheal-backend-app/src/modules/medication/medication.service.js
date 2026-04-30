@@ -7,7 +7,7 @@ import { ACTIONS } from '../../shared/constants/actions.js';
 
 export class MedicationService {
 
-    // список
+    // list of medications ok
     async getAll() {
         const medications = await prisma.medications.findMany({
             select: {

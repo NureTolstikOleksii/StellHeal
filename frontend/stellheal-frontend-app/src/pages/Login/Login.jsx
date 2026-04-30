@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Login.module.css';
 import logo from '../../assets/logo.png';
 import Input from '../../components/Input/LoginInput.jsx';
@@ -18,18 +18,32 @@ const Login = () => {
     const [showPageLoader, setShowPageLoader] = useState(false);
     const [showForgotModal, setShowForgotModal] = useState(false);
 
+    const { accessToken } = useAuth();
+
+    useEffect(() => {
+        if (accessToken) {
+            navigate("/main/profile");
+        }
+    }, [accessToken]);
+
+
     const handleLogin = async () => {
         setError('');
         setIsLoading(true);
+
         try {
-            const response = await loginUser(email, password);
-            login(response.token, response.user);
+            await login(email, password); // 🔥 ГОЛОВНЕ
+
             setShowPageLoader(true);
+
             setTimeout(() => {
                 navigate('/main/profile');
             }, 600);
+
         } catch (err) {
-            const serverError = err.response?.data?.message || 'Помилка з\'єднання з сервером'
+            const serverError =
+                err.response?.data?.message || "Помилка з'єднання з сервером";
+
             setError(serverError);
         } finally {
             setIsLoading(false);

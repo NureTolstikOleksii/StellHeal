@@ -7,6 +7,7 @@ import { authorizeRoles } from '../../middleware/role.middleware.js';
 const router = Router();
 const wardsService = new WardsService();
 
+// ok
 router.get(
     '/',
     authenticateToken,

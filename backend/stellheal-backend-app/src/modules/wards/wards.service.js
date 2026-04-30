@@ -2,6 +2,7 @@ import prisma from '../../config/prisma.js';
 
 export class WardsService {
 
+    // ok
     async getAvailableWards() {
 
         const wards = await prisma.wards.findMany({

@@ -11,7 +11,7 @@ import {ERROR_CODES} from "../../shared/constants/errorCodes.js";
 const router = Router();
 const patientsService = new PatientsService();
 
-// display the list of patients
+// display the list of patients ok
 router.get(
     '/',
     authenticateToken,
@@ -26,22 +26,7 @@ router.get(
     }
 );
 
-// a list of patients for nurses
-router.get(
-    '/staff',
-    authenticateToken,
-    authorizeRoles(2),
-    async (req, res, next) => {
-        try {
-            const result = await patientsService.getAllPatientsForStaff();
-            res.json(result);
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-// get the number of patients
+// get the number of patients ok
 router.get(
     '/stats',
     authenticateToken,
@@ -56,7 +41,7 @@ router.get(
     }
 );
 
-// adding a patient
+// adding a patient ok
 router.post(
     '/create',
     authenticateToken,
@@ -72,7 +57,7 @@ router.post(
     }
 );
 
-// Excel report
+// Excel report ok
 router.get(
     '/export',
     authenticateToken,
@@ -89,7 +74,7 @@ router.get(
     }
 );
 
-// patient information by id
+// patient information by id ok
 router.get(
     '/:id',
     authenticateToken,
@@ -104,7 +89,7 @@ router.get(
     }
 );
 
-// get the patient's current treatment
+// get the patient's current treatment ok
 router.get(
     '/:id/current',
     authenticateToken,
@@ -119,7 +104,7 @@ router.get(
     }
 );
 
-// get patient treatment history
+// get patient treatment history ok
 router.get(
     '/:id/history',
     authenticateToken,
@@ -134,7 +119,62 @@ router.get(
     }
 );
 
-// create destination
+// delete patient ok
+router.delete(
+    '/:id',
+    authenticateToken,
+    authorizeRoles(1, 4),
+    async (req, res, next) => {
+        try {
+            const id = Number(req.params.id);
+
+            if (!id) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Не вказано ID пацієнта',
+                    400
+                ));
+            }
+
+            await patientsService.deletePatient(id, req);
+
+            res.json({ message: 'Пацієнта видалено' });
+
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// update patient ok
+router.put(
+    '/:id',
+    authenticateToken,
+    authorizeRoles(1),
+    validateEmail,
+    async (req, res, next) => {
+        try {
+            const id = Number(req.params.id);
+
+            if (!id) {
+                return next(new AppError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Invalid user ID',
+                    400
+                ));
+            }
+
+            const updated = await patientsService.updatePatient(id, req.body, req);
+
+            res.json(updated);
+
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// create prescription ok
 router.post(
     '/prescriptions/create',
     authenticateToken,
@@ -166,7 +206,7 @@ router.post(
     }
 );
 
-// delete destination
+// delete prescription ok
 router.delete(
     '/prescriptions/:id',
     authenticateToken,
@@ -193,7 +233,7 @@ router.delete(
     }
 );
 
-// patient treatment report
+// patient treatment report ok
 router.get(
     '/:id/report',
     authenticateToken,
@@ -230,63 +270,22 @@ router.get(
     }
 );
 
-// delete patient
-router.delete(
-    '/:id',
-    authenticateToken,
-    authorizeRoles(1, 4),
-    async (req, res, next) => {
-        try {
-            const id = Number(req.params.id);
-
-            if (!id) {
-                return next(new AppError(
-                    ERROR_CODES.VALIDATION_ERROR,
-                    'Не вказано ID пацієнта',
-                    400
-                ));
-            }
-
-            await patientsService.deletePatient(id, req);
-
-            res.json({ message: 'Пацієнта видалено' });
-
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-// update patient
-router.put(
-    '/:id',
-    authenticateToken,
-    authorizeRoles(1),
-    validateEmail,
-    async (req, res, next) => {
-        try {
-            const id = Number(req.params.id);
-
-            if (!id) {
-                return next(new AppError(
-                    ERROR_CODES.VALIDATION_ERROR,
-                    'Invalid user ID',
-                    400
-                ));
-            }
-
-            const updated = await patientsService.updatePatient(id, req.body, req);
-
-            res.json(updated);
-
-        } catch (err) {
-            next(err);
-        }
-    }
-);
-
-
 // --- mobile ---
+
+// a list of patients (nurses)
+router.get(
+    '/staff',
+    authenticateToken,
+    authorizeRoles(2),
+    async (req, res, next) => {
+        try {
+            const result = await patientsService.getAllPatientsForStaff();
+            res.json(result);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
 
 // treatment history (patient)
 router.post(

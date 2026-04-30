@@ -66,14 +66,15 @@ const AddPatientModal = ({ onClose, setPatients }) => {
 
             onClose();
         } catch (err) {
-            if (err.response && err.response.data && err.response.data.error) {
-                setFormError(err.response.data.error);
+            const code = err.response?.data?.code;
+
+            if (code === "USER_EXISTS") {
+                setFormError(t('patient_form.errors.user_exists'));
+            } else if (err.response?.data?.message) {
+                setFormError(err.response.data.message);
             } else {
                 setFormError(t('patient_form.errors.creation_failed'));
             }
-            console.error(err);
-        } finally {
-            setLoading(false);
         }
     };
 

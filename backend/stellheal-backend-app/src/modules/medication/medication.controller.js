@@ -9,7 +9,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const medicationService = new MedicationService();
 
-// список препаратів
+// список препаратів ok
 router.get(
     '/',
     authenticateToken,

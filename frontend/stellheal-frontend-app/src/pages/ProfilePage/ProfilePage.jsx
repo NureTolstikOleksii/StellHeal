@@ -31,21 +31,35 @@ const ProfilePage = () => {
 
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            try {
-                const res = await uploadAvatar(file);
-                setProfileData(prev => ({ ...prev, avatar: res.avatar }));
-                setUser(prev => {
-                    const updated = { ...prev, avatar: res.avatar };
-                    localStorage.setItem('user', JSON.stringify(updated));
-                    return updated;
-                });
-            } catch (err) {
-                console.error('Помилка при завантаженні аватару:', err);
-            }
+        if (!file) return;
+
+        try {
+            const res = await uploadAvatar(file);
+
+            const newAvatar = res.avatar;
+
+            // ✅ оновлюємо profile (локально)
+            setProfileData(prev => ({
+                ...prev,
+                avatar: newAvatar
+            }));
+
+            // ✅ створюємо НОВИЙ user (важливо!)
+            const updatedUser = {
+                ...user,
+                avatar: newAvatar
+            };
+
+            // ✅ оновлюємо context
+            setUser(updatedUser);
+
+            // ✅ синхронізуємо localStorage
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+        } catch (err) {
+            console.error('Помилка при завантаженні аватару:', err);
         }
     };
-
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordForm(prev => ({ ...prev, [name]: value }));

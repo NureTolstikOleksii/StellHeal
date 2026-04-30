@@ -10,13 +10,26 @@ import BackupPage from '../pages/BackupPage/BackupPage';
 import PatientDetailsPage from "../pages/PatientDetailsPage/PatientDetailsPage.jsx";
 import ResetPasswordPage from "../pages/ResetPasswordPage/ResetPasswordPage.jsx";
 
+import ProtectedRoute from "./ProtectedRoute.jsx";
+
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
+
+                {/* 🔓 Публічні */}
                 <Route path="/" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/main" element={<MainPage />}>
+
+                {/* 🔐 Приватні */}
+                <Route
+                    path="/main"
+                    element={
+                        <ProtectedRoute>
+                            <MainPage />
+                        </ProtectedRoute>
+                    }
+                >
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="patients" element={<PatientsPage />} />
                     <Route path="staff" element={<StaffPage />} />
@@ -25,6 +38,7 @@ export default function AppRouter() {
                     <Route path="backup" element={<BackupPage />} />
                     <Route path="patients/:id" element={<PatientDetailsPage />} />
                 </Route>
+
             </Routes>
         </BrowserRouter>
     );

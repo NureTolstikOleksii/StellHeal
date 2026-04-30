@@ -8,7 +8,7 @@ import { uploadAvatar } from '../../integrations/cloudinary/uploadAvatar.js';
 const router = Router();
 const profileService = new ProfileService();
 
-// GET PROFILE
+// GET PROFILE (ok)
 router.get('/', authenticateToken, async (req, res, next) => {
     try {
         const user = await profileService.getProfile(req.user.userId, req);
@@ -18,7 +18,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
     }
 });
 
-// UPDATE AVATAR
+// UPDATE AVATAR ok
 router.put('/avatar', authenticateToken, async (req, res, next) => {
     try {
         const avatarUrl = await uploadAvatar(req);
@@ -31,7 +31,7 @@ router.put('/avatar', authenticateToken, async (req, res, next) => {
     }
 });
 
-// CHANGE PASSWORD
+// CHANGE PASSWORD ok
 router.put(
     '/change-password',
     authenticateToken,

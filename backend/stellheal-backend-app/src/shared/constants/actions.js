@@ -1,4 +1,9 @@
 export const ACTIONS = {
+    CREATE: 'CREATE',
+    UPDATE: 'UPDATE',
+    DELETE: 'DELETE',
+
+
     // 🔐 AUTH
     LOGIN: 'LOGIN',
     LOGIN_FAILED: 'LOGIN_FAILED',

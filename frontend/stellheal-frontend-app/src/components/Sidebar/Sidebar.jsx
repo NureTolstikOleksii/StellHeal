@@ -22,6 +22,7 @@ const Sidebar = () => {
     const role = user?.role;
     const currentPath = location.pathname;
 
+    // 🔐 Role-based links
     const links = role === 'admin'
         ? [
             { key: 'profile', label: t('sidebar.profile'), icon: <FaUserMd /> },
@@ -36,14 +37,39 @@ const Sidebar = () => {
             { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured /> }
         ];
 
+    // 🔥 logout handler
+    const handleLogout = () => {
+        const confirmLogout = window.confirm(t('sidebar.confirmLogout') || 'Вийти з акаунту?');
+        if (!confirmLogout) return;
+
+        logout(); // 🔥 сам робить redirect
+    };
+
     return (
         <aside className={styles.sidebar}>
+
+            {/* 👤 USER */}
             <div className={styles.userInfo}>
-                <img src={user?.avatar || default_avatar} alt="avatar" className={styles.avatar} />
+                <img
+                    src={
+                        user?.avatar
+                            ? `${user.avatar}?t=${Date.now()}`
+                            : default_avatar
+                    }
+                    alt="avatar"
+                    className={styles.avatar}
+                />
+
                 <p className={styles.name}>
-                    {user?.lastName} {user?.firstName?.charAt(0)}.
+                    {user?.last_name} {user?.first_name?.charAt(0)}.
+                </p>
+
+                <p className={styles.role}>
+                    {user?.role}
                 </p>
             </div>
+
+            {/* 📂 MENU */}
             <nav className={styles.menu}>
                 {links.map(link => {
                     const isActive = currentPath.includes(link.key);
@@ -61,13 +87,12 @@ const Sidebar = () => {
                 })}
             </nav>
 
-            <div className={styles.logout} onClick={() => {
-                logout();
-                navigate('/');
-            }}>
+            {/* 🚪 LOGOUT */}
+            <div className={styles.logout} onClick={handleLogout}>
                 <FaSignOutAlt />
                 <span>{t('sidebar.logout')}</span>
             </div>
+
         </aside>
     );
 };

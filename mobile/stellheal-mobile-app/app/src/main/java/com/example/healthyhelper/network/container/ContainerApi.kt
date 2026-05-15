@@ -24,17 +24,8 @@ interface ContainerApi {
     @GET("containers/{id}")
     fun getContainerDetails(@Path("id") containerId: Int): Call<ContainerDetailsResponse>
 
-    @GET("containers/{id}/compartments")
-    fun getFilledCompartments(@Path("id") containerId: Int): Call<List<FilledCompartmentResponse>>
-
     @GET("containers/patient/{id}/today")
     fun getTodaysPrescriptions(@Path("id") patientId: Int): Call<List<PrescriptionOption>>
-
-    @POST("containers/compartments/fill")
-    fun addMedicationToCompartment(@Body body: Map<String, Int>): Call<Unit>
-
-    @POST("containers/compartments/clear")
-    fun clearCompartment(@Body body: Map<String, Int>): Call<Map<String, String>>
 
     @GET("containers/patients/{id}/date-range")
     fun getPrescriptionDateRange(@Path("id") patientId: Int): Call<PrescriptionDateRange>
@@ -47,4 +38,35 @@ interface ContainerApi {
 
     @GET("containers/all-container-details")
     fun getAllContainerDetails(): Call<List<ContainerWithDetails>>
+
+    @POST("device/fill/clear")
+    fun clearCompartmentWithRotate(@Body body: ClearCompartmentRequest): Call<Unit>
+
+
+    // Нові роути для device
+    @GET("device/compartments/{containerId}")
+    fun getCompartments(@Path("containerId") containerId: Int): Call<List<CompartmentResponse>>
+
+    @POST("device/fill/rotate")
+    fun rotateToCompartment(@Body body: Map<String, Int>): Call<Unit>
+
+    @POST("device/fill/confirm")
+    fun fillConfirm(@Body body: FillConfirmRequest): Call<Unit>
+
+    @GET("device/rfid-status/{containerId}")
+    fun getRfidStatus(@Path("containerId") containerId: Int): Call<RfidStatusResponse>
+
+    @POST("device/rfid-reset/{containerId}")
+    fun resetRfidStatus(@Path("containerId") containerId: Int): Call<Unit>
+
+//   @GET("containers/{id}/compartments")
+//    fun getFilledCompartments(@Path("id") containerId: Int): Call<List<FilledCompartmentResponse>>
+//
+//    @POST("containers/compartments/fill")
+//    fun addMedicationToCompartment(@Body body: Map<String, Int>): Call<Unit>
+//
+//    @POST("containers/compartments/clear")
+//    fun clearCompartment(@Body body: Map<String, Int>): Call<Map<String, String>>
+
+
 }

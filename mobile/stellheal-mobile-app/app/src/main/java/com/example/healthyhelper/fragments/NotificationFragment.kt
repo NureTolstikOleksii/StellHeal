@@ -22,8 +22,9 @@ import java.util.*
 class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
     private lateinit var notificationList: LinearLayout
+    private lateinit var progressBar: ProgressBar
+    private lateinit var scrollView: ScrollView
 
-    // 🔥 Receiver для real-time оновлення
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val v = view ?: return
@@ -35,14 +36,18 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         super.onViewCreated(view, savedInstanceState)
 
         notificationList = view.findViewById(R.id.notificationList)
+        progressBar = view.findViewById(R.id.progressBar)
+        scrollView = view.findViewById(R.id.scrollView)
 
         loadNotifications(view)
     }
 
     private fun loadNotifications(view: View) {
-
-        // 🔥 очищаємо перед завантаженням
         notificationList.removeAllViews()
+
+        // Показуємо лоадер, ховаємо список
+        progressBar.visibility = View.VISIBLE
+        scrollView.visibility = View.GONE
 
         RetrofitClient.notificationApi.getUserNotifications()
             .enqueue(object : Callback<List<NotificationResponse>> {
@@ -51,21 +56,25 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                     call: Call<List<NotificationResponse>>,
                     response: Response<List<NotificationResponse>>
                 ) {
+                    // Ховаємо лоадер
+                    progressBar.visibility = View.GONE
+
                     if (!response.isSuccessful) {
                         Toast.makeText(requireContext(), "Помилка сервера", Toast.LENGTH_SHORT).show()
                         return
                     }
 
                     val notifications = response.body() ?: emptyList()
-
                     val emptyText = view.findViewById<TextView>(R.id.emptyText)
 
                     if (notifications.isEmpty()) {
                         emptyText.visibility = View.VISIBLE
+                        scrollView.visibility = View.GONE
                         return
-                    } else {
-                        emptyText.visibility = View.GONE
                     }
+
+                    emptyText.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
 
                     val unread = notifications.filter { !it.is_read }
                     val read = notifications.filter { it.is_read }
@@ -73,7 +82,6 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                     if (unread.isNotEmpty()) {
                         addSectionHeader("New")
                         unread.forEach { addNotificationItem(it) }
-
                         if (read.isNotEmpty()) {
                             addSectionHeader("Earlier")
                             read.forEach { addNotificationItem(it) }
@@ -82,7 +90,6 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                         read.forEach { addNotificationItem(it) }
                     }
 
-                    // 🔥 автоматично позначаємо як прочитані
                     RetrofitClient.notificationApi.markNotificationsRead()
                         .enqueue(object : Callback<Void> {
                             override fun onResponse(call: Call<Void>, response: Response<Void>) {}
@@ -91,15 +98,13 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                 }
 
                 override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Помилка: ${t.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(requireContext(), "Помилка: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             })
     }
 
+    // решта методів без змін
     private fun addNotificationItem(notification: NotificationResponse) {
         val item = layoutInflater.inflate(R.layout.item_notification, notificationList, false)
 
@@ -111,12 +116,7 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
-        val parsedDate = try {
-            inputFormat.parse(notification.date)
-        } catch (e: Exception) {
-            null
-        }
-
+        val parsedDate = try { inputFormat.parse(notification.date) } catch (e: Exception) { null }
         val formattedDate = parsedDate?.let { outputFormat.format(it) } ?: notification.date
 
         message.text = notification.message
@@ -136,10 +136,13 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                 item.setBackgroundResource(R.drawable.bg_green_gradient)
                 icon.setImageResource(R.drawable.ic_success_notific)
             }
+            "PILL_NOT_TAKEN" -> {
+                item.setBackgroundResource(R.drawable.bg_red_gradient)
+                icon.setImageResource(R.drawable.ic_warning_notific)
+            }
         }
 
         item.alpha = if (!notification.is_read) 1.0f else 0.5f
-
         notificationList.addView(item)
     }
 
@@ -151,22 +154,12 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
     override fun onResume() {
         super.onResume()
-
-        // 🔥 Android 13 fix
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(
-                receiver,
-                IntentFilter("NEW_NOTIFICATION"),
-                Context.RECEIVER_NOT_EXPORTED
-            )
-        } else {
-            ContextCompat.registerReceiver(
-                requireContext(),
-                receiver,
-                IntentFilter("NEW_NOTIFICATION"),
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-        }
+        ContextCompat.registerReceiver(
+            requireContext(),
+            receiver,
+            IntentFilter("NEW_NOTIFICATION"),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     override fun onPause() {

@@ -5,6 +5,7 @@ import profileRouter from '../modules/profile/profile.controller.js';
 import { medicationRouter } from '../modules/medication/medication.controller.js';
 import { mainRouter } from '../modules/patients/patients.controller.js';
 import { containerRouter } from '../modules/container/container.controller.js';
+import { deviceRouter } from '../modules/container/device.controller.js';
 import { notificationRouter } from '../modules/notifications/notifications.controller.js';
 import wardsRouter from '../modules/wards/wards.controller.js';
 import { staffRouter } from '../modules/staff/staff.controller.js';
@@ -21,7 +22,7 @@ router.use('/medication', medicationRouter);
 router.use('/patients', mainRouter);
 router.use('/wards', wardsRouter);
 router.use('/containers', containerRouter);
-
+router.use('/device', deviceRouter);
 
 router.use('/notification', notificationRouter);
 router.use('/staff', staffRouter);

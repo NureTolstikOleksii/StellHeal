@@ -275,6 +275,8 @@ router.get(
                 medication: p.medications?.name || 'Unknown',
                 quantity: p.quantity,
                 intake_time: p.intake_time
+                    ? new Date(p.intake_time).toISOString().substring(11, 16) // завжди UTC → "08:00"
+                    : null
             })));
 
         } catch (err) {

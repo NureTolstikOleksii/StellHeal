@@ -240,16 +240,13 @@ export class ContainerService {
         }
 
         const compartmentsInfo = container.compartments.map((comp) => {
-
             if (!comp.compartment_medications.length) {
-                return `Comp. ${comp.compartment_number} - 0`;
+                return `Comp. ${comp.compartment_number} - empty`;
             }
 
             const med = comp.compartment_medications[0]?.prescription_medications;
-
             const medName = med?.medications?.name || '?';
             const quantity = med?.quantity || '?';
-
             const rawTime = med?.intake_time;
             const intakeTime = rawTime
                 ? rawTime.toISOString().substring(11, 16)
@@ -257,10 +254,18 @@ export class ContainerService {
 
             return `Comp. ${comp.compartment_number} - ${medName} - ${quantity} табл. - ${intakeTime}`;
         });
+        
+        const now = new Date();
+        const lastSeen = container.last_seen;
+        const isOnline = lastSeen
+            ? (now - new Date(lastSeen)) < 2 * 60 * 1000
+            : false;
 
         return {
             container_number: container.container_number,
-            status: container.status || 'unknown',
+            status: container.status || 'inactive',       // active / inactive
+            is_online: isOnline,                           // true / false на основі last_seen
+            last_seen: container.last_seen,
             patient_id: container.patient_id || null,
             compartments: compartmentsInfo
         };
@@ -324,7 +329,10 @@ export class ContainerService {
                 }
             },
             include: { medications: true },
-            orderBy: { intake_time: 'asc' }
+            orderBy: [
+                { medications: { name: 'asc' } }, // ← спочатку за назвою
+                { intake_time: 'asc' }             // ← потім за часом
+            ]
         });
     }
 
@@ -812,6 +820,14 @@ export class ContainerService {
             where: { compartment_med_id: latest.compartment_med_id }
         });
 
+        await prisma.compartments.update({
+            where: { compartment_id: compartment_id },
+            data: {
+                is_filled: false,
+                last_filled_at: null
+            }
+        });
+
         await logAction({
             userId: req.user.userId,
             action: ACTIONS.DELETE,
@@ -892,6 +908,14 @@ export class ContainerService {
                 filled_by: userId,
                 fill_time,
                 open_time
+            }
+        });
+
+        await prisma.compartments.update({
+            where: { compartment_id: compartmentId },
+            data: {
+                is_filled: true,
+                last_filled_at: now
             }
         });
 

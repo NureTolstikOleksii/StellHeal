@@ -25,9 +25,10 @@ class IntakeFragment : Fragment() {
     private lateinit var intakeList: LinearLayout
     private lateinit var progressText: TextView
     private lateinit var circleProgress: CircularProgressIndicator
+    private lateinit var progressBar: ProgressBar
+    private lateinit var scrollView: ScrollView
 
     private val args: IntakeFragmentArgs by navArgs()
-
     private var selectedDate: Date = Date()
     private var allDates: List<Date> = emptyList()
 
@@ -37,40 +38,41 @@ class IntakeFragment : Fragment() {
     ): View = inflater.inflate(R.layout.fragment_intake, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
         calendarContainer = view.findViewById(R.id.calendarContainer)
         intakeList = view.findViewById(R.id.intakeList)
         progressText = view.findViewById(R.id.progressText)
         circleProgress = view.findViewById(R.id.circleProgress)
+        progressBar = view.findViewById(R.id.progressBar)
+        scrollView = view.findViewById(R.id.scrollView)
 
         val btnBack = view.findViewById<ImageButton>(R.id.btnBack)
+        btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        btnBack.setOnClickListener {
-            findNavController().popBackStack()
-        }
+        // Показуємо лоадер
+        progressBar.visibility = View.VISIBLE
+        scrollView.visibility = View.GONE
 
         loadDateRangeAndBuildCalendar()
     }
 
-    // 🔥 API FIX
     private fun loadDateRangeAndBuildCalendar() {
         val patientId = args.patientId
 
         RetrofitClient.containerApi
             .getPrescriptionDateRange(patientId)
             .enqueue(object : Callback<PrescriptionDateRange> {
-
                 override fun onResponse(
                     call: Call<PrescriptionDateRange>,
                     response: Response<PrescriptionDateRange>
                 ) {
                     if (!response.isSuccessful) {
+                        progressBar.visibility = View.GONE
+                        scrollView.visibility = View.VISIBLE
                         Toast.makeText(requireContext(), "Помилка", Toast.LENGTH_SHORT).show()
                         return
                     }
 
                     val range = response.body() ?: return
-
                     val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     val startDate = sdf.parse(range.minDate)
                     val endDate = sdf.parse(range.maxDate)
@@ -78,13 +80,13 @@ class IntakeFragment : Fragment() {
                     if (startDate != null && endDate != null) {
                         allDates = getDatesInRange(startDate, endDate)
                         buildCalendarFromDates(allDates)
-
-                        // 🔥 важливо
                         loadDataForDate(selectedDate)
                     }
                 }
 
                 override fun onFailure(call: Call<PrescriptionDateRange>, t: Throwable) {
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
                     Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
                 }
             })
@@ -97,22 +99,13 @@ class IntakeFragment : Fragment() {
         val dowFormat = SimpleDateFormat("EEE", Locale.getDefault())
 
         dates.forEach { date ->
-
-            val dayView = layoutInflater.inflate(
-                R.layout.item_calendar_day,
-                calendarContainer,
-                false
-            )
+            val dayView = layoutInflater.inflate(R.layout.item_calendar_day, calendarContainer, false)
 
             dayView.findViewById<TextView>(R.id.dayNumber).text = sdf.format(date)
-            dayView.findViewById<TextView>(R.id.dayName).text =
-                dowFormat.format(date).uppercase()
+            dayView.findViewById<TextView>(R.id.dayName).text = dowFormat.format(date).uppercase()
 
             if (isSameDay(date, selectedDate)) {
-                dayView.background = ContextCompat.getDrawable(
-                    requireContext(),
-                    R.drawable.bg_selected_day
-                )
+                dayView.background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_selected_day)
             }
 
             dayView.setOnClickListener {
@@ -126,37 +119,36 @@ class IntakeFragment : Fragment() {
     }
 
     private fun loadDataForDate(date: Date) {
-
         val patientId = args.patientId
-
-        val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            .format(date)
+        val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
 
         RetrofitClient.containerApi
             .getIntakeStatistics(patientId, formatted)
             .enqueue(object : Callback<List<PrescriptionOption>> {
-
                 override fun onResponse(
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
                 ) {
+                    // Ховаємо лоадер, показуємо контент
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
+
                     if (!response.isSuccessful) {
                         Toast.makeText(requireContext(), "Помилка", Toast.LENGTH_SHORT).show()
                         return
                     }
-
-                    val list = response.body() ?: emptyList()
-                    renderIntakeList(list)
+                    renderIntakeList(response.body() ?: emptyList())
                 }
 
                 override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
                     Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
                 }
             })
     }
 
     private fun renderIntakeList(meds: List<PrescriptionOption>) {
-
         intakeList.removeAllViews()
 
         val taken = meds.count { it.isTaken == true }
@@ -165,23 +157,17 @@ class IntakeFragment : Fragment() {
         progressText.text = "$taken/$total"
 
         val percent = if (total != 0) (taken * 100 / total) else 0
-
         ObjectAnimator.ofInt(circleProgress, "progress", percent).apply {
             duration = 500
             start()
         }
 
         meds.forEach { med ->
-
-            val item = layoutInflater.inflate(
-                R.layout.item_intake,
-                intakeList,
-                false
-            )
+            val item = layoutInflater.inflate(R.layout.item_intake, intakeList, false)
 
             item.findViewById<TextView>(R.id.medName).text = med.medication
             item.findViewById<TextView>(R.id.medQuantity).text =
-                "${med.quantity} pill" + if (med.quantity != 1) "s" else ""
+                "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
 
             item.findViewById<TextView>(R.id.timeText).text =
                 med.intake_time.substringAfter("T").substring(0, 5)
@@ -191,9 +177,7 @@ class IntakeFragment : Fragment() {
                 false -> R.drawable.ic_close_circle
                 null -> R.drawable.ic_null_circle
             }
-
-            item.findViewById<ImageView>(R.id.iconStatus)
-                .setImageResource(statusIcon)
+            item.findViewById<ImageView>(R.id.iconStatus).setImageResource(statusIcon)
 
             intakeList.addView(item)
         }
@@ -203,12 +187,10 @@ class IntakeFragment : Fragment() {
         val dates = mutableListOf<Date>()
         val calendar = Calendar.getInstance()
         calendar.time = start
-
         while (!calendar.time.after(end)) {
             dates.add(calendar.time)
             calendar.add(Calendar.DAY_OF_MONTH, 1)
         }
-
         return dates
     }
 

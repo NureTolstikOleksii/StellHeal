@@ -411,20 +411,38 @@ export class PatientsService {
         });
 
         const startDate = new Date();
+        const usedTimesByDay = {}; // ← окремо для кожного дня
 
-        for (const med of medications) {
-            const { medicationId, quantity, timesPerDay, duration } = med;
-
+        for (let medIndex = 0; medIndex < medications.length; medIndex++) {
+            const { medicationId, quantity, timesPerDay, duration } = medications[medIndex];
             const times = getIntakeTimes(Number(timesPerDay));
 
             for (let day = 0; day < Number(duration); day++) {
                 const date = addDays(startDate, day);
+                const dateStr = date.toISOString().substring(0, 10);
+
+                // Ініціалізуємо Set для цього дня якщо ще немає
+                if (!usedTimesByDay[dateStr]) {
+                    usedTimesByDay[dateStr] = new Set();
+                }
 
                 for (const timeStr of times) {
                     const [hours, minutes] = timeStr.split(':');
+                    let totalMinutes = Number(hours) * 60 + Number(minutes);
 
-                    const intakeTime = new Date(date);
-                    intakeTime.setHours(Number(hours), Number(minutes), 0, 0);
+                    // Зсуваємо тільки якщо цей час вже зайнятий в цей день
+                    while (usedTimesByDay[dateStr].has(totalMinutes)) {
+                        totalMinutes += 30; // шукаємо вільний слот
+                    }
+
+                    // Зберігаємо зайнятий час для цього дня
+                    usedTimesByDay[dateStr].add(totalMinutes);
+
+                    const finalHours = Math.floor(totalMinutes / 60) % 24;
+                    const finalMinutes = totalMinutes % 60;
+
+                    const timeStr_final = `${String(finalHours).padStart(2,'0')}:${String(finalMinutes).padStart(2,'0')}:00`;
+                    //const intakeTime = new Date(`${dateStr}T${timeStr_final}`);
 
                     await prisma.prescription_medications.create({
                         data: {
@@ -433,7 +451,7 @@ export class PatientsService {
                             quantity: Number(quantity),
                             frequency: `${timesPerDay} раз(и) на день`,
                             intake_date: date,
-                            intake_time: intakeTime
+                            intake_time: new Date(`1970-01-01T${timeStr_final}.000Z`)
                         }
                     });
                 }

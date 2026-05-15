@@ -17,11 +17,13 @@ import retrofit2.Response
 import android.content.Context
 import android.util.Log
 import android.view.ViewGroup
+import com.example.healthyhelper.network.container.FillConfirmRequest
 
 class AddMedicationDialogFragment(
     private val patientId: Int,
-    private val compartmentId: Int,
-    private val containerId: Int
+    private val compartmentNumber: Int,  // ← змінили з compartmentId
+    private val containerId: Int,
+    private val onSuccess: () -> Unit    // ← колбек замість навігації
 ) : DialogFragment() {
 
     private var prescriptionMap = emptyMap<String, Int>()
@@ -36,23 +38,17 @@ class AddMedicationDialogFragment(
         val btnOk = dialog.findViewById<Button>(R.id.btnOk)
         val btnCancel = dialog.findViewById<Button>(R.id.btnCancel)
 
-        val sharedPref = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val filledBy = sharedPref.getInt("user_id", -1)
-
+        // Завантажуємо призначення пацієнта
         RetrofitClient.containerApi.getTodaysPrescriptions(patientId)
             .enqueue(object : Callback<List<PrescriptionOption>> {
-                override fun onResponse(
-                    call: Call<List<PrescriptionOption>>,
-                    response: Response<List<PrescriptionOption>>
-                ) {
+                override fun onResponse(call: Call<List<PrescriptionOption>>, response: Response<List<PrescriptionOption>>) {
                     val list = response.body() ?: return
 
                     val labels = list.map {
                         val time = try {
-                            it.intake_time.substringAfter("T").substring(0, 5)
-                        } catch (e: Exception) {
-                            "??:??"
-                        }
+                            // Беремо час напряму як рядок без конвертації
+                            it.intake_time?.substring(0, 5) ?: "??:??"
+                        } catch (e: Exception) { "??:??" }
                         "${it.medication} - ${it.quantity} табл. - $time"
                     }
 
@@ -60,14 +56,12 @@ class AddMedicationDialogFragment(
                         labels[index] to item.prescription_med_id
                     }.toMap()
 
-                    val adapter = ArrayAdapter(
+                    spinner.adapter = ArrayAdapter(
                         requireContext(),
                         android.R.layout.simple_spinner_dropdown_item,
                         labels
                     )
-                    spinner.adapter = adapter
                 }
-
                 override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
                     Toast.makeText(requireContext(), "Помилка завантаження призначень", Toast.LENGTH_SHORT).show()
                 }
@@ -75,41 +69,32 @@ class AddMedicationDialogFragment(
 
         btnOk.setOnClickListener {
             val selectedLabel = spinner.selectedItem?.toString() ?: return@setOnClickListener
-            val prescriptionId = prescriptionMap[selectedLabel] ?: return@setOnClickListener
+            val prescriptionMedId = prescriptionMap[selectedLabel] ?: return@setOnClickListener
 
-            if (filledBy == -1) {
-                Toast.makeText(requireContext(), "Не знайдено ID користувача", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                return@setOnClickListener
-            }
-            Log.d("AddMedDebug", "filledBy = $filledBy")
-
-            RetrofitClient.containerApi.addMedicationToCompartment(
-                mapOf(
-                    "compartmentId" to compartmentId,
-                    "prescription_med_id" to prescriptionId,
-                    "filled_by" to filledBy
+            // Використовуємо новий fill/confirm
+            RetrofitClient.containerApi.fillConfirm(
+                FillConfirmRequest(
+                    containerId = containerId,
+                    compartmentNumber = compartmentNumber,
+                    prescription_med_id = prescriptionMedId
                 )
             ).enqueue(object : Callback<Unit> {
                 override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                    dialog.dismiss()
-                    requireParentFragment().findNavController().navigate(
-                        R.id.containerCompartmentFragment,
-                        Bundle().apply {
-                            putInt("containerId", containerId)
-                        }
-                    )
+                    if (response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Відсік заповнено ✅", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                        onSuccess() // ← перезавантажуємо список
+                    } else {
+                        Toast.makeText(requireContext(), "Помилка заповнення", Toast.LENGTH_SHORT).show()
+                    }
                 }
-
                 override fun onFailure(call: Call<Unit>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Помилка додавання препарату", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Помилка мережі", Toast.LENGTH_SHORT).show()
                 }
             })
         }
 
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
-        }
+        btnCancel.setOnClickListener { dialog.dismiss() }
 
         return dialog
     }

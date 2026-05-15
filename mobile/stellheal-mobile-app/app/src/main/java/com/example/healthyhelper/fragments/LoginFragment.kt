@@ -123,9 +123,7 @@ class LoginFragment : Fragment() {
                             if (task.isSuccessful) {
                                 val fcmToken = task.result
                                 Log.d("FCM_TOKEN_LOGIN", fcmToken)
-
-                                MyFirebaseMessagingService
-                                    .sendTokenToServer(requireContext(), fcmToken)
+                                MyFirebaseMessagingService.sendTokenToServer(requireContext(), fcmToken)
                             }
                         }
 

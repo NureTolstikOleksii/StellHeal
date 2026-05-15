@@ -25,8 +25,15 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
     private val args: TreatmentFragmentArgs by navArgs()
     private var currentContainer: ContainerResponse? = null
 
+    // Лічильник завантажених запитів
+    private var loadedRequests = 0
+    private val totalRequests = 3 // пацієнт + лікування + контейнер
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
+        val treatmentScroll = view.findViewById<ScrollView>(R.id.treatmentScroll)
 
         val avatar = view.findViewById<ImageView>(R.id.imageAvatar)
         val fullName = view.findViewById<TextView>(R.id.textFullName)
@@ -47,9 +54,21 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
         val patientId = args.patientId
 
-        btnBack.setOnClickListener {
-            findNavController().popBackStack()
+        // Показуємо лоадер
+        progressBar.visibility = View.VISIBLE
+        treatmentScroll.visibility = View.GONE
+        loadedRequests = 0
+
+        // Функція що ховає лоадер коли всі запити завершені
+        fun onRequestComplete() {
+            loadedRequests++
+            if (loadedRequests >= totalRequests) {
+                progressBar.visibility = View.GONE
+                treatmentScroll.visibility = View.VISIBLE
+            }
         }
+
+        btnBack.setOnClickListener { findNavController().popBackStack() }
 
         btnViewStatistics.setOnClickListener {
             val action = TreatmentFragmentDirections
@@ -58,76 +77,90 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
         }
 
         // 1. Завантаження пацієнта
-        RetrofitClient.getPatientsApi().getAllPatients().enqueue(object : Callback<List<PatientResponse>> {
-            override fun onResponse(call: Call<List<PatientResponse>>, response: Response<List<PatientResponse>>) {
-                val patient = response.body()?.find { it.id == patientId }
-
-                if (patient != null) {
-                    avatar.load(patient.avatar) {
-                        placeholder(R.drawable.ic_default_avatar)
-                        error(R.drawable.ic_default_avatar)
-                        transformations(CircleCropTransformation())
+        RetrofitClient.getPatientsApi().getAllPatients()
+            .enqueue(object : Callback<List<PatientResponse>> {
+                override fun onResponse(
+                    call: Call<List<PatientResponse>>,
+                    response: Response<List<PatientResponse>>
+                ) {
+                    val patient = response.body()?.find { it.id == patientId }
+                    if (patient != null) {
+                        avatar.load(patient.avatar) {
+                            placeholder(R.drawable.ic_default_avatar)
+                            error(R.drawable.ic_default_avatar)
+                            transformations(CircleCropTransformation())
+                        }
+                        fullName.text = "${patient.name} (${formatDate(patient.dob)})"
+                        email.text = patient.email
+                        phone.text = patient.phone
+                        address.text = patient.address ?: "—"
                     }
-                    fullName.text = "${patient.name} (${formatDate(patient.dob)})"
-                    email.text = patient.email
-                    phone.text = patient.phone
-                    address.text = patient.address ?: "—"
+                    onRequestComplete()
                 }
-            }
-
-            override fun onFailure(call: Call<List<PatientResponse>>, t: Throwable) {
-                Toast.makeText(requireContext(), "Помилка з'єднання з пацієнтами", Toast.LENGTH_SHORT).show()
-            }
-        })
+                override fun onFailure(call: Call<List<PatientResponse>>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Помилка з'єднання з пацієнтами", Toast.LENGTH_SHORT).show()
+                    onRequestComplete()
+                }
+            })
 
         // 2. Завантаження лікування
-        RetrofitClient.treatmentApi.getCurrentTreatment(patientId).enqueue(object : Callback<List<TreatmentResponse>> {
-            override fun onResponse(call: Call<List<TreatmentResponse>>, response: Response<List<TreatmentResponse>>) {
-                if (response.isSuccessful) {
-                    val treatment = response.body()?.firstOrNull()
-                    if (treatment != null) {
-                        diagnosis.text = treatment.name
-                        dateRange.text = "Application date: ${formatDatePretty(treatment.date)}\nDuration: ${treatment.duration} days"
-                        textDoctor.text = "Doctor: ${treatment.doctor}"
-                        textWard.text = "Ward: ${treatment.ward}"
-                        medsContainer.removeAllViews()
-                        treatment.medications.forEachIndexed { index, med ->
-                            val medView = layoutInflater.inflate(R.layout.item_medication, medsContainer, false)
-                            medView.findViewById<TextView>(R.id.medName).text = "${index + 1}. $med"
-                            medsContainer.addView(medView)
+        RetrofitClient.treatmentApi.getCurrentTreatment(patientId)
+            .enqueue(object : Callback<List<TreatmentResponse>> {
+                override fun onResponse(
+                    call: Call<List<TreatmentResponse>>,
+                    response: Response<List<TreatmentResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val treatment = response.body()?.firstOrNull()
+                        if (treatment != null) {
+                            diagnosis.text = treatment.name
+                            dateRange.text = "Application date: ${formatDatePretty(treatment.date)}\nDuration: ${treatment.duration} days"
+                            textDoctor.text = "Doctor: ${treatment.doctor}"
+                            textWard.text = "Ward: ${treatment.ward}"
+                            medsContainer.removeAllViews()
+                            treatment.medications.forEachIndexed { index, med ->
+                                val medView = layoutInflater.inflate(R.layout.item_medication, medsContainer, false)
+                                medView.findViewById<TextView>(R.id.medName).text = "${index + 1}. $med"
+                                medsContainer.addView(medView)
+                            }
                         }
                     }
+                    onRequestComplete()
                 }
-            }
-
-            override fun onFailure(call: Call<List<TreatmentResponse>>, t: Throwable) {
-                Toast.makeText(requireContext(), "Помилка при отриманні лікування", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        // 3. Перевірка: чи пацієнт вже має контейнер
-        RetrofitClient.containerApi.getAllContainers().enqueue(object : Callback<List<ContainerResponse>> {
-            override fun onResponse(call: Call<List<ContainerResponse>>, response: Response<List<ContainerResponse>>) {
-                val container = response.body()?.find { it.patientId == patientId }
-                if (container != null) {
-                    currentContainer = container
-                    btnAddContainer.visibility = View.GONE
-                    btnViewStatistics.visibility = View.VISIBLE
-                    btnUnassignContainer.visibility = View.VISIBLE
-                    getContainerDetails(container.container_id)
-                } else {
-                    currentContainer = null
-                    btnAddContainer.visibility = View.VISIBLE
-                    btnViewStatistics.visibility = View.GONE
-                    btnUnassignContainer.visibility = View.GONE
-                    containerCard.visibility = View.GONE
+                override fun onFailure(call: Call<List<TreatmentResponse>>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Помилка при отриманні лікування", Toast.LENGTH_SHORT).show()
+                    onRequestComplete()
                 }
-            }
+            })
 
-            override fun onFailure(call: Call<List<ContainerResponse>>, t: Throwable) {
-                Toast.makeText(requireContext(), "Помилка при перевірці контейнера", Toast.LENGTH_SHORT).show()
-            }
-        })
+        // 3. Перевірка контейнера
+        RetrofitClient.containerApi.getAllContainers()
+            .enqueue(object : Callback<List<ContainerResponse>> {
+                override fun onResponse(
+                    call: Call<List<ContainerResponse>>,
+                    response: Response<List<ContainerResponse>>
+                ) {
+                    val container = response.body()?.find { it.patientId == patientId }
+                    if (container != null) {
+                        currentContainer = container
+                        btnAddContainer.visibility = View.GONE
+                        btnViewStatistics.visibility = View.VISIBLE
+                        btnUnassignContainer.visibility = View.VISIBLE
+                        getContainerDetails(container.container_id)
+                    } else {
+                        currentContainer = null
+                        btnAddContainer.visibility = View.VISIBLE
+                        btnViewStatistics.visibility = View.GONE
+                        btnUnassignContainer.visibility = View.GONE
+                        containerCard.visibility = View.GONE
+                    }
+                    onRequestComplete()
+                }
+                override fun onFailure(call: Call<List<ContainerResponse>>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Помилка при перевірці контейнера", Toast.LENGTH_SHORT).show()
+                    onRequestComplete()
+                }
+            })
 
         // 4. Закріпити контейнер
         btnAddContainer.setOnClickListener {
@@ -146,7 +179,6 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                                 getContainerDetails(selected.container_id)
                             }
                         }
-
                         override fun onFailure(call: Call<Unit>, t: Throwable) {
                             Toast.makeText(requireContext(), "Помилка: ${t.message}", Toast.LENGTH_SHORT).show()
                         }
@@ -159,33 +191,33 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
         btnUnassignContainer.setOnClickListener {
             val current = currentContainer ?: return@setOnClickListener
             val request = AssignContainerRequest(current.container_id, patientId)
-            RetrofitClient.containerApi.unassignContainer(request).enqueue(object : Callback<Unit> {
-                override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                    if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Контейнер відкріплено", Toast.LENGTH_SHORT).show()
-                        currentContainer = null
-                        btnAddContainer.visibility = View.VISIBLE
-                        btnViewStatistics.visibility = View.GONE
-                        btnUnassignContainer.visibility = View.GONE
-                        containerCard.visibility = View.GONE
+            RetrofitClient.containerApi.unassignContainer(request)
+                .enqueue(object : Callback<Unit> {
+                    override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                        if (response.isSuccessful) {
+                            Toast.makeText(requireContext(), "Контейнер відкріплено", Toast.LENGTH_SHORT).show()
+                            currentContainer = null
+                            btnAddContainer.visibility = View.VISIBLE
+                            btnViewStatistics.visibility = View.GONE
+                            btnUnassignContainer.visibility = View.GONE
+                            containerCard.visibility = View.GONE
+                        }
                     }
-                }
-
-                override fun onFailure(call: Call<Unit>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Помилка: ${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
+                    override fun onFailure(call: Call<Unit>, t: Throwable) {
+                        Toast.makeText(requireContext(), "Помилка: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
         }
 
         btnConfigureContainer.setOnClickListener {
             val containerId = currentContainer?.container_id ?: return@setOnClickListener
-            val action = TreatmentFragmentDirections.actionTreatmentFragmentToContainerCompartmentFragment(containerId)
+            val action = TreatmentFragmentDirections
+                .actionTreatmentFragmentToContainerCompartmentFragment(containerId)
             findNavController().navigate(action)
         }
     }
 
     private fun getContainerDetails(containerId: Int) {
-
         val containerCard = view?.findViewById<LinearLayout>(R.id.containerCard) ?: return
         val containerTitle = view?.findViewById<TextView>(R.id.containerTitle) ?: return
         val containerStatus = view?.findViewById<TextView>(R.id.containerStatus) ?: return
@@ -194,7 +226,6 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
         RetrofitClient.containerApi.getContainerDetails(containerId)
             .enqueue(object : Callback<ContainerDetailsResponse> {
-
                 override fun onResponse(
                     call: Call<ContainerDetailsResponse>,
                     response: Response<ContainerDetailsResponse>
@@ -204,15 +235,18 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
                         containerCard.visibility = View.VISIBLE
                         containerTitle.text = "Container №${data.container_number}"
-                        containerStatus.text = "Status: ${data.status}"
-                        containerNetwork.text =
-                            if (data.status.lowercase() == "active")
-                                "Network: Connected"
+                        containerStatus.text = if (data.status.lowercase() == "active")
+                            "Status: Active" else "Status: Inactive"
+                        containerNetwork.text = if (data.is_online)
+                            "Network: Connected" else "Network: Disconnected"
+                        containerNetwork.setTextColor(
+                            if (data.is_online)
+                                android.graphics.Color.parseColor("#4CAF50")
                             else
-                                "Network: Not connected"
+                                android.graphics.Color.parseColor("#F44336")
+                        )
 
                         compartmentsInfo.removeAllViews()
-
                         data.compartments.forEach { info ->
                             val textView = TextView(requireContext())
                             textView.text = info
@@ -222,7 +256,6 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                         }
                     }
                 }
-
                 override fun onFailure(call: Call<ContainerDetailsResponse>, t: Throwable) {
                     Toast.makeText(requireContext(), "Помилка при завантаженні контейнера", Toast.LENGTH_SHORT).show()
                 }
@@ -237,7 +270,6 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
         return try {
             val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             val date = parser.parse(input ?: "") ?: return "—"
-
             val formatter = java.text.SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
             formatter.format(date)
         } catch (e: Exception) {

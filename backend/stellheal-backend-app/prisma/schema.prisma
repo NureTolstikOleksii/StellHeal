@@ -18,6 +18,8 @@ model compartment_medications {
   compartments             compartments?             @relation(fields: [compartment_id], references: [compartment_id], onDelete: Cascade)
   users                    users?                    @relation(fields: [filled_by], references: [user_id])
   prescription_medications prescription_medications? @relation(fields: [prescription_med_id], references: [prescription_med_id])
+  fill_session_id          Int?
+  fill_sessions            fill_sessions?            @relation(fields: [fill_session_id], references: [session_id])
 }
 
 model compartments {
@@ -26,16 +28,36 @@ model compartments {
   container_id            Int?
   compartment_medications compartment_medications[]
   containers              containers?               @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+  is_filled               Boolean?                  @default(false)
+  last_filled_at          DateTime?
 }
 
 model containers {
-  container_id     Int             @id @default(autoincrement())
+  container_id     Int  @id @default(autoincrement())
   container_number Int?
-  status           String?         @db.VarChar(50)
-  patient_id       Int?
-  compartments     compartments[]
-  users            users?          @relation(fields: [patient_id], references: [user_id])
-  notifications    notifications[]
+
+  status String? @db.VarChar(50) // active / inactive
+
+  patient_id Int?
+
+  // 🔥 НОВЕ (IoT)
+  device_uid    String? @unique // унікальний ID ESP32
+  device_secret String? // для auth
+  device_token  String? // опціонально
+
+  last_seen DateTime?
+  is_online Boolean?  @default(false)
+
+  firmware_version String?
+
+  compartments   compartments[]
+  users          users?            @relation(fields: [patient_id], references: [user_id])
+  notifications  notifications[]
+  fillSessions   fill_sessions[]
+  deviceCommands device_commands[]
+  deviceEvents   device_events[]
+
+  rfid_authenticated Boolean? @default(false)
 }
 
 model medical_staff {
@@ -137,6 +159,7 @@ model users {
   refreshTokens                                 refresh_tokens[]
   failed_login_attempts                         Int                       @default(0)
   lock_until                                    DateTime?
+  fillSessions                                  fill_sessions[]
 }
 
 model wards {
@@ -188,4 +211,49 @@ model refresh_tokens {
   created_at DateTime @default(now())
 
   users users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model fill_sessions {
+  session_id Int @id @default(autoincrement())
+
+  container_id Int
+  containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+
+  started_by Int
+  users      users @relation(fields: [started_by], references: [user_id])
+
+  status String // active / finished
+
+  started_at             DateTime                  @default(now())
+  finished_at            DateTime?
+  compartmentMedications compartment_medications[]
+}
+
+model device_commands {
+  id Int @id @default(autoincrement())
+
+  container_id Int
+  containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+
+  command String // rotate_to / open_top / open_bottom
+  payload Json?
+
+  status String @default("pending") // pending / done
+
+  created_at  DateTime  @default(now())
+  executed_at DateTime?
+}
+
+model device_events {
+  id Int @id @default(autoincrement())
+
+  container_id Int
+  containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+
+  type String // info / error / warning
+  code String? // MOTOR_ERROR / NO_PILL
+
+  message String?
+
+  created_at DateTime @default(now())
 }

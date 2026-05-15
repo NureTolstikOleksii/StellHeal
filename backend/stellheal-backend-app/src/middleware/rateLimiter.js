@@ -17,7 +17,7 @@ const createLimiter = (max, message) =>
 
 export const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 1000000,
     handler: (req, res) => {
         res.status(429).json({
             code: ERROR_CODES.TOO_MANY_REQUESTS,

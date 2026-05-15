@@ -5,9 +5,52 @@ import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { authorizeRoles } from '../../middleware/role.middleware.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+import jwt from "jsonwebtoken";
 
 const router = Router();
 const notificationService = new NotificationService();
+
+/**
+ * 🔐 Middleware для авторизації device
+ */
+function authenticateDevice(req, res, next) {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            throw new AppError(
+                ERROR_CODES.UNAUTHORIZED,
+                "Token required",
+                401
+            );
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.type !== "device") {
+            throw new AppError(
+                ERROR_CODES.FORBIDDEN,
+                "Invalid token type",
+                403
+            );
+        }
+
+        req.device = decoded; // { containerId }
+
+        next();
+
+    } catch (err) {
+        next(
+            new AppError(
+                ERROR_CODES.UNAUTHORIZED,
+                "Invalid token",
+                401
+            )
+        );
+    }
+}
 
 // отримання сповіщень (тільки свої)
 router.get(
@@ -98,5 +141,33 @@ router.post(
         }
     }
 );
+
+
+
+
+
+
+
+
+
+
+router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
+    try {
+        const { containerId } = req.device;
+        const { prescription_med_id } = req.body;
+
+        const result = await notificationService.sendWeightAlert(
+            containerId,
+            prescription_med_id
+        );
+
+        res.json(result);
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 
 export const notificationRouter = router;

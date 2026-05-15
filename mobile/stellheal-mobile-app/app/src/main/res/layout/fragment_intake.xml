@@ -22,6 +22,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Лоадер -->
+
     <TextView
         android:id="@+id/textTitle"
         android:layout_width="wrap_content"
@@ -32,13 +34,24 @@
         android:textColor="@color/black"
         android:textSize="26sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/scrollView"
+        app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.209"
+        app:layout_constraintHorizontal_bias="0.279"
         app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.589" />
+        app:layout_constraintVertical_bias="0.068" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
+
+    <!-- ScrollView прихований до завантаження -->
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
@@ -47,10 +60,11 @@
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
         android:paddingBottom="105dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnBack">
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -58,7 +72,6 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <!-- Календар -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -72,7 +85,6 @@
                     android:orientation="horizontal" />
             </HorizontalScrollView>
 
-            <!-- Коло -->
             <FrameLayout
                 android:id="@+id/progressWrapper"
                 android:layout_width="180dp"
@@ -112,7 +124,6 @@
                     android:textStyle="bold" />
             </FrameLayout>
 
-            <!-- Список прийомів -->
             <LinearLayout
                 android:id="@+id/intakeList"
                 android:layout_width="match_parent"

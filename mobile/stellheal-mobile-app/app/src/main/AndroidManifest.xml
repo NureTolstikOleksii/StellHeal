@@ -4,6 +4,7 @@
 
     <application
         android:name=".MyApp"
+        android:screenOrientation="portrait"
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

@@ -9,12 +9,10 @@
     android:background="@color/white"
     tools:context=".fragments.HomeFragment">
 
-    <!-- Тулбар -->
     <include
         android:id="@+id/topBar"
         layout="@layout/toolbar_staff" />
 
-    <!-- Заголовок -->
     <TextView
         android:id="@+id/textTitle"
         android:layout_width="wrap_content"
@@ -26,11 +24,20 @@
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/topBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/homeScrollView" />
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- ScrollView -->
+    <!-- Лоадер -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textTitle" />
+
+    <!-- ScrollView прихований до завантаження -->
     <ScrollView
         android:id="@+id/homeScrollView"
         android:layout_width="0dp"
@@ -39,6 +46,7 @@
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
         android:paddingBottom="105dp"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/textTitle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -50,7 +58,6 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <!-- Календар -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,7 +71,6 @@
                     android:orientation="horizontal" />
             </HorizontalScrollView>
 
-            <!-- Коло прогресу -->
             <FrameLayout
                 android:id="@+id/progressWrapper"
                 android:layout_width="180dp"
@@ -104,7 +110,6 @@
                     android:textStyle="bold" />
             </FrameLayout>
 
-            <!-- Список прийомів -->
             <LinearLayout
                 android:id="@+id/intakeList"
                 android:layout_width="match_parent"

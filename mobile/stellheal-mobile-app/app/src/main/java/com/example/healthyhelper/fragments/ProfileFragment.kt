@@ -95,6 +95,9 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
+        val profileScroll = view.findViewById<ScrollView>(R.id.profileScroll)
+
         val textFullName = view.findViewById<TextView>(R.id.textFullName)
         val textEmail = view.findViewById<TextView>(R.id.textEmail)
         val textPhone = view.findViewById<TextView>(R.id.textPhone)
@@ -103,7 +106,6 @@ class ProfileFragment : Fragment() {
         val textSpecialization = view.findViewById<TextView>(R.id.textSpecialization)
         val textShift = view.findViewById<TextView>(R.id.textShift)
         val textAdmissionDate = view.findViewById<TextView>(R.id.textAdmissionDate)
-
         val staffSection = view.findViewById<View>(R.id.staffSection)
         val patientSection = view.findViewById<View>(R.id.patientSection)
         val changePasswordButton = view.findViewById<Button>(R.id.btnChangePassword)
@@ -113,15 +115,22 @@ class ProfileFragment : Fragment() {
             avatarLauncher.launch("image/*")
         }
 
+        // Показуємо лоадер, ховаємо контент
+        progressBar.visibility = View.VISIBLE
+        profileScroll.visibility = View.GONE
+
         RetrofitClient.profileApi.getProfile()
             .enqueue(object : Callback<UserProfileResponse> {
                 override fun onResponse(
                     call: Call<UserProfileResponse>,
                     response: Response<UserProfileResponse>
                 ) {
+                    // Ховаємо лоадер, показуємо контент
+                    progressBar.visibility = View.GONE
+                    profileScroll.visibility = View.VISIBLE
+
                     if (response.isSuccessful) {
                         val user = response.body()
-
                         user?.let {
                             view.findViewById<ImageView>(R.id.imageAvatar).load(it.avatar) {
                                 placeholder(R.drawable.ic_default_avatar)
@@ -130,8 +139,7 @@ class ProfileFragment : Fragment() {
                                 crossfade(true)
                             }
 
-                            val fullName =
-                                "${it.last_name} ${it.first_name} ${it.patronymic.orEmpty()}"
+                            val fullName = "${it.last_name} ${it.first_name} ${it.patronymic.orEmpty()}"
                             textFullName.text = fullName.trim()
                             textEmail.text = it.login
                             textPhone.text = it.phone.orEmpty()
@@ -140,31 +148,25 @@ class ProfileFragment : Fragment() {
                             if (it.roles.role_name == "staff") {
                                 staffSection.visibility = View.VISIBLE
                                 patientSection.visibility = View.GONE
-
-                                textSpecialization.text =
-                                    it.medical_staff?.specialization.orEmpty()
+                                textSpecialization.text = it.medical_staff?.specialization.orEmpty()
                                 textShift.text = it.medical_staff?.shift.orEmpty()
-                                textAdmissionDate.text =
-                                    formatDate(it.medical_staff?.admission_date)
-
+                                textAdmissionDate.text = formatDate(it.medical_staff?.admission_date)
                             } else if (it.roles.role_name == "patient") {
                                 staffSection.visibility = View.GONE
                                 patientSection.visibility = View.VISIBLE
-
                                 textAddress.text = it.contact_info.orEmpty()
                             }
                         }
-
                     } else {
                         Toast.makeText(context, "Не вдалося завантажити профіль", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onFailure(call: Call<UserProfileResponse>, t: Throwable) {
+                    progressBar.visibility = View.GONE
                     Toast.makeText(context, "Помилка з'єднання: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             })
-
 
         logoutButton.setOnClickListener {
             Toast.makeText(context, "Ви вийшли з акаунту", Toast.LENGTH_SHORT).show()

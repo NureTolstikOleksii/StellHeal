@@ -16,10 +16,19 @@ import retrofit2.Response
 class DeviceFragment : Fragment(R.layout.fragment_device) {
 
     private lateinit var devicesContainer: LinearLayout
+    private lateinit var progressBar: ProgressBar
+    private lateinit var scrollView: ScrollView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         devicesContainer = view.findViewById(R.id.devicesContainer)
+        progressBar = view.findViewById(R.id.progressBar)
+        scrollView = view.findViewById(R.id.scrollView)
+
+        // Показуємо лоадер
+        progressBar.visibility = View.VISIBLE
+        scrollView.visibility = View.GONE
 
         RetrofitClient.containerApi.getAllContainerDetails()
             .enqueue(object : Callback<List<ContainerWithDetails>> {
@@ -27,6 +36,10 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                     call: Call<List<ContainerWithDetails>>,
                     response: Response<List<ContainerWithDetails>>
                 ) {
+                    // Ховаємо лоадер, показуємо список
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
+
                     val containers = response.body() ?: return
                     devicesContainer.removeAllViews()
 
@@ -42,17 +55,17 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         card.findViewById<TextView>(R.id.containerStatus).text =
                             "Status: ${container.status}"
                         card.findViewById<TextView>(R.id.containerNetwork).text =
-                            if (container.status.lowercase() == "active") "Network: Connected" else "Network: Not connected"
+                            if (container.status.lowercase() == "active")
+                                "Network: Connected"
+                            else
+                                "Network: Not connected"
 
                         val compLayout = card.findViewById<LinearLayout>(R.id.compartmentsInfo)
                         container.compartments.forEach { line ->
                             val text = TextView(requireContext())
                             text.text = line
                             text.setTextColor(
-                                ContextCompat.getColor(
-                                    requireContext(),
-                                    R.color.black
-                                )
+                                ContextCompat.getColor(requireContext(), R.color.black)
                             )
                             compLayout.addView(text)
                         }
@@ -69,6 +82,7 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                 }
 
                 override fun onFailure(call: Call<List<ContainerWithDetails>>, t: Throwable) {
+                    progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Failed to load containers",
@@ -77,5 +91,4 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                 }
             })
     }
-
 }

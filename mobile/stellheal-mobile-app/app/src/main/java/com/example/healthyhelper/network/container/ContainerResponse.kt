@@ -12,6 +12,8 @@ data class ContainerResponse(
 data class ContainerDetailsResponse(
     val container_number: Int,
     val status: String,
+    val is_online: Boolean,        // ← нове
+    val last_seen: String?,        // ← нове
     val compartments: List<String>,
     @SerializedName("patient_id")
     val patientId: Int?
@@ -46,4 +48,31 @@ data class ContainerWithDetails(
     val status: String,
     val compartments: List<String>,
     val patient_id: Int?
+)
+
+
+
+data class CompartmentResponse(
+    val compartment_id: Int,
+    val compartment_number: Int,
+    val is_filled: Boolean,
+    val last_filled_at: String?,
+    val medication: CompartmentMedication?
+)
+
+data class CompartmentMedication(
+    val name: String,
+    val dosage: String,
+    val intake_time: String?,
+    val intake_date: String?
+)
+
+data class FillConfirmRequest(
+    val containerId: Int,
+    val compartmentNumber: Int,
+    val prescription_med_id: Int
+)
+
+data class RfidStatusResponse(
+    val rfid_authenticated: Boolean
 )

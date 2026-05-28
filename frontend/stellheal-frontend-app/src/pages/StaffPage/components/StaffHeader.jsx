@@ -10,7 +10,7 @@ const StaffHeader = ({ onAddClick, staffCount, onOpenRoles, onExport }) => {
         <div className={styles.header}>
             <div className={styles.titleBlock}>
                 <div className={styles.pageTitleRow}>
-                    <FaUsers className={styles.pageTitleIcon} />
+                    {/*<FaUsers className={styles.pageTitleIcon} />*/}
                     <h2 className={styles.pageTitle}>{t('staff.title')}</h2>
                 </div>
                 <div className={styles.counts}>

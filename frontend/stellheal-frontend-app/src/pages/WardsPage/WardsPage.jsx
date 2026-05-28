@@ -128,9 +128,9 @@ const WardCard = ({ ward, onView, onEdit, onDelete, t }) => {
             style={{ cursor: 'pointer' }}
         >
             <div className={styles.wardTop}>
-                <div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>
-                    <FaHospital size={18} className={ward.is_blocked ? styles.wardIconBlockedColor : styles.wardIcon} />
-                </div>
+                {/*<div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>*/}
+                {/*    <FaHospital size={18} className={ward.is_blocked ? styles.wardIconBlockedColor : styles.wardIcon} />*/}
+                {/*</div>*/}
                 <div className={styles.wardInfo}>
                     <div className={styles.wardNumber}>
                         {t('wards.ward')} {ward.ward_number}
@@ -262,7 +262,7 @@ const WardsPage = () => {
             <div className={styles.pageHeader}>
                 <div className={styles.titleBlock}>
                     <div className={styles.pageTitleRow}>
-                        <FaHospital className={styles.pageTitleIcon} />
+                        {/*<FaHospital className={styles.pageTitleIcon} />*/}
                         <h2 className={styles.pageTitle}>{t('wards.title')}</h2>
                     </div>
                     <div className={styles.counts}>

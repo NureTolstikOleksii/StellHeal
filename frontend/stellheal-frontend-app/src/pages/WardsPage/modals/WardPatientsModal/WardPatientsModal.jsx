@@ -69,9 +69,9 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
-                        <div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>
-                            <FaHospital size={16} />
-                        </div>
+                        {/*<div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>*/}
+                        {/*    <FaHospital size={16} />*/}
+                        {/*</div>*/}
                         <div>
                             <div className={styles.titleRow}>
                                 <h3 className={styles.title}>

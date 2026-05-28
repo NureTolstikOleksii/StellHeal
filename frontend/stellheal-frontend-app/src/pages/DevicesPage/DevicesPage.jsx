@@ -194,7 +194,7 @@ const DevicesPage = () => {
             <div className={styles.pageHeader}>
                 <div className={styles.titleBlock}>
                     <div className={styles.pageTitleRow}>
-                        <FaMicrochip className={styles.pageTitleIcon} />
+                        {/*<FaMicrochip className={styles.pageTitleIcon} />*/}
                         <h2 className={styles.pageTitle}>{t('devices.title')}</h2>
                     </div>
                     <div className={styles.counts}>

@@ -145,7 +145,7 @@ const BackupPage = () => {
             {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
-                    <FaDatabase className={styles.pageTitleIcon} />
+                    {/*<FaDatabase className={styles.pageTitleIcon} />*/}
                     <h2 className={styles.pageTitle}>{t('backup.title')}</h2>
                 </div>
             </div>

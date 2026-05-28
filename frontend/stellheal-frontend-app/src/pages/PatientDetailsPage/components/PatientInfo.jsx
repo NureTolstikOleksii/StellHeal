@@ -66,17 +66,19 @@ const PatientInfo = ({ patient, setPatient, onAdd, onDownloadReport, role }) => 
                         <MdEditDocument size={13} /> {t('patient_info.add_prescription')}
                     </button>
                 )}
+                {role !== 'admin' && (
+                    <button
+                        className={styles.secondaryButton}
+                        onClick={() => navigate(`/main/patients/${patient.id}/files`)}
+                    >
+                        <FaPaperclip size={13} /> {t('patient_info.tests_and_research')}
+                    </button>
+                )}
                 <button
                     className={styles.secondaryButton}
                     onClick={() => onDownloadReport(patient.id)}
                 >
                     <FaFileDownload size={13} /> {t('patient_info.download_report')}
-                </button>
-                <button
-                    className={styles.secondaryButton}
-                    onClick={() => navigate(`/main/patients/${patient.id}/files`)}
-                >
-                    <FaPaperclip size={13} /> {t('patient_info.tests_and_research')}
                 </button>
             </div>
 

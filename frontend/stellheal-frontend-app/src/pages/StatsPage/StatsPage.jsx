@@ -149,7 +149,7 @@ const StatsPage = () => {
             {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
-                    <FaChartBar className={styles.pageTitleIcon} />
+                    {/*<FaChartBar className={styles.pageTitleIcon} />*/}
                     <h2 className={styles.pageTitle}>{t('stats.clinic_title')}</h2>
                 </div>
             </div>

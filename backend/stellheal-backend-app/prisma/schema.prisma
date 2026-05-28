@@ -32,30 +32,23 @@ model compartments {
 }
 
 model containers {
-  container_id     Int  @id @default(autoincrement())
-  container_number Int?
-
-  status String? @db.VarChar(50)
-
-  patient_id Int?
-
-  device_uid    String? @unique
-  device_secret String?
-  device_token  String?
-
-  last_seen DateTime?
-  is_online Boolean?  @default(false)
-
-  firmware_version String?
-
-  compartments   compartments[]
-  users          users?            @relation(fields: [patient_id], references: [user_id])
-  notifications  notifications[]
-  fillSessions   fill_sessions[]
-  deviceCommands device_commands[]
-  deviceEvents   device_events[]
-
-  rfid_authenticated Boolean? @default(false)
+  container_id       Int               @id @default(autoincrement())
+  container_number   Int?
+  status             String?           @db.VarChar(50)
+  patient_id         Int?
+  device_uid         String?           @unique
+  device_secret      String?
+  device_token       String?
+  last_seen          DateTime?
+  is_online          Boolean?          @default(false)
+  firmware_version   String?
+  compartments       compartments[]
+  users              users?            @relation(fields: [patient_id], references: [user_id])
+  notifications      notifications[]
+  fillSessions       fill_sessions[]
+  deviceCommands     device_commands[]
+  deviceEvents       device_events[]
+  rfid_authenticated Boolean?          @default(false)
 }
 
 model medical_staff {
@@ -113,21 +106,20 @@ model prescription_medications {
 }
 
 model prescriptions {
-  prescription_id Int       @id @default(autoincrement())
-  date_issued     DateTime? @db.Date
-  duration        Int?
-  patient_id      Int?
-  doctor_id       Int?
-  diagnosis       String?   @db.VarChar(255)
-  icd_code        String?   @db.VarChar(255)
-  ward_id         Int?
-  end_date        DateTime? @db.Date
-
-  complaints       String? // Скарги
-  anamnesis        String? // Анамнез захворювання
-  objective_status String? // Об'єктивний стан
-  recommendations  String? // Рекомендації щодо лікування
-  notes            String? // Примітки
+  prescription_id  Int       @id @default(autoincrement())
+  date_issued      DateTime? @db.Date
+  duration         Int?
+  patient_id       Int?
+  doctor_id        Int?
+  diagnosis        String?   @db.VarChar(255)
+  icd_code         String?   @db.VarChar(255)
+  ward_id          Int?
+  end_date         DateTime? @db.Date
+  complaints       String?
+  anamnesis        String?
+  objective_status String?
+  recommendations  String?
+  notes            String?
 
   prescription_files                    prescription_files[]
   prescription_medications              prescription_medications[]
@@ -198,80 +190,59 @@ model password_reset_tokens {
 }
 
 model audit_logs {
-  id Int @id @default(autoincrement())
-
-  user_id Int?
-  action  String @db.VarChar(100)
-
-  entity    String @db.VarChar(100)
-  entity_id Int?
-
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  action      String   @db.VarChar(100)
+  entity      String   @db.VarChar(100)
+  entity_id   Int?
   description String?
   metadata    Json?
-
-  ip_address String? @db.VarChar(50)
-
-  created_at DateTime @default(now())
-
-  users users? @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
+  ip_address  String?  @db.VarChar(50)
+  created_at  DateTime @default(now())
+  users       users?   @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
 }
 
 model refresh_tokens {
-  id      Int    @id @default(autoincrement())
-  user_id Int
-  token   String @unique
-
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token      String   @unique
   device     String?
   ip_address String?
-
-  is_revoked Boolean @default(false)
-
+  is_revoked Boolean  @default(false)
   expires_at DateTime
   created_at DateTime @default(now())
-
-  users users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  users      users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 }
 
 model fill_sessions {
-  session_id Int @id @default(autoincrement())
-
-  container_id Int
-  containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
-
-  started_by Int
-  users      users @relation(fields: [started_by], references: [user_id])
-
-  status String
-
+  session_id             Int                       @id @default(autoincrement())
+  container_id           Int
+  containers             containers                @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
+  started_by             Int
+  users                  users                     @relation(fields: [started_by], references: [user_id])
+  status                 String
   started_at             DateTime                  @default(now())
   finished_at            DateTime?
   compartmentMedications compartment_medications[]
 }
 
 model device_commands {
-  id Int @id @default(autoincrement())
-
+  id           Int        @id @default(autoincrement())
   container_id Int
   containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
-
-  command String
-  payload Json?
-
-  status      String    @default("pending")
-  created_at  DateTime  @default(now())
-  executed_at DateTime?
+  command      String
+  payload      Json?
+  status       String     @default("pending")
+  created_at   DateTime   @default(now())
+  executed_at  DateTime?
 }
 
 model device_events {
-  id Int @id @default(autoincrement())
-
+  id           Int        @id @default(autoincrement())
   container_id Int
   containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
-
-  type String
-  code String?
-
-  message String?
-
-  created_at DateTime @default(now())
+  type         String
+  code         String?
+  message      String?
+  created_at   DateTime   @default(now())
 }

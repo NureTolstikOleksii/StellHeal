@@ -11,15 +11,19 @@ import wardsRouter from '../modules/wards/wards.controller.js';
 import { staffRouter } from '../modules/staff/staff.controller.js';
 import { statsRouter } from '../modules/stats/stats.controller.js';
 import { backupRouter } from '../modules/backup/backup.controller.js';
+import { aiRouter } from '../modules/AI/ai.controller.js';
+import { icdRouter } from '../modules/icd/icd.controller.js';
 
 const router = Router();
 
-// 🔥 всі маршрути тут
 router.use('/auth', authRouter);
 router.use('/profile', profileRouter);
 
 router.use('/medication', medicationRouter);
 router.use('/patients', mainRouter);
+router.use('/ai', aiRouter);
+router.use('/icd', icdRouter);
+
 router.use('/wards', wardsRouter);
 router.use('/containers', containerRouter);
 router.use('/device', deviceRouter);

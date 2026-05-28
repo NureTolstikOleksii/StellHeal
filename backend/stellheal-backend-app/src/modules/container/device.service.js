@@ -333,64 +333,44 @@ export class DeviceService {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     async getCompartments(containerId) {
         const compartments = await prisma.compartments.findMany({
             where: { container_id: containerId },
-            orderBy: { compartment_number: "asc" },
+            orderBy: { compartment_number: 'asc' },
             include: {
                 compartment_medications: {
-                    orderBy: { fill_time: "desc" },
+                    orderBy: { fill_time: 'desc' },
                     take: 1,
                     include: {
-                        prescription_medications: {
-                            include: {
-                                medications: true
-                            }
-                        }
+                        prescription_medications: true  // medications більше не потрібен
                     }
                 }
             }
         });
 
-        // Форматуємо відповідь для мобільного
         return compartments.map(c => {
             const med = c.compartment_medications[0]?.prescription_medications;
-            const medication_info = med?.medications;
 
             return {
                 compartment_id: c.compartment_id,
                 compartment_number: c.compartment_number,
                 is_filled: c.is_filled,
                 last_filled_at: c.last_filled_at,
-                medication: medication_info
+                medication: med
                     ? {
-                        name: medication_info.name,
-                        dosage: medication_info.dosage,
+                        name: med.medication_name || 'Unknown', // ← тепер з текстового поля
+                        dosage: `${med.quantity} од.`,
                         intake_time: med.intake_time
-                            ? new Date(med.intake_time).toISOString().substring(11, 16) // "17:00"
+                            ? new Date(med.intake_time).toISOString().substring(11, 16)
                             : null,
                         intake_date: med.intake_date
-                            ? new Date(med.intake_date).toISOString().substring(0, 10) // "2026-05-01"
+                            ? new Date(med.intake_date).toISOString().substring(0, 10)
                             : null,
                     }
                     : null
             };
         });
     }
-
 
     async rotateToCompartment(containerId, compartmentNumber) {
         const compartment = await prisma.compartments.findFirst({
@@ -486,16 +466,6 @@ export class DeviceService {
     }
 
 
-
-
-
-
-
-
-
-
-
-
     async sendWeightAlert(containerId, prescriptionMedId) {
         const now = new Date();
 
@@ -561,12 +531,4 @@ export class DeviceService {
 
         return { message: "Alert sent", notification_id: notification.notification_id };
     }
-
-
-
-
-
 }
-
-
-

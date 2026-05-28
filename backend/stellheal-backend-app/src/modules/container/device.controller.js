@@ -9,7 +9,7 @@ const deviceService = new DeviceService();
 const router = Router();
 
 /**
- * 🔐 Middleware для авторизації device
+ * Middleware для авторизації device
  */
 function authenticateDevice(req, res, next) {
     try {
@@ -51,7 +51,7 @@ function authenticateDevice(req, res, next) {
 }
 
 /**
- * 🔐 POST /device/auth
+ * POST /device/auth
  */
 router.post("/auth", async (req, res, next) => {
     try {
@@ -75,7 +75,7 @@ router.post("/auth", async (req, res, next) => {
 });
 
 /**
- * ❤️ POST /device/heartbeat
+ * POST /device/heartbeat
  */
 router.post("/heartbeat", authenticateDevice, async (req, res, next) => {
     try {
@@ -91,7 +91,7 @@ router.post("/heartbeat", authenticateDevice, async (req, res, next) => {
 });
 
 /**
- * 📡 GET /device/commands
+ * GET /device/commands
  */
 router.get("/commands", authenticateDevice, async (req, res, next) => {
     try {
@@ -107,7 +107,7 @@ router.get("/commands", authenticateDevice, async (req, res, next) => {
 });
 
 /**
- * ✅ POST /device/commands/:id/done
+ * POST /device/commands/:id/done
  */
 router.post("/commands/:id/done", authenticateDevice, async (req, res, next) => {
     try {
@@ -121,7 +121,7 @@ router.post("/commands/:id/done", authenticateDevice, async (req, res, next) => 
 });
 
 /**
- * 💊 GET /device/next-intake
+ * GET /device/next-intake
  */
 router.get("/next-intake", authenticateDevice, async (req, res, next) => {
     try {
@@ -143,7 +143,7 @@ router.get("/next-intake", authenticateDevice, async (req, res, next) => {
 });
 
 /**
- * 💊 POST /device/intake
+ * POST /device/intake
  */
 router.post("/intake", authenticateDevice, async (req, res, next) => {
     try {

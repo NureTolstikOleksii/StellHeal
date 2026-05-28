@@ -6,7 +6,6 @@ import {authenticateToken} from "../../middleware/auth.middleware.js";
 import { forgotPassword, resetPassword } from './auth.controller.js';
 import { authorizeRoles } from "../../middleware/role.middleware.js";
 
-// приклад ролей
 const ADMIN = 3;
 const DOCTOR = 2;
 

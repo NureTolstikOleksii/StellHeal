@@ -11,25 +11,30 @@ const MuiDatePicker = ({ value, onChange }) => {
     const { i18n } = useTranslation();
     const locale = i18n.language === 'uk' ? uk : enUS;
 
-    const isMobile = useMediaQuery('(max-width:768px)');
-
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={locale}>
             <DatePicker
                 value={value}
                 onChange={onChange}
                 format="dd.MM.yyyy"
+                PopperProps={{
+                    style: { zIndex: 99999 }
+                }}
                 slotProps={{
                     textField: {
                         placeholder: i18n.language === 'uk' ? 'дд.мм.рррр' : 'dd.mm.yyyy',
                         size: 'small',
                         variant: 'outlined',
+                        fullWidth: true,
                         sx: {
-                            backgroundColor: '#fff',
-                            borderRadius: '8px',
-                            width: isMobile ? '100%' : '32%'
+                            backgroundColor: '#f9fafb',
+                            borderRadius: '9px',
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: '9px',
+                                fontSize: '14px',
+                            },
                         }
-                    }
+                    },
                 }}
             />
         </LocalizationProvider>

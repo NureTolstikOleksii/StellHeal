@@ -32,9 +32,9 @@ export const sendWelcomeEmail = async (to, password) => {
             subject: 'Вітаємо у StellHeal!',
             html: htmlContent,
         });
-        console.log(`✅ Welcome email sent to ${to}`);
+        console.log(`Welcome email sent to ${to}`);
     } catch (error) {
-        console.error(`❌ Error sending welcome email:`, error);
+        console.error(`Error sending welcome email:`, error);
         throw error;
     }
 };
@@ -62,9 +62,9 @@ export const sendStaffCredentialsEmail = async (to, password) => {
             subject: 'Доступ до системи StellHeal',
             html: htmlContent,
         });
-        console.log(`✅ Staff credentials email sent to ${to}`);
+        console.log(`Staff credentials email sent to ${to}`);
     } catch (error) {
-        console.error(`❌ Error sending staff email:`, error);
+        console.error(`Error sending staff email:`, error);
         throw error;
     }
 };
@@ -96,9 +96,9 @@ export const sendResetPasswordEmail = async (to, token) => {
             subject: 'Інструкції для відновлення пароля',
             html: htmlContent,
         });
-        console.log(`✅ Reset password email sent to ${to}`);
+        console.log(`Reset password email sent to ${to}`);
     } catch (error) {
-        console.error(`❌ Error sending reset email:`, error);
+        console.error(`Error sending reset email:`, error);
         throw error;
     }
 };

@@ -11,7 +11,7 @@ const router = Router();
 const notificationService = new NotificationService();
 
 /**
- * 🔐 Middleware для авторизації device
+ * Middleware для авторизації device
  */
 function authenticateDevice(req, res, next) {
     try {
@@ -37,7 +37,7 @@ function authenticateDevice(req, res, next) {
             );
         }
 
-        req.device = decoded; // { containerId }
+        req.device = decoded;
 
         next();
 
@@ -142,15 +142,6 @@ router.post(
     }
 );
 
-
-
-
-
-
-
-
-
-
 router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -167,7 +158,5 @@ router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
         next(err);
     }
 });
-
-
 
 export const notificationRouter = router;

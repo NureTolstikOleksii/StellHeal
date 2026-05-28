@@ -29,7 +29,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         showNotification(title, body)
 
-        // 🔥 ДОДАТИ ОЦЕ
         val intent = Intent("NEW_NOTIFICATION")
         intent.setPackage(packageName)
         sendBroadcast(intent)

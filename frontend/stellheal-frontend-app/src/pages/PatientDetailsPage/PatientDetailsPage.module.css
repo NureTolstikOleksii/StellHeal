@@ -1,41 +1,7 @@
+/* ── Layout ──────────────────────────────────────────────────────────────────── */
 .pageWrapper {
-    display: flex;
-    gap: 24px;
-    padding-top: 10px;
-    background-color: #ffffff;
-}
-
-.sidebar {
-    width: 300px;
-    background-color: #F0F0F5;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.15);
-}
-
-.mainContent {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-}
-
-.section {
-    background-color: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
-}
-
-.section h3 {
-    margin-top: 0;
-}
-
-.historyHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    font-family: inherit;
+    background: #fff;
 }
 
 .loading,
@@ -46,155 +12,524 @@
     color: #888;
 }
 
+/* ── Breadcrumb header (same as Create/Edit pages) ───────────────────────────── */
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
 
-.patientInfoCard {
+.breadcrumb {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.01em;
+}
+
+.breadcrumbLink {
+    color: #1976d2;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.breadcrumbLink:hover { color: #1565c0; text-decoration: underline; }
+.breadcrumbSep { color: #d1d5db; }
+
+.pageTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pageTitleIcon {
+    font-size: 22px;
+    color: #1976d2;
+    flex-shrink: 0;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.patientBadge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
     border-radius: 12px;
+    padding: 10px 16px;
+}
+
+.patientAvatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0e7ff;
+}
+
+.patientName { font-weight: 600; font-size: 14px; color: #111827; }
+.patientMeta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+/* ── Content row ─────────────────────────────────────────────────────────────── */
+.contentRow {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.mainContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+.sidebar {
+    width: 350px;
+    flex-shrink: 0;
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────────── */
+.section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 14px 0;
+}
+
+.historyHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.historyHeader .sectionTitle { margin-bottom: 0; }
+
+/* ── Sidebar patient card ────────────────────────────────────────────────────── */
+.patientInfoCard {
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    border-radius: 14px;
     padding: 20px;
     text-align: center;
 }
 
 .avatar {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 0;
+    margin-bottom: 12px;
+    border: 3px solid #e0e7ff;
 }
 
 .name {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    margin-top: 0;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: #111827;
 }
 
-.info {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 4px;
+.infoList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.infoRow {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.infoLabel {
+    font-size: 10px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.infoValue {
+    font-size: 13px;
+    color: #374151;
 }
 
 .buttonBlock {
-    margin-top: 12px;
-    margin-bottom: 12px;
     display: flex;
     gap: 8px;
     justify-content: center;
+    margin-top: 30px;
     flex-wrap: wrap;
 }
 
-.editButton, .deleteButton {
-    padding: 6px 14px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: #ffffff;
-}
-
 .editButton {
-    background-color: #ffffff;
-    color: #1967D2;
-    border: 1px solid #1967D2;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: 1px solid #1967d2;
+    background: #fff;
+    color: #1967d2;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
 }
+.editButton:hover { background: #eff6ff; }
 
 .deleteButton {
-    background-color: #ffffff;
-    color: #D32F2F;
-    border: 1px solid #D32F2F;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: 1px solid #d32f2f;
+    background: #fff;
+    color: #d32f2f;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.deleteButton:hover { background: #fef2f2; }
+
+.actionButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .primaryButton {
-    background-color: #1976d2;
-    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #1976d2;
+    color: #fff;
     border: none;
     padding: 10px 14px;
-    border-radius: 8px;
-    margin-top: 16px;
+    border-radius: 9px;
     cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s;
     width: 100%;
 }
+.primaryButton:hover { background: #1565c0; }
 
 .secondaryButton {
-    border: 1px solid #0d6efd;
-    background-color: white;
-    color: #0d6efd;
-    padding: 10px 14px;
-    border-radius: 8px;
-    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid #1976d2;
+    background: #fff;
+    color: #1976d2;
+    padding: 9px 14px;
+    border-radius: 9px;
     cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
     width: 100%;
 }
+.secondaryButton:hover { background: #eff6ff; }
 
+/* ── Diagnosis card ──────────────────────────────────────────────────────────── */
 .card {
-    background-color: #f8f8f8;
+    background: #fff;
     border-radius: 12px;
     padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.15);
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .cardHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 14px;
+    gap: 12px;
+}
+
+.cardTitleBlock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
 }
 
 .cardTitle {
-    font-weight: bold;
-    font-size: 16px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #111827;
 }
 
-.actions button {
-    margin-left: 8px;
-    padding: 4px 10px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    cursor: pointer;
+.cardDates {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.icdBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1976d2;
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .deleteBtn {
-    background-color: #ffffff;
-    color: #d32f2f;
-    border: 1px solid #fd0000 !important;
+    padding: 5px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid #ef4444;
+    background: #fff;
+    color: #ef4444;
+    cursor: pointer;
+    transition: background 0.15s;
 }
+.deleteBtn:hover { background: #fef2f2; }
 
 .statusDone {
-    color: #28a745;
+    color: #16a34a;
+    font-size: 13px;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.statusIcon {
-    font-size: 18px;
-}
+.statusIcon { font-size: 15px; }
 
+/* ── Medications ─────────────────────────────────────────────────────────────── */
 .medicationsList {
-    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
 }
 
 .medicationItem {
-    background-color: #1976d2;
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 8px;
-    margin: 6px 0;
-    width: fit-content;
+    background: #1976d2;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 13px;
 }
 
+/* ── Footer info row ─────────────────────────────────────────────────────────── */
 .detailsRow {
     display: flex;
     gap: 20px;
-    font-size: 14px;
-    color: #000000;
-    margin-top: 10px;
+    font-size: 13px;
+    color: #6b7280;
     flex-wrap: wrap;
 }
 
+/* ── Expand button ───────────────────────────────────────────────────────────── */
+.expandBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 5px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f9fafb;
+    font-size: 12px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.expandBtn:hover { background: #f3f4f6; }
+
+/* ── Details panel ───────────────────────────────────────────────────────────── */
+.detailsPanel {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: #f8f9fc;
+    border-radius: 10px;
+    border: 1px solid #e8edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Кнопки дій в деталях */
+.detailActions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e8edf5;
+    margin-bottom: 4px;
+}
+
+.filesBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid #1976d2;
+    background: #fff;
+    color: #1976d2;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.filesBtn:hover { background: #eff6ff; }
+
+.editBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid #f59e0b;
+    background: #fff;
+    color: #b45309;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.editBtn:hover { background: #fffbeb; }
+
+.statsBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid #22c55e;
+    background: #fff;
+    color: #16a34a;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.statsBtn:hover { background: #f0fdf4; }
+
+/* ── Detail items ────────────────────────────────────────────────────────────── */
+.detailItem {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.detailLabel {
+    font-size: 10px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detailValue {
+    font-size: 13px;
+    color: #1a1a2e;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* ── Files modal ─────────────────────────────────────────────────────────────── */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.filesModal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    width: 500px;
+    max-width: 90vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.filesModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.filesModalTitle { font-size: 15px; font-weight: 600; }
+
+.filesModalClose {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    font-size: 16px;
+}
+
+.filesModalLoading,
+.filesModalEmpty { text-align: center; padding: 24px; color: #aaa; font-size: 14px; }
+.filesModalError  { text-align: center; padding: 24px; color: #d32f2f; font-size: 14px; }
+
+.fileRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e0e6f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+}
+.fileRow:hover { background: #f0f6ff; }
+
+.fileRowType  { font-size: 13px; flex-shrink: 0; }
+.fileRowName  { flex: 1; font-size: 13px; color: #1976d2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileRowDate  { font-size: 12px; color: #aaa; flex-shrink: 0; }
+
+/* ── Year selector ───────────────────────────────────────────────────────────── */
 .yearSelector {
     display: flex;
     align-items: center;
@@ -202,71 +537,39 @@
 }
 
 .yearButton {
-    background-color: transparent;
+    background: transparent;
     border: none;
     cursor: pointer;
     font-size: 16px;
     padding: 6px;
     color: #1976d2;
-    transition: transform 0.1s ease-in-out;
+    transition: transform 0.1s;
 }
-
-.yearButton:hover {
-    transform: scale(1.1);
-}
+.yearButton:hover { transform: scale(1.1); }
 
 .yearText {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
     color: #333;
 }
 
+/* ── Spinner ─────────────────────────────────────────────────────────────────── */
+.spinner {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-    .pageWrapper {
-        flex-direction: column-reverse;
-        gap: 16px;
-        padding: 10px;
-    }
-
-    .sidebar {
-        width: 100%;
-        padding: 16px;
-    }
-
-    .mainContent {
-        gap: 24px;
-    }
-
-    .section {
-        padding: 16px;
-    }
-
-    .card {
-        padding: 16px;
-    }
-
-    .cardHeader {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .detailsRow {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .primaryButton,
-    .secondaryButton {
-        width: 100%;
-    }
-
-    .editButton, .deleteButton {
-        width: 100%;
-    }
-
-    .yearSelector {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+    .pageHeader { flex-direction: column; }
+    .contentRow { flex-direction: column-reverse; gap: 16px; }
+    .sidebar { width: 100%; }
+    .card { padding: 16px; }
+    .cardHeader { flex-direction: column; align-items: flex-start; }
+    .detailsRow { flex-direction: column; gap: 6px; }
+    .detailActions { flex-direction: column; }
 }

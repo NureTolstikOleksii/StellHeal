@@ -3,7 +3,7 @@ import { StaffService } from './staff.service.js';
 
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { authorizeRoles } from '../../middleware/role.middleware.js';
-import { validateEmail } from "../../middleware/validation/validateEmail.js";
+import { validateEmail } from '../../middleware/validation/validateEmail.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 
@@ -14,7 +14,7 @@ const staffService = new StaffService();
 router.get(
     '/',
     authenticateToken,
-    authorizeRoles(4), // admin
+    authorizeRoles(4),
     async (req, res, next) => {
         try {
             res.json(await staffService.getAllMedicalStaff());
@@ -85,6 +85,36 @@ router.delete(
     }
 );
 
+// ── Заблокувати акаунт ────────────────────────────────────────────────────────
+router.patch(
+    '/:id/block',
+    authenticateToken,
+    authorizeRoles(4),
+    async (req, res, next) => {
+        try {
+            await staffService.blockStaff(Number(req.params.id), req);
+            res.json({ message: 'Акаунт заблоковано' });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// ── Розблокувати акаунт ───────────────────────────────────────────────────────
+router.patch(
+    '/:id/unblock',
+    authenticateToken,
+    authorizeRoles(4),
+    async (req, res, next) => {
+        try {
+            await staffService.unblockStaff(Number(req.params.id), req);
+            res.json({ message: 'Акаунт розблоковано' });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
 // get user roles ok
 router.get(
     '/roles',
@@ -107,11 +137,9 @@ router.post(
     async (req, res, next) => {
         try {
             const { role_name } = req.body;
-
             if (!role_name) {
                 return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'role_name required', 400));
             }
-
             res.status(201).json(await staffService.createRole(role_name, req));
         } catch (err) {
             next(err);
@@ -157,10 +185,8 @@ router.get(
     async (req, res, next) => {
         try {
             const buffer = await staffService.exportStaffToExcel(req);
-
             res.setHeader('Content-Disposition', 'attachment; filename="staff_export.xlsx"');
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
             res.send(buffer);
         } catch (err) {
             next(err);

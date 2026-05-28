@@ -3,7 +3,7 @@ import { ProfileService } from './profile.service.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { validatePasswordStrength } from '../../middleware/validation/validatePasswordStrength.js';
 import { validateEmail } from '../../middleware/validation/validateEmail.js';
-import { uploadAvatar } from '../../integrations/cloudinary/uploadAvatar.js';
+import { uploadAvatar } from '../../integrations/azure/uploadAvatar.js';
 
 const router = Router();
 const profileService = new ProfileService();

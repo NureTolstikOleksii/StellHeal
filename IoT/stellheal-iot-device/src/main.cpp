@@ -32,9 +32,6 @@ HX711 scale;
 float calibration_factor = -7050.0; 
 
 
-
-
-
 const int COMPARTMENT_STEPS[9] = {
     0,    // [0] — не використовується
     0,    // [1] — відсік 1, позиція датчика Холла
@@ -47,8 +44,8 @@ const int COMPARTMENT_STEPS[9] = {
     1792  // [8]
 };
 
-const char* API_BASE = "http://192.168.0.100:4200/api/device";
-const char* API_BASE_NOTIFIC = "http://192.168.0.100:4200/api/notification";
+const char* API_BASE = "http://192.168.0.104:4200/api/device";
+const char* API_BASE_NOTIFIC = "http://192.168.0.104:4200/api/notification";
 const char* DEVICE_UID = "esp32_container_1";
 const char* DEVICE_SECRET = "s3cr3t_container_1_2026";
 int lastPrescriptionMedId = -1;

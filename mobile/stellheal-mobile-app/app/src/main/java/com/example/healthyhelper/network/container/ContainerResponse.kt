@@ -31,7 +31,7 @@ data class FilledCompartmentResponse(
 
 data class PrescriptionOption(
     val prescription_med_id: Int,
-    val medication: String,
+    val medication_name: String,
     val quantity: Int,
     val intake_time: String,
     val isTaken: Boolean?
@@ -46,6 +46,7 @@ data class ContainerWithDetails(
     val container_id: Int,
     val container_number: Int,
     val status: String,
+    val is_online: Boolean,
     val compartments: List<String>,
     val patient_id: Int?
 )

@@ -49,7 +49,7 @@ class AddMedicationDialogFragment(
                             // Беремо час напряму як рядок без конвертації
                             it.intake_time?.substring(0, 5) ?: "??:??"
                         } catch (e: Exception) { "??:??" }
-                        "${it.medication} - ${it.quantity} табл. - $time"
+                        "${it.medication_name} - ${it.quantity} табл. - $time"
                     }
 
                     prescriptionMap = list.mapIndexed { index, item ->

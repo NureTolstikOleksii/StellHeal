@@ -59,7 +59,13 @@ export const login = async (req, res, next) => {
 
 export const refresh = async (req, res, next) => {
     try {
-        const result = await authService.refreshSession(req.body.refreshToken, req);
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'Refresh token відсутній' });
+        }
+
+        const result = await authService.refreshSession(refreshToken, req);
         res.json(result);
     } catch (err) {
         next(err);
@@ -68,7 +74,13 @@ export const refresh = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
     try {
-        await authService.logoutByToken(req.body.refreshToken, req);
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: 'Refresh token відсутній' });
+        }
+
+        await authService.logoutByToken(refreshToken, req);
         res.json({ message: 'Logged out' });
     } catch (err) {
         next(err);

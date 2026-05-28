@@ -6,6 +6,7 @@ import { globalLimiter } from './src/middleware/rateLimiter.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 import prisma from './src/config/prisma.js';
 import mainRouter from './src/routes/index.js';
+import {BackupService} from "./src/modules/backup/backup.service.js";
 
 dotenv.config();
 
@@ -19,8 +20,8 @@ const PORT = process.env.PORT || 4200;
 
 async function main() {
     app.set('trust proxy', 1);
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     app.use(cookieParser());
     app.use(globalLimiter);
 
@@ -51,6 +52,8 @@ async function main() {
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
         });
+        const backupService = new BackupService();
+        backupService.startScheduler();
     } catch (err) {
         console.error('Failed to connect to DB:', err);
         await prisma.$disconnect();

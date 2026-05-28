@@ -5,7 +5,6 @@ export const validateEmail = (req, res, next) => {
     const { email, login } = req.body;
     const emailToValidate = email || login;
 
-    // Якщо поле не передане — просто йдемо далі (для PATCH це ок)
     if (!emailToValidate) {
         return next();
     }

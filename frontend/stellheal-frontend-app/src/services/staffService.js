@@ -43,7 +43,7 @@ export const updateStaff = async (staffData) => {
 
 export const exportStaffToExcel = async () => {
     const res = await axios.get('/staff/export', {
-        responseType: 'blob', // ВАЖЛИВО: щоб отримати файл
+        responseType: 'blob',
     });
 
     const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -61,3 +61,7 @@ export const deleteStaff = async (userId) => {
     const res = await axios.delete(`/staff/${userId}`);
     return res.data;
 };
+
+export const blockStaff   = (userId) => axios.patch(`/staff/${userId}/block`);
+
+export const unblockStaff = (userId) => axios.patch(`/staff/${userId}/unblock`);

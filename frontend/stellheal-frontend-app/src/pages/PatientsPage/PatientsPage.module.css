@@ -1,28 +1,55 @@
-/* ---------- ВЕРХНЯ ПАНЕЛЬ ---------- */
-.headerPanel {
-    background-color: #fff;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+/* ── Wrapper ─────────────────────────────────────────────────────────────────── */
+.wrapper {
+    padding: 8px 0 60px;
+    font-family: inherit;
 }
 
-.pageTitle {
-    font-size: 20px;
-    font-weight: bold;
-    margin: 10px 0px 10px;
+/* ── Header panel ────────────────────────────────────────────────────────────── */
+.headerPanel {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .titleBlock {
     display: flex;
     flex-direction: column;
+    gap: 12px;
 }
 
+.pageTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pageTitleIcon {
+    font-size: 22px;
+    color: #1976d2;
+    flex-shrink: 0;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+/* ── Stats counts ────────────────────────────────────────────────────────────── */
 .counts {
     display: flex;
     align-items: center;
     gap: 24px;
+    padding: 10px 16px;
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    border-radius: 12px;
+    width: fit-content;
 }
 
 .countItem {
@@ -32,181 +59,177 @@
 }
 
 .countValue {
-    font-size: 35px;
-    font-weight: bold;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1976d2;
+    line-height: 1;
 }
 
 .countLabel {
-    font-size: 15px;
-    color: #666;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
 }
 
 .divider {
-    height: 40px;
+    height: 36px;
     width: 1px;
-    background-color: #ddd;
+    background: #e0e7ff;
 }
 
+/* ── Action buttons ──────────────────────────────────────────────────────────── */
 .actions {
     display: flex;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .addBtn {
-    background-color: #1976d2;
-    width: 200px;
-    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1976d2;
+    color: #fff;
     border: none;
-    padding: 12px 24px;
+    padding: 11px 20px;
     border-radius: 10px;
     font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    font-weight: 500;
     cursor: pointer;
-    text-align: center;
+    transition: background 0.15s;
+    box-shadow: 0 2px 6px rgba(25,118,210,0.2);
 }
-
-.addBtn:hover {
-    background-color: #1565c0;
-}
+.addBtn:hover { background: #1565c0; }
 
 .exportBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     border: 1px solid #1976d2;
-    width: 200px;
     color: #1976d2;
-    padding: 12px 20px;
+    background: #fff;
+    padding: 10px 20px;
     border-radius: 10px;
     font-size: 14px;
-    background-color: transparent;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.exportBtn:hover { background: #eff6ff; }
+
+.icon { font-size: 15px; }
+
+/* ── Search panel ────────────────────────────────────────────────────────────── */
+.searchPanel {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.searchRow {
     display: flex;
     align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    text-align: center;
-}
-
-.exportBtn:hover {
-    background-color: #f1f6ff;
-}
-
-.icon {
-    font-size: 16px;
-}
-
-/* ---------- ПАНЕЛЬ ПОШУКУ ТА ФІЛЬТРІВ ---------- */
-.searchPanel {
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px 2px rgba(0,0,0,0.12);
-}
-
-.topRow {
-    display: flex;
-    align-items: flex-end; /* вирівнює всі дочірні елементи по нижньому краю */
     gap: 12px;
     flex-wrap: wrap;
 }
 
-.searchInput {
-    flex: 2;
+.searchInputWrapper {
+    position: relative;
+    flex: 1;
     min-width: 200px;
-    padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
     font-size: 14px;
-    background-color: #f9f9f9;
+    pointer-events: none;
 }
 
-.searchButton {
-    padding: 10px 24px;
-    background-color: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 500;
-    cursor: pointer;
+.searchInput {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    font-size: 14px;
+    background: #f9fafb;
+    color: #111827;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
 }
+.searchInput:focus { outline: none; border-color: #1976d2; background: #fff; }
 
-.searchButton:hover {
-    background-color: #1565c0;
-}
-
-.bottomRow {
+.sortGroup {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-shrink: 0;
 }
+
+.sortIcon { color: #6b7280; font-size: 14px; }
 
 .sortLabel {
-    font-size: 14px;
-    color: #333;
-    width: 100px;
-}
-
-.sortSelect {
-    flex: 1;
-    min-width: 140px;
-    padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #fff;
-    font-size: 14px;
-}
-
-/* Пошукове поле */
-.searchInput {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 14px;
-    background-color: #f9f9f9;
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
 }
 
 .sortSelect {
     padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #fff;
     font-size: 14px;
+    color: #111827;
     min-width: 160px;
+    cursor: pointer;
+}
+.sortSelect:focus { outline: none; border-color: #1976d2; }
+
+/* ── Table ───────────────────────────────────────────────────────────────────── */
+.tableWrapper {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-/* ---------- ТАБЛИЦЯ ПАЦІЄНТІВ ---------- */
 .patientsTable {
     width: 100%;
     border-collapse: collapse;
-    background-color: #fff;
-    border-radius: 12px;
-    overflow: hidden;
 }
 
 .patientsTable th {
-    background-color: #E0EDFF;
+    background: #eff6ff;
     text-align: left;
-    padding: 14px 16px;
-    font-size: 14px;
+    padding: 13px 16px;
+    font-size: 13px;
     font-weight: 600;
-    color: #444;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .patientsTable td {
     padding: 12px 16px;
     font-size: 14px;
-    color: #333;
-    border-top: 1px solid #eee;
+    color: #374151;
+    border-top: 1px solid #f3f4f6;
     vertical-align: middle;
 }
 
-.patientsTable tr:hover {
-    background-color: #f9f9f9;
+.clickableRow {
+    cursor: pointer;
+    transition: background 0.12s;
 }
+.clickableRow:hover { background: #f8faff; }
 
 .userCell {
     display: flex;
@@ -216,83 +239,43 @@
 }
 
 .userAvatar {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid #e0e7ff;
+    flex-shrink: 0;
 }
 
-/* ---------- АДАПТИВНІСТЬ ---------- */
+.noResults {
+    text-align: center;
+    padding: 40px 16px !important;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 950px) {
-    .headerPanel {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 16px;
-    }
+    .headerPanel { flex-direction: column; align-items: stretch; }
+    .actions { justify-content: stretch; }
+    .addBtn, .exportBtn { flex: 1; justify-content: center; }
+    .searchRow { flex-direction: column; align-items: stretch; }
+    .searchInputWrapper { min-width: unset; }
+    .sortGroup { justify-content: flex-start; }
+    .sortSelect { flex: 1; }
 
-    .titleBlock2 {
-        align-self: flex-start;
-    }
-
-    .counts {
-        justify-content: center;
-        gap: 32px;
-    }
-
-    .actions {
-        justify-content: center;
-        width: 100%;
-    }
-
-    .searchPanel {
-        gap: 16px;
-    }
-
-    .topRow,
-    .bottomRow {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-
-    .searchInput,
-    .searchButton,
-    .sortSelect {
-        width: 100%;
-    }
-
-    .patientsTable thead {
-        display: none; /* Приховуємо заголовки таблиці */
-    }
-
+    .patientsTable thead { display: none; }
     .patientsTable tr {
         display: block;
-        margin-bottom: 12px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        margin-bottom: 10px;
+        border-radius: 10px;
         padding: 12px;
+        border: 1px solid #e5e7eb;
     }
-
     .patientsTable td {
         display: block;
-        text-align: left; /* додано */
-        padding: 8px 0;
+        padding: 6px 0;
         border: none;
     }
-
-    .patientsTable td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: #555;
-    }
-
-    .userCell {
-        gap: 8px;
-    }
-
-    .userAvatar {
-        width: 28px;
-        height: 28px;
-    }
+    .userCell { gap: 8px; }
 }

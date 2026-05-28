@@ -11,17 +11,21 @@ import PatientDetailsPage from "../pages/PatientDetailsPage/PatientDetailsPage.j
 import ResetPasswordPage from "../pages/ResetPasswordPage/ResetPasswordPage.jsx";
 
 import ProtectedRoute from "./ProtectedRoute.jsx";
+import CreatePrescriptionPage from "../pages/CreatePrescriptionPage/CreatePrescriptionPage.jsx";
+import PatientFilesPage from "../pages/PatientFilesPage/PatientFilesPage.jsx";
+import EditPrescriptionPage from "../pages/EditPrescriptionPage/EditPrescriptionPage.jsx";
+import PatientIntakePage from "../pages/PatientIntakePage/PatientIntakePage.jsx";
 
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
 
-                {/* 🔓 Публічні */}
+                {/* Публічні */}
                 <Route path="/" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* 🔐 Приватні */}
+                {/* Приватні */}
                 <Route
                     path="/main"
                     element={
@@ -37,6 +41,10 @@ export default function AppRouter() {
                     <Route path="stats" element={<StatsPage />} />
                     <Route path="backup" element={<BackupPage />} />
                     <Route path="patients/:id" element={<PatientDetailsPage />} />
+                    <Route path="patients/:id/prescription/new" element={<CreatePrescriptionPage />} />
+                    <Route path="patients/:id/files" element={<PatientFilesPage />} />
+                    <Route path="patients/:id/prescription/:prescriptionId/edit" element={<EditPrescriptionPage />} />
+                    <Route path="patients/:id/intake/:prescriptionId" element={<PatientIntakePage />} />
                 </Route>
 
             </Routes>

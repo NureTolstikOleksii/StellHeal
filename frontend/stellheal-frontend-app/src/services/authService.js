@@ -14,11 +14,11 @@ export const refreshTokenRequest = async (refreshToken) => {
 };
 
 export const sendResetEmail = async (email) => {
-    return await axios.post('/login/forgot-password', { email });
+    return await axios.post('/auth/forgot-password', { email });
 };
 
 export const resetPassword = async (token, newPassword) => {
-    return await axios.post('/login/reset-password', {
+    return await axios.post('/auth/reset-password', {
         token,
         newPassword
     });

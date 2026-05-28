@@ -12,7 +12,6 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Наші помилки
     if (err instanceof AppError) {
         return res.status(err.status).json({
             code: err.code,

@@ -1,0 +1,159 @@
+.pageWrapper {
+    margin: 0 auto;
+}
+
+.centered {
+    text-align: center;
+    padding: 60px;
+    color: #888;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.spinner {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.breadcrumb {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.breadcrumbLink {
+    color: #1976d2;
+    cursor: pointer;
+}
+
+.breadcrumbLink:hover { text-decoration: underline; }
+.breadcrumbSep { color: #bbb; }
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.patientBadge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0f4ff;
+    border: 1px solid #d0d9f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.patientAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.patientName { font-weight: 600; font-size: 14px; color: #1a1a2e; }
+.patientMeta { font-size: 12px; color: #666; }
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.filterBtn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #d0d5dd;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #444;
+}
+
+.filterBtn:hover { background: #f0f6ff; border-color: #1976d2; color: #1976d2; }
+
+.filterActive {
+    background: #1976d2 !important;
+    color: #fff !important;
+    border-color: #1976d2 !important;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.fileCard {
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.fileCard:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.fileCardType { font-size: 13px; font-weight: 600; }
+
+.fileCardName {
+    font-size: 14px;
+    color: #1a1a2e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileCardMeta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #888;
+}
+
+.fileCardOpen {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #1976d2;
+    margin-top: 4px;
+}
+
+.empty {
+    text-align: center;
+    padding: 60px;
+    color: #aaa;
+}
+
+.emptyIcon { font-size: 48px; margin-bottom: 12px; }

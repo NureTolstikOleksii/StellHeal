@@ -1,98 +1,93 @@
 import React from 'react';
 import styles from './Sidebar.module.css';
 import {
-    FaUserMd,
-    FaUserInjured,
-    FaMicrochip,
-    FaChartBar,
-    FaSave,
-    FaSignOutAlt
+    FaUserMd, FaUserInjured, FaMicrochip,
+    FaChartBar, FaSave, FaSignOutAlt, FaUser,
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import default_avatar from '../../assets/default_avatar.svg';
+import default_avatar from '../../assets/icons/default_avatar.svg';
 
 const Sidebar = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const navigate  = useNavigate();
+    const location  = useLocation();
     const { user, logout } = useAuth();
 
-    const role = user?.role;
+    const role        = user?.role;
     const currentPath = location.pathname;
 
-    // 🔐 Role-based links
     const links = role === 'admin'
         ? [
-            { key: 'profile', label: t('sidebar.profile'), icon: <FaUserMd /> },
-            { key: 'staff', label: t('sidebar.staff'), icon: <FaUserMd /> },
-            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured /> },
-            { key: 'devices', label: t('sidebar.devices'), icon: <FaMicrochip /> },
-            { key: 'stats', label: t('sidebar.stats'), icon: <FaChartBar /> },
-            { key: 'backup', label: t('sidebar.backup'), icon: <FaSave /> }
+            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />         },
+            { key: 'staff',    label: t('sidebar.staff'),    icon: <FaUserMd size={15} />       },
+            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} />  },
+            { key: 'devices',  label: t('sidebar.devices'),  icon: <FaMicrochip size={15} />    },
+            { key: 'stats',    label: t('sidebar.stats'),    icon: <FaChartBar size={15} />     },
+            { key: 'backup',   label: t('sidebar.backup'),   icon: <FaSave size={15} />         },
         ]
         : [
-            { key: 'profile', label: t('sidebar.profile'), icon: <FaUserMd /> },
-            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured /> }
+            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />         },
+            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} />  },
         ];
 
-    // 🔥 logout handler
     const handleLogout = () => {
-        const confirmLogout = window.confirm(t('sidebar.confirmLogout') || 'Вийти з акаунту?');
-        if (!confirmLogout) return;
-
-        logout(); // 🔥 сам робить redirect
+        if (window.confirm(t('sidebar.logout') + '?')) logout();
     };
+
+    const displayName = [user?.last_name, user?.first_name ? user.first_name.charAt(0) + '.' : '']
+        .filter(Boolean).join(' ');
 
     return (
         <aside className={styles.sidebar}>
 
-            {/* 👤 USER */}
-            <div className={styles.userInfo}>
-                <img
-                    src={
-                        user?.avatar
-                            ? `${user.avatar}?t=${Date.now()}`
-                            : default_avatar
-                    }
-                    alt="avatar"
-                    className={styles.avatar}
-                />
-
-                <p className={styles.name}>
-                    {user?.last_name} {user?.first_name?.charAt(0)}.
-                </p>
-
-                <p className={styles.role}>
-                    {user?.role}
-                </p>
+            {/* ── User block ── */}
+            <div className={styles.userBlock}>
+                <div className={styles.avatarWrapper}>
+                    <img
+                        src={user?.avatar ? `${user.avatar}?t=${Date.now()}` : default_avatar}
+                        alt="avatar"
+                        className={styles.avatar}
+                    />
+                    <div className={styles.onlineDot} />
+                </div>
+                <div className={styles.userInfo}>
+                    <span className={styles.userName}>{displayName || '—'}</span>
+                    <span className={styles.userRole}>{role}</span>
+                </div>
             </div>
 
-            {/* 📂 MENU */}
+            <div className={styles.divider} />
+
+            {/* ── Nav menu ── */}
             <nav className={styles.menu}>
                 {links.map(link => {
                     const isActive = currentPath.includes(link.key);
-
                     return (
                         <div
                             key={link.key}
-                            className={`${styles.menuItem} ${isActive ? styles.active : ''}`}
+                            className={`${styles.menuItem} ${isActive ? styles.menuItemActive : ''}`}
                             onClick={() => navigate(`/main/${link.key}`)}
                         >
-                            {link.icon}
-                            <span>{link.label}</span>
+                            <span className={`${styles.menuIcon} ${isActive ? styles.menuIconActive : ''}`}>
+                                {link.icon}
+                            </span>
+                            <span className={styles.menuLabel}>{link.label}</span>
+                            {isActive && <div className={styles.activeBar} />}
                         </div>
                     );
                 })}
             </nav>
 
-            {/* 🚪 LOGOUT */}
-            <div className={styles.logout} onClick={handleLogout}>
-                <FaSignOutAlt />
-                <span>{t('sidebar.logout')}</span>
+            {/* ── Logout ── */}
+            <div className={styles.logoutBlock}>
+                <div className={styles.divider} />
+                <div className={styles.logout} onClick={handleLogout}>
+                    <FaSignOutAlt size={15} />
+                    <span>{t('sidebar.logout')}</span>
+                </div>
             </div>
-
         </aside>
     );
 };

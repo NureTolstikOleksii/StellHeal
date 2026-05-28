@@ -14,7 +14,6 @@ interface NotificationApi {
     @POST("notification/mark-read")
     fun markNotificationsRead(): Call<Void>
 
-    // 🔥 НОВИЙ ПРАВИЛЬНИЙ
     @POST("notification/fcm-token")
     fun sendFcmToken(
         @Body tokenRequest: FcmTokenRequest

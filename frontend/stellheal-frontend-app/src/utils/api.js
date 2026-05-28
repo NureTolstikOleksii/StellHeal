@@ -2,7 +2,7 @@ import axios from "axios";
 import {refreshTokenRequest} from "../services/authService.js";
 
 const api = axios.create({
-    baseURL: "http://localhost:4200/api",
+    baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
 let isRefreshing = false;
@@ -29,11 +29,14 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const isAuthEndpoint = originalRequest.url.includes('/auth/');
+        const refreshToken = localStorage.getItem('refreshToken');
 
         if (
             (error.response?.status === 401 || error.response?.status === 403) &&
             !originalRequest._retry &&
-            !originalRequest.url.includes("/auth/refresh")
+            !isAuthEndpoint &&
+            refreshToken
         ) {
             originalRequest._retry = true;
 
@@ -49,18 +52,15 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const refreshToken = localStorage.getItem("refreshToken");
-
                 const res = await refreshTokenRequest(refreshToken);
 
                 const newAccessToken = res.data.accessToken;
                 const newRefreshToken = res.data.refreshToken;
 
-                localStorage.setItem("accessToken", newAccessToken);
-                localStorage.setItem("refreshToken", newRefreshToken);
+                localStorage.setItem('accessToken', newAccessToken);
+                localStorage.setItem('refreshToken', newRefreshToken);
 
                 api.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
-
                 onRefreshed(newAccessToken);
                 isRefreshing = false;
 
@@ -70,8 +70,7 @@ api.interceptors.response.use(
             } catch (err) {
                 isRefreshing = false;
                 localStorage.clear();
-
-                window.location.href = "/"; // logout
+                window.location.href = '/';
                 return Promise.reject(err);
             }
         }

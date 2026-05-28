@@ -9,6 +9,61 @@ import {AppError} from "../../shared/errors/AppError.js";
 const router = Router();
 const containerService = new ContainerService();
 
+
+router.get('/:id/sessions', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const containerId = Number(req.params.id);
+        if (!containerId) {
+            return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId required', 400));
+        }
+        res.json(await containerService.getContainerSessions(containerId));
+    } catch (err) { next(err); }
+});
+
+// ── Реєстрація контейнера (тільки адмін) ─────────────────────────────────────
+router.post('/', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const { device_uid } = req.body;
+
+        if (!device_uid?.trim()) {
+            return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'device_uid is required', 400));
+        }
+
+        const container = await containerService.registerContainer(device_uid.trim(), req);
+        res.status(201).json(container);
+    } catch (err) { next(err); }
+});
+
+// ── Видалення контейнера (тільки адмін) ──────────────────────────────────────
+router.delete('/:id', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const containerId = Number(req.params.id);
+        if (!containerId) {
+            return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId required', 400));
+        }
+        await containerService.deleteContainer(containerId, req);
+        res.status(204).end();
+    } catch (err) { next(err); }
+});
+
+router.get(
+    '/:id/compartments/admin',
+    authenticateToken,
+    authorizeRoles(4), // тільки адмін
+    async (req, res, next) => {
+        try {
+            const containerId = Number(req.params.id);
+            if (!containerId) {
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId required', 400));
+            }
+            const data = await containerService.getAdminCompartments(containerId);
+            res.json(data);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
 // number of containers ok
 router.get(
     '/count',
@@ -272,7 +327,7 @@ router.get(
 
             res.json(prescriptions.map(p => ({
                 prescription_med_id: p.prescription_med_id,
-                medication: p.medications?.name || 'Unknown',
+                medication_name: p.medication_name || 'Unknown',
                 quantity: p.quantity,
                 intake_time: p.intake_time
                     ? new Date(p.intake_time).toISOString().substring(11, 16) // завжди UTC → "08:00"
@@ -568,5 +623,16 @@ router.post(
         }
     }
 );
+
+router.get('/:id/events', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const containerId = Number(req.params.id);
+        if (!containerId) {
+            return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId required', 400));
+        }
+        const events = await containerService.getContainerEvents(containerId);
+        res.json(events);
+    } catch (err) { next(err); }
+});
 
 export const containerRouter = router;

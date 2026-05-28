@@ -237,7 +237,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         meds.forEach { med ->
             val item = layoutInflater.inflate(R.layout.item_intake, intakeList, false)
 
-            item.findViewById<TextView>(R.id.medName).text = med.medication
+            item.findViewById<TextView>(R.id.medName).text = med.medication_name
             item.findViewById<TextView>(R.id.medQuantity).text =
                 "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
 

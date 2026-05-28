@@ -36,14 +36,13 @@ model containers {
   container_id     Int  @id @default(autoincrement())
   container_number Int?
 
-  status String? @db.VarChar(50) // active / inactive
+  status String? @db.VarChar(50)
 
   patient_id Int?
 
-  // 🔥 НОВЕ (IoT)
-  device_uid    String? @unique // унікальний ID ESP32
-  device_secret String? // для auth
-  device_token  String? // опціонально
+  device_uid    String? @unique
+  device_secret String?
+  device_token  String?
 
   last_seen DateTime?
   is_online Boolean?  @default(false)
@@ -107,6 +106,7 @@ model prescription_medications {
   frequency               String?                   @db.VarChar(100)
   prescription_id         Int?
   medication_id           Int?
+  medication_name         String?                   @db.VarChar(255)
   intake_status           Boolean?
   compartment_medications compartment_medications[]
   medications             medications?              @relation(fields: [medication_id], references: [medication_id])
@@ -114,18 +114,37 @@ model prescription_medications {
 }
 
 model prescriptions {
-  prescription_id                       Int                        @id @default(autoincrement())
-  date_issued                           DateTime?                  @db.Date
-  duration                              Int?
-  patient_id                            Int?
-  doctor_id                             Int?
-  diagnosis                             String?                    @db.VarChar(255)
-  ward_id                               Int?
-  end_date                              DateTime?                  @db.Date
+  prescription_id Int       @id @default(autoincrement())
+  date_issued     DateTime? @db.Date
+  duration        Int?
+  patient_id      Int?
+  doctor_id       Int?
+  diagnosis       String?   @db.VarChar(255)
+  icd_code        String?   @db.VarChar(255)
+  ward_id         Int?
+  end_date        DateTime? @db.Date
+
+  complaints       String? // Скарги
+  anamnesis        String? // Анамнез захворювання
+  objective_status String? // Об'єктивний стан
+  recommendations  String? // Рекомендації щодо лікування
+  notes            String? // Примітки
+
+  prescription_files                    prescription_files[]
   prescription_medications              prescription_medications[]
   users_prescriptions_doctor_idTousers  users?                     @relation("prescriptions_doctor_idTousers", fields: [doctor_id], references: [user_id])
   users_prescriptions_patient_idTousers users?                     @relation("prescriptions_patient_idTousers", fields: [patient_id], references: [user_id], onDelete: Cascade)
   wards                                 wards?                     @relation(fields: [ward_id], references: [ward_id])
+}
+
+model prescription_files {
+  file_id         Int            @id @default(autoincrement())
+  prescription_id Int?
+  file_name       String?        @db.VarChar(255)
+  file_url        String?        @db.VarChar(500)
+  file_type       String?        @db.VarChar(100)
+  uploaded_at     DateTime?      @default(now())
+  prescriptions   prescriptions? @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade)
 }
 
 model roles {
@@ -202,7 +221,7 @@ model refresh_tokens {
   user_id Int
   token   String @unique
 
-  device     String? // 🔥 пристрій
+  device     String?
   ip_address String?
 
   is_revoked Boolean @default(false)
@@ -222,7 +241,7 @@ model fill_sessions {
   started_by Int
   users      users @relation(fields: [started_by], references: [user_id])
 
-  status String // active / finished
+  status String
 
   started_at             DateTime                  @default(now())
   finished_at            DateTime?
@@ -235,11 +254,10 @@ model device_commands {
   container_id Int
   containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
 
-  command String // rotate_to / open_top / open_bottom
+  command String
   payload Json?
 
-  status String @default("pending") // pending / done
-
+  status      String    @default("pending")
   created_at  DateTime  @default(now())
   executed_at DateTime?
 }
@@ -250,8 +268,8 @@ model device_events {
   container_id Int
   containers   containers @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
 
-  type String // info / error / warning
-  code String? // MOTOR_ERROR / NO_PILL
+  type String
+  code String?
 
   message String?
 

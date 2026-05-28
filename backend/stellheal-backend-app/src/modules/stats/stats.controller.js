@@ -8,33 +8,42 @@ const router = Router();
 const statsService = new StatsService();
 
 // clinic statistics ok
-router.get(
-    '/clinic',
-    authenticateToken,
-    authorizeRoles(4), // admin
-    async (req, res, next) => {
-        try {
-            const data = await statsService.getClinicStats();
-            res.json(data);
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+router.get('/clinic', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        res.json(await statsService.getClinicStats());
+    } catch (err) { next(err); }
+});
 
 // doctor statistics ok
-router.get(
-    '/doctors',
-    authenticateToken,
-    authorizeRoles(4), // admin
-    async (req, res, next) => {
-        try {
-            const data = await statsService.getDoctorStats();
-            res.json(data);
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+router.get('/doctors', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        res.json(await statsService.getDoctorStats());
+    } catch (err) { next(err); }
+});
+
+// intake week stats ok
+router.get('/intake-week', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        res.json(await statsService.getIntakeWeekStats());
+    } catch (err) { next(err); }
+});
+
+// ── Audit log ─────────────────────────────────────────────────────────────────
+router.get('/audit-log', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const limit  = Math.min(Number(req.query.limit)  || 50, 200);
+        const page   = Math.max(Number(req.query.page)   || 1,  1);
+        const action = req.query.action || null;
+
+        res.json(await statsService.getAuditLog({ limit, action, page }));
+    } catch (err) { next(err); }
+});
+
+// ── Типи дій для фільтру ──────────────────────────────────────────────────────
+router.get('/audit-actions', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        res.json(await statsService.getAuditActions());
+    } catch (err) { next(err); }
+});
 
 export const statsRouter = router;

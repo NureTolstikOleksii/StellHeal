@@ -18,9 +18,8 @@ const LOCK_TIME = 5 * 60 * 1000;
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
-// 🔥 ДОЗВОЛЕНІ РОЛІ (під себе налаштуй)
-const ALLOWED_ROLES = [1, 2, 3]; // наприклад: Patient, Doctor, Nurse
-const WEB_ROLES = [1, 4];     // doctor, admin (підстав свої)
+const ALLOWED_ROLES = [1, 2, 3];
+const WEB_ROLES = [1, 4];
 const MOBILE_ROLES = [2, 3]
 
 export class AuthService {
@@ -144,7 +143,12 @@ export class AuthService {
         }
 
         if (user.lock_until && new Date(user.lock_until) > new Date()) {
-            throw new AppError(ERROR_CODES.ACCOUNT_LOCKED, 'Too many attempts', 403);
+            const minutesLeft = Math.ceil((new Date(user.lock_until) - new Date()) / 60000);
+            throw new AppError(
+                ERROR_CODES.ACCOUNT_LOCKED,
+                `Too many attempts. Try again in ${minutesLeft} min`,
+                403
+            );
         }
 
         const isMatch = await bcrypt.compare(password, user.password);

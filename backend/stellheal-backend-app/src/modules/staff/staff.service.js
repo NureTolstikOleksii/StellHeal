@@ -8,7 +8,7 @@ import { AppError } from '../../shared/errors/AppError.js';
 import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 import { logAction } from '../../shared/logger/auditLogger.js';
 import { ACTIONS } from '../../shared/constants/actions.js';
-import {generateStaffExcel} from "../../integrations/reports/staffExcel.service.js";
+import { generateStaffExcel } from '../../integrations/reports/staffExcel.service.js';
 
 export class StaffService {
 
@@ -61,59 +61,54 @@ export class StaffService {
 
         const createdUser = await prisma.users.create({
             data: {
-                first_name: data.first_name,
-                last_name: data.last_name,
-                patronymic: data.patronymic,
-                login: data.login,
-                phone: data.phone,
-                contact_info: data.contact_info,
-                password: hashedPassword,
-                role_id: Number(data.role_id),
+                first_name:    data.first_name,
+                last_name:     data.last_name,
+                patronymic:    data.patronymic,
+                login:         data.login,
+                phone:         data.phone,
+                contact_info:  data.contact_info,
+                password:      hashedPassword,
+                role_id:       Number(data.role_id),
                 date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
             }
         });
 
-        // medical staff
         if (data.specialization) {
             await prisma.medical_staff.create({
                 data: {
-                    staff_id: createdUser.user_id,
+                    staff_id:       createdUser.user_id,
                     specialization: data.specialization,
-                    shift: data.shift || null,
+                    shift:          data.shift || null,
                     admission_date: new Date()
                 }
             });
         }
 
-        // email
         await sendStaffCredentialsEmail(data.login, plainPassword);
 
-        // notification
         const now = new Date();
-
         const notification = await prisma.notifications.create({
             data: {
                 notification_type: 'success',
-                message: `Вітаємо вас у системі, ${createdUser.last_name} ${createdUser.first_name}!`,
+                message:   `Вітаємо вас у системі, ${createdUser.last_name} ${createdUser.first_name}!`,
                 sent_date: now,
-                sent_time: new Date(now.getTime() + (3 * 60 * 60 * 1000)),
+                sent_time: new Date(now.getTime() + 3 * 60 * 60 * 1000),
             }
         });
 
         await prisma.notification_recipients.create({
             data: {
                 notification_id: notification.notification_id,
-                user_id: createdUser.user_id,
-                is_read: false
+                user_id:         createdUser.user_id,
+                is_read:         false
             }
         });
 
-        // audit log
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.CREATE_STAFF,
-            entity: 'STAFF',
-            entityId: createdUser.user_id,
+            userId:      req.user.userId,
+            action:      ACTIONS.CREATE_STAFF,
+            entity:      'STAFF',
+            entityId:    createdUser.user_id,
             description: 'Staff created with credentials and notification',
             req
         });
@@ -123,73 +118,32 @@ export class StaffService {
 
     // update employee ok
     async updateStaff(id, data, req) {
+        const { role_id, first_name, last_name, patronymic, login, phone, contact_info, date_of_birth, specialization, shift } = data;
 
-        const {
-            role_id,
-            first_name,
-            last_name,
-            patronymic,
-            login,
-            phone,
-            contact_info,
-            date_of_birth,
-            specialization,
-            shift
-        } = data;
-
-        // existence check
-        const existing = await prisma.users.findUnique({
-            where: { user_id: id }
-        });
-
+        const existing = await prisma.users.findUnique({ where: { user_id: id } });
         if (!existing) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Працівника не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
         }
 
         const [updatedUser] = await prisma.$transaction([
-
             prisma.users.update({
                 where: { user_id: id },
                 data: {
-                    first_name,
-                    last_name,
-                    patronymic,
-                    login,
-                    phone,
-                    contact_info,
+                    first_name, last_name, patronymic, login, phone, contact_info,
                     date_of_birth: date_of_birth ? new Date(date_of_birth) : null,
                     role_id
                 }
             }),
-
             prisma.medical_staff.upsert({
-                where: { staff_id: id },
-                update: {
-                    specialization,
-                    shift
-                },
-                create: {
-                    staff_id: id,
-                    specialization,
-                    shift,
-                    admission_date: new Date()
-                }
+                where:  { staff_id: id },
+                update: { specialization, shift },
+                create: { staff_id: id, specialization, shift, admission_date: new Date() }
             })
-
         ]);
 
-        // audit log
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.UPDATE_STAFF,
-            entity: 'STAFF',
-            entityId: id,
-            description: 'Staff updated',
-            req
+            userId: req.user.userId, action: ACTIONS.UPDATE_STAFF,
+            entity: 'STAFF', entityId: id, description: 'Staff updated', req
         });
 
         return updatedUser;
@@ -197,39 +151,76 @@ export class StaffService {
 
     // delete employee ok
     async deleteStaff(userId, req) {
-
-        const existing = await prisma.users.findUnique({
-            where: { user_id: userId }
-        });
-
+        const existing = await prisma.users.findUnique({ where: { user_id: userId } });
         if (!existing) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Працівника не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
         }
 
-        await prisma.users.delete({
-            where: { user_id: userId }
+        await prisma.users.delete({ where: { user_id: userId } });
+
+        await logAction({
+            userId: req.user.userId, action: ACTIONS.DELETE_STAFF,
+            entity: 'STAFF', entityId: userId, description: 'Staff deleted', req
+        });
+    }
+
+    // ── Заблокувати акаунт ────────────────────────────────────────────────────
+    async blockStaff(userId, req) {
+        const user = await prisma.users.findUnique({ where: { user_id: userId } });
+        if (!user) {
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+        }
+
+        const updated = await prisma.users.update({
+            where: { user_id: userId },
+            data: {
+                // 100 років — фактично назавжди
+                lock_until: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000),
+            }
         });
 
-        // audit log
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.DELETE_STAFF,
-            entity: 'STAFF',
-            entityId: userId,
-            description: 'Staff deleted',
+            userId:      req.user.userId,
+            action:      ACTIONS.SECURITY_EVENT,
+            entity:      'STAFF',
+            entityId:    userId,
+            description: `Staff account blocked: ${user.login}`,
             req
         });
+
+        return updated;
+    }
+
+    // ── Розблокувати акаунт ───────────────────────────────────────────────────
+    async unblockStaff(userId, req) {
+        const user = await prisma.users.findUnique({ where: { user_id: userId } });
+        if (!user) {
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+        }
+
+        const updated = await prisma.users.update({
+            where: { user_id: userId },
+            data: {
+                lock_until:            null,
+                failed_login_attempts: 0,
+            }
+        });
+
+        await logAction({
+            userId:      req.user.userId,
+            action:      ACTIONS.SECURITY_EVENT,
+            entity:      'STAFF',
+            entityId:    userId,
+            description: `Staff account unblocked: ${user.login}`,
+            req
+        });
+
+        return updated;
     }
 
     // get user roles ok
     async getRoles() {
-        return await prisma.roles.findMany({
-            orderBy: { role_id: 'asc' }
-        });
+        return await prisma.roles.findMany({ orderBy: { role_id: 'asc' } });
     }
 
     // create role ok
@@ -237,33 +228,16 @@ export class StaffService {
         const name = role_name.trim();
 
         const existing = await prisma.roles.findFirst({
-            where: {
-                role_name: {
-                    equals: name,
-                    mode: 'insensitive'
-                }
-            }
+            where: { role_name: { equals: name, mode: 'insensitive' } }
         });
+        if (existing) throw new AppError(ERROR_CODES.CONFLICT, 'Role already exists', 409);
 
-        if (existing) {
-            throw new AppError(
-                ERROR_CODES.CONFLICT,
-                'Role already exists',
-                409
-            );
-        }
-
-        const newRole = await prisma.roles.create({
-            data: { role_name: name }
-        });
+        const newRole = await prisma.roles.create({ data: { role_name: name } });
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.CREATE_ROLE,
-            entity: 'ROLE',
-            entityId: newRole.role_id,
-            description: `Role created: ${name}`,
-            req
+            userId: req.user.userId, action: ACTIONS.CREATE_ROLE,
+            entity: 'ROLE', entityId: newRole.role_id,
+            description: `Role created: ${name}`, req
         });
 
         return newRole;
@@ -271,100 +245,48 @@ export class StaffService {
 
     // delete role ok
     async deleteRole(roleId, req) {
-        const role = await prisma.roles.findUnique({
-            where: { role_id: roleId }
-        });
-
-        if (!role) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Role not found',
-                404
-            );
-        }
+        const role = await prisma.roles.findUnique({ where: { role_id: roleId } });
+        if (!role) throw new AppError(ERROR_CODES.NOT_FOUND, 'Role not found', 404);
 
         const SYSTEM_ROLES = ['admin', 'doctor', 'nurse', 'patient'];
-
         if (SYSTEM_ROLES.includes(role.role_name.toLowerCase())) {
-            throw new AppError(
-                ERROR_CODES.FORBIDDEN,
-                'Cannot delete system role',
-                403
-            );
+            throw new AppError(ERROR_CODES.FORBIDDEN, 'Cannot delete system role', 403);
         }
 
-        const usersWithRole = await prisma.users.count({
-            where: { role_id: roleId }
-        });
-
+        const usersWithRole = await prisma.users.count({ where: { role_id: roleId } });
         if (usersWithRole > 0) {
-            throw new AppError(
-                ERROR_CODES.CONFLICT,
-                'Role is assigned to users',
-                409
-            );
+            throw new AppError(ERROR_CODES.CONFLICT, 'Role is assigned to users', 409);
         }
 
-        await prisma.roles.delete({
-            where: { role_id: roleId }
-        });
+        await prisma.roles.delete({ where: { role_id: roleId } });
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.DELETE_ROLE,
-            entity: 'ROLE',
-            entityId: roleId,
-            description: `Role deleted: ${role.role_name}`,
-            req
+            userId: req.user.userId, action: ACTIONS.DELETE_ROLE,
+            entity: 'ROLE', entityId: roleId,
+            description: `Role deleted: ${role.role_name}`, req
         });
     }
 
     // update role ok
     async updateRole(roleId, role_name, req) {
-
-        const role = await prisma.roles.findUnique({
-            where: { role_id: roleId }
-        });
-
-        if (!role) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Role not found',
-                404
-            );
-        }
+        const role = await prisma.roles.findUnique({ where: { role_id: roleId } });
+        if (!role) throw new AppError(ERROR_CODES.NOT_FOUND, 'Role not found', 404);
 
         const name = role_name.trim();
         const existing = await prisma.roles.findFirst({
-            where: {
-                role_name: {
-                    equals: name,
-                    mode: 'insensitive'
-                },
-                NOT: { role_id: roleId }
-            }
+            where: { role_name: { equals: name, mode: 'insensitive' }, NOT: { role_id: roleId } }
         });
-
-        if (existing) {
-            throw new AppError(
-                ERROR_CODES.CONFLICT,
-                'Role already exists',
-                409
-            );
-        }
+        if (existing) throw new AppError(ERROR_CODES.CONFLICT, 'Role already exists', 409);
 
         const updated = await prisma.roles.update({
             where: { role_id: roleId },
-            data: { role_name: name }
+            data:  { role_name: name }
         });
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.UPDATE_ROLE,
-            entity: 'ROLE',
-            entityId: roleId,
-            description: `Role updated to: ${name}`,
-            req
+            userId: req.user.userId, action: ACTIONS.UPDATE_ROLE,
+            entity: 'ROLE', entityId: roleId,
+            description: `Role updated to: ${name}`, req
         });
 
         return updated;
@@ -373,24 +295,17 @@ export class StaffService {
     // get report ok
     async exportStaffToExcel(req) {
         const doctors = await prisma.users.findMany({
-            where: { role_id: 1 },
-            include: { medical_staff: true }
+            where: { role_id: 1 }, include: { medical_staff: true }
         });
-
         const nurses = await prisma.users.findMany({
-            where: { role_id: 2 },
-            include: { medical_staff: true }
+            where: { role_id: 2 }, include: { medical_staff: true }
         });
 
         const buffer = await generateStaffExcel(doctors, nurses);
 
-        // audit log
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.EXPORT_STAFF,
-            entity: 'STAFF',
-            description: 'Staff Excel exported',
-            req
+            userId: req.user.userId, action: ACTIONS.EXPORT_STAFF,
+            entity: 'STAFF', description: 'Staff Excel exported', req
         });
 
         return buffer;

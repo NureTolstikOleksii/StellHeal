@@ -9,39 +9,55 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const backupService = new BackupService();
 
-// last backup ok
-router.get(
-    '/last',
-    authenticateToken,
-    authorizeRoles(4),
-    async (req, res, next) => {
-        try {
-            const last = await backupService.getLastBackup();
-            res.json({ lastBackup: last || null });
-        } catch (err) {
-            next(err);
+// Останній бекап
+router.get('/last', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const last = await backupService.getLastBackup();
+        res.json({ lastBackup: last || null });
+    } catch (err) { next(err); }
+});
+
+// Список всіх бекапів
+router.get('/list', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const backups = await backupService.listBackups();
+        res.json(backups);
+    } catch (err) { next(err); }
+});
+
+// Створити бекап вручну
+router.post('/manual', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const backup = await backupService.createBackup('manual', req);
+        res.json({
+            message:   'Резервна копія створена успішно',
+            timestamp: backup.timestamp,
+            name:      backup.name,
+        });
+    } catch (err) { next(err); }
+});
+
+// Відновити з бекапу
+router.post('/restore', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const { name } = req.body;
+
+        if (!name?.trim()) {
+            return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'name is required', 400));
         }
-    }
-);
 
-// create backup (not ok)
-router.post(
-    '/manual',
-    authenticateToken,
-    authorizeRoles(4), // admin
-    async (req, res, next) => {
-        try {
-            const backup = await backupService.createBackup('manual', req);
+        const result = await backupService.restoreBackup(name.trim(), req);
+        res.json(result);
+    } catch (err) { next(err); }
+});
 
-            res.json({
-                message: 'Резервна копія створена успішно',
-                timestamp: backup.timestamp
-            });
-
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+// Видалити бекап
+router.delete('/:name', authenticateToken, authorizeRoles(4), async (req, res, next) => {
+    try {
+        const name = decodeURIComponent(req.params.name);
+        await backupService.deleteBackup(name, req);
+        res.status(204).end();
+    } catch (err) { next(err); }
+});
 
 export const backupRouter = router;

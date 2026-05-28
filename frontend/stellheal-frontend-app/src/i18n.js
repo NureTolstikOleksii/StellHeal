@@ -19,7 +19,6 @@ i18n
             escapeValue: false,
         },
         detection: {
-            // порядок визначення мови
             order: ['localStorage', 'navigator'],
             caches: ['localStorage'],
         }

@@ -55,10 +55,15 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         card.findViewById<TextView>(R.id.containerStatus).text =
                             "Status: ${container.status}"
                         card.findViewById<TextView>(R.id.containerNetwork).text =
-                            if (container.status.lowercase() == "active")
-                                "Network: Connected"
+                            if (container.is_online) "Network: Connected" else "Network: Disconnected"
+
+                        val networkText = card.findViewById<TextView>(R.id.containerNetwork)
+                        networkText.setTextColor(
+                            if (container.is_online)
+                                android.graphics.Color.parseColor("#4CAF50")
                             else
-                                "Network: Not connected"
+                                android.graphics.Color.parseColor("#F44336")
+                        )
 
                         val compLayout = card.findViewById<LinearLayout>(R.id.compartmentsInfo)
                         container.compartments.forEach { line ->

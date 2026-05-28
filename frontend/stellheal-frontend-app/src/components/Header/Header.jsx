@@ -4,89 +4,107 @@ import logo from '../../assets/logo.png';
 import flagUk from '../../assets/flag-uk.png';
 import flagEn from '../../assets/flag-en.png';
 import i18n from '../../i18n';
-import { FaBars } from 'react-icons/fa';
+import { FaBars, FaChevronDown } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import LoaderOverlay from "../LoaderOverlay/LoaderOverlay.jsx";
+import LoaderOverlay from '../LoaderOverlay/LoaderOverlay.jsx';
+
+const LANGS = [
+    { code: 'uk', flag: flagUk, alt: 'UA' },
+    { code: 'en', flag: flagEn, alt: 'EN' },
+];
 
 const Header = ({ role, onToggleMenu }) => {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
-    const [selectedLang, setSelectedLang] = useState(i18n.language || 'en');
-    const switchRef = useRef(null);
+    const { t, i18n: i18nHook } = useTranslation();
+
+    // ← беремо мову з i18n хука а не зі стейту — завжди актуальна
+    const currentLang = i18nHook.language?.substring(0, 2) || 'en';
+    const currentLangData = LANGS.find(l => l.code === currentLang) || LANGS[1];
+
+    const [open, setOpen]                 = useState(false);
     const [showPageLoader, setShowPageLoader] = useState(false);
-
-    const toggleDropdown = () => setOpen((prev) => !prev);
-
-    const getFlag = (lang) => {
-        switch (lang) {
-            case 'uk':
-                return flagUk;
-            case 'en':
-            default:
-                return flagEn;
-        }
-    };
+    const switchRef = useRef(null);
 
     const handleSelect = (lang) => {
+        if (lang === currentLang) { setOpen(false); return; }
         setShowPageLoader(true);
         setTimeout(() => {
             i18n.changeLanguage(lang);
-            setSelectedLang(lang);
             setShowPageLoader(false);
             setOpen(false);
-        }, 600);
+        }, 400);
     };
 
     useEffect(() => {
-        const handleClickOutside = (e) => {
+        const handler = (e) => {
             if (switchRef.current && !switchRef.current.contains(e.target)) {
                 setOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
     }, []);
 
     return (
-        <header className={styles.header}>
-            <div className={styles.container}>
-                <button className={styles.menuToggle} onClick={onToggleMenu}>
-                    <FaBars />
-                </button>
+        <>
+            <header className={styles.header}>
+                <div className={styles.container}>
 
-                <div className={styles.leftSide}>
+                    {/* Burger — тільки мобільний */}
+                    <button className={styles.menuToggle} onClick={onToggleMenu} aria-label="Menu">
+                        <FaBars size={18} />
+                    </button>
+
+                    {/* Logo */}
                     <div className={styles.logoBlock}>
                         <img src={logo} alt="StellHeal" className={styles.logo} />
                         <div className={styles.titleBlock}>
-                            <h1 className={styles.title}>StellHeal</h1>
-                            {role === 'admin' && <span className={styles.subtitle}>admin-panel</span>}
+                            <span className={styles.title}>StellHeal</span>
+                            {role === 'admin'  && <span className={styles.subtitle}>admin-panel</span>}
                             {role === 'doctor' && <span className={styles.subtitle}>doctor-panel</span>}
                         </div>
                     </div>
-                </div>
 
-                <div className={styles.rightSide}>
-                    <div ref={switchRef} className={styles.languageSwitch} onClick={toggleDropdown}>
-                        <img src={getFlag(selectedLang)} alt={selectedLang} className={styles.flagIcon} />
-                        <span>{t(`language.${selectedLang}`)}</span>
+                    {/* Right side */}
+                    <div className={styles.rightSide}>
+                        <div
+                            ref={switchRef}
+                            className={styles.languageSwitch}
+                            onClick={() => setOpen(prev => !prev)}
+                        >
+                            <img
+                                src={currentLangData.flag}
+                                alt={currentLangData.alt}
+                                className={styles.flagIcon}
+                            />
+                            <span className={styles.langLabel}>
+                                {t(`language.${currentLang}`)}
+                            </span>
+                            <FaChevronDown
+                                size={11}
+                                className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}
+                            />
 
-                        {open && (
-                            <div className={styles.dropdown}>
-                                <div className={styles.langItem} onClick={() => handleSelect('uk')}>
-                                    <img src={flagUk} alt="UA" />
-                                    <span>{t('language.uk')}</span>
+                            {open && (
+                                <div className={styles.dropdown}>
+                                    {LANGS.map(({ code, flag, alt }) => (
+                                        <div
+                                            key={code}
+                                            className={`${styles.langItem} ${currentLang === code ? styles.langItemActive : ''}`}
+                                            onClick={() => handleSelect(code)}
+                                        >
+                                            <img src={flag} alt={alt} className={styles.dropFlagIcon} />
+                                            <span>{t(`language.${code}`)}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className={styles.langItem} onClick={() => handleSelect('en')}>
-                                    <img src={flagEn} alt="EN" />
-                                    <span>{t('language.en')}</span>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            </header>
+
             {showPageLoader && <LoaderOverlay />}
-        </header>
+        </>
     );
 };
 

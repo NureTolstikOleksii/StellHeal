@@ -185,6 +185,7 @@ model wards {
   ward_id       Int             @id @default(autoincrement())
   ward_number   String?         @db.VarChar(50)
   capacity      Int?
+  is_blocked    Boolean?        @default(false)
   prescriptions prescriptions[]
 }
 

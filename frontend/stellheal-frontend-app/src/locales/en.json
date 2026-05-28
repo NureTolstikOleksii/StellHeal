@@ -1,7 +1,8 @@
 {
   "language": {
     "uk": "Uk",
-    "en": "Eng"
+    "en": "Eng",
+    "ru": "Eng"
   },
   "sidebar": {
     "profile": "Profile",
@@ -9,6 +10,7 @@
     "patients": "Patients",
     "devices": "IoT Devices",
     "stats": "Statistics",
+    "wards": "Wards",
     "backup": "Backup",
     "logout": "Log out"
   },
@@ -439,5 +441,42 @@
     "unit": "units",
     "schedule_for": "Schedule for",
     "no_prescriptions": "No prescriptions for this day"
+  },
+  "wards_en": {
+    "title": "Wards",
+    "ward": "Ward",
+    "total": "Total wards",
+    "available": "Available",
+    "occupied_patients": "Patients",
+    "total_capacity": "Capacity",
+    "add": "Add Ward",
+    "add_title": "New Ward",
+    "edit_title": "Edit Ward",
+    "ward_number": "Ward Number",
+    "ward_number_placeholder": "e.g. 101",
+    "capacity": "Capacity (beds)",
+    "capacity_placeholder": "e.g. 4",
+    "capacity_error": "Enter a number greater than 0",
+    "full": "Full",
+    "free": "Available",
+    "empty": "No wards added yet",
+    "load_error": "Failed to load wards",
+    "save_error": "Failed to save",
+    "created": "Ward added",
+    "updated": "Ward updated",
+    "deleted": "Ward deleted",
+    "delete_confirm": "Delete ward",
+    "delete_error": "Failed to delete ward",
+    "delete_occupied_error": "Cannot delete ward",
+    "delete_occupied_hint": "Ward has active patients",
+    "no_patients": "No active patients in this ward",
+    "beds": "beds",
+    "until": "Until",
+    "days": "days",
+    "blocked": "Blocked",
+    "blocked_count": "Blocked",
+    "blocked_hint": "Ward is blocked — doctors cannot assign it to patients",
+    "block": "Block Ward",
+    "unblock": "Unblock Ward"
   }
 }

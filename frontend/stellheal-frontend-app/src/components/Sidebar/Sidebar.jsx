@@ -3,6 +3,7 @@ import styles from './Sidebar.module.css';
 import {
     FaUserMd, FaUserInjured, FaMicrochip,
     FaChartBar, FaSave, FaSignOutAlt, FaUser,
+    FaHospital,
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -20,16 +21,17 @@ const Sidebar = () => {
 
     const links = role === 'admin'
         ? [
-            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />         },
-            { key: 'staff',    label: t('sidebar.staff'),    icon: <FaUserMd size={15} />       },
-            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} />  },
-            { key: 'devices',  label: t('sidebar.devices'),  icon: <FaMicrochip size={15} />    },
-            { key: 'stats',    label: t('sidebar.stats'),    icon: <FaChartBar size={15} />     },
-            { key: 'backup',   label: t('sidebar.backup'),   icon: <FaSave size={15} />         },
+            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />        },
+            { key: 'staff',    label: t('sidebar.staff'),    icon: <FaUserMd size={15} />      },
+            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} /> },
+            { key: 'devices',  label: t('sidebar.devices'),  icon: <FaMicrochip size={15} />   },
+            { key: 'wards',    label: t('sidebar.wards'),    icon: <FaHospital size={15} />    },
+            { key: 'stats',    label: t('sidebar.stats'),    icon: <FaChartBar size={15} />    },
+            { key: 'backup',   label: t('sidebar.backup'),   icon: <FaSave size={15} />        },
         ]
         : [
-            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />         },
-            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} />  },
+            { key: 'profile',  label: t('sidebar.profile'),  icon: <FaUser size={15} />        },
+            { key: 'patients', label: t('sidebar.patients'), icon: <FaUserInjured size={15} /> },
         ];
 
     const handleLogout = () => {

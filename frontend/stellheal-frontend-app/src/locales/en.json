@@ -442,7 +442,7 @@
     "schedule_for": "Schedule for",
     "no_prescriptions": "No prescriptions for this day"
   },
-  "wards_en": {
+  "wards": {
     "title": "Wards",
     "ward": "Ward",
     "total": "Total wards",
@@ -478,5 +478,24 @@
     "blocked_hint": "Ward is blocked — doctors cannot assign it to patients",
     "block": "Block Ward",
     "unblock": "Unblock Ward"
+  },
+  "ai_chat": {
+    "assistant_title": "Stella",
+    "assistant_sub_default": "Your medical consultant",
+    "assistant_sub_typing": "Typing...",
+    "fab_title": "AI Assistant",
+    "clear_chat": "Clear chat",
+    "close_chat": "Close chat",
+    "empty_state": "Click \"AI hint\" in any field or ask a question below",
+    "placeholder": "Ask for clarification...",
+    "error_connection": "Connection error to AI.",
+    "apply_to_field": "Apply to field \"{{label}}\"",
+    "hint_prefix": "AI Hint: ",
+    "questions": {
+      "interact": "Drug interactions",
+      "contra": "Contraindications",
+      "alt": "Alternative treatment",
+      "tests": "Additional tests"
+    }
   }
 }

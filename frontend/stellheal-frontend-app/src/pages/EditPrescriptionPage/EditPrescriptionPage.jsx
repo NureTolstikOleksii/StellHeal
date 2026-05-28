@@ -22,6 +22,7 @@ import {
     searchICDCodes,
 } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
+import AiFloatingChat from '../../components/AiFloatingChat/AiFloatingChat';
 
 // ─── Константи ────────────────────────────────────────────────────────────────
 const FILE_TYPES = [
@@ -350,12 +351,10 @@ const EditPrescriptionPage = () => {
     const [newFiles, setNewFiles]               = useState([]);
     const [schedule, setSchedule]               = useState([]);
 
-    const [aiDiagnosis, setAiDiagnosis] = useState({ text: '', loading: false });
-    const [aiMeds, setAiMeds]           = useState({ text: '', loading: false });
-    const [aiRec, setAiRec]             = useState({ text: '', loading: false });
     const [saving, setSaving]           = useState(false);
     const [toast, setToast]             = useState({ open: false, type: 'error', title: '', message: '' });
 
+    const chatRef      = useRef(null);
     const diagAbortRef = useRef(null);
     const medsAbortRef = useRef(null);
     const recAbortRef  = useRef(null);
@@ -406,28 +405,33 @@ const EditPrescriptionPage = () => {
         setSchedule(hasAny ? buildSchedule(medications) : []);
     }, [medications, scheduleLoaded]);
 
-    const requestAi = async (type, payload, setter, abortRef) => {
-        abortRef.current?.abort();
-        abortRef.current = new AbortController();
-        setter({ text: '', loading: true });
-        let acc = '';
-        try {
-            await streamAiRecommendation(type, payload, chunk => {
-                acc += chunk;
-                setter({ text: acc, loading: false });
-            }, abortRef.current.signal);
-        } catch (e) {
-            if (e.name !== 'AbortError') setter({ text: 'Помилка підключення до AI.', loading: false });
-        }
-    };
-
     const patientPayload = () => ({
         age: patient?.dob ? String(new Date().getFullYear() - new Date(patient.dob).getFullYear()) : '',
     });
 
-    const suggestDiagnosis       = () => requestAi('diagnosis',       { ...patientPayload(), complaints, anamnesis, objectiveStatus }, setAiDiagnosis, diagAbortRef);
-    const suggestMedications     = () => requestAi('medications',     { ...patientPayload(), diagnosis, complaints }, setAiMeds, medsAbortRef);
-    const suggestRecommendations = () => requestAi('recommendations', { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') }, setAiRec, recAbortRef);
+    // Контекст для чату
+    const chatContext = patient
+        ? `Пацієнт: ${patient.name}, вік: ${patientPayload().age} р.\nСкарги: ${complaints || 'не вказано'}\nАнамнез: ${anamnesis || 'не вказано'}\nОб'єктивний стан: ${objectiveStatus || 'не вказано'}\nДіагноз: ${diagnosis || 'не вказано'}\nПрепарати: ${medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') || 'не призначено'}`
+        : '';
+
+    const requestAiToChat = async (type, payload, label, onApply, abortRef) => {
+        abortRef.current?.abort();
+        abortRef.current = new AbortController();
+        chatRef.current?.openWithSuggestion(label, '', onApply);
+        let acc = '';
+        try {
+            await streamAiRecommendation(type, payload, chunk => {
+                acc += chunk;
+                chatRef.current?.updateLastMessage(acc);
+            }, abortRef.current.signal);
+        } catch (e) {
+            if (e.name !== 'AbortError') chatRef.current?.updateLastMessage('Помилка підключення до AI.');
+        }
+    };
+
+    const suggestDiagnosis       = () => requestAiToChat('diagnosis',       { ...patientPayload(), complaints, anamnesis, objectiveStatus }, 'Діагноз',       (text) => setDiagnosis(text),       diagAbortRef);
+    const suggestMedications     = () => requestAiToChat('medications',     { ...patientPayload(), diagnosis, complaints },                  'Препарати',     null,                               medsAbortRef);
+    const suggestRecommendations = () => requestAiToChat('recommendations', { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') }, 'Рекомендації', (text) => setRecommendations(text), recAbortRef);
 
     const handleMedChange  = (i, f, v) => { const u = [...medications]; u[i][f] = v; setMedications(u); };
     const handleAddMed     = () => setMedications([...medications, { medicationName: '', quantity: '', timesPerDay: '', duration: '' }]);
@@ -542,11 +546,6 @@ const EditPrescriptionPage = () => {
                             </button>
                         </div>
                         <textarea className={styles.textarea} rows={2} placeholder={t('prescription_form.diagnosis_placeholder')} value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
-                        <AISuggestion
-                            text={aiDiagnosis.text} loading={aiDiagnosis.loading}
-                            onApply={() => { setDiagnosis(aiDiagnosis.text); setAiDiagnosis({ text: '', loading: false }); }}
-                            onDismiss={() => setAiDiagnosis({ text: '', loading: false })}
-                        />
                     </div>
 
                     {/* МКХ-10 */}
@@ -637,11 +636,6 @@ const EditPrescriptionPage = () => {
                             </button>
                         </div>
                         <textarea className={styles.textarea} rows={3} placeholder={t('prescription_form.recommendations_placeholder')} value={recommendations} onChange={e => setRecommendations(e.target.value)} />
-                        <AISuggestion
-                            text={aiRec.text} loading={aiRec.loading}
-                            onApply={() => { setRecommendations(aiRec.text); setAiRec({ text: '', loading: false }); }}
-                            onDismiss={() => setAiRec({ text: '', loading: false })}
-                        />
                     </div>
 
                     {/* Препарати */}
@@ -652,7 +646,6 @@ const EditPrescriptionPage = () => {
                                 <FaRobot size={12} /> {t('prescription_form.ai_hint')}
                             </button>
                         </div>
-                        <AISuggestion text={aiMeds.text} loading={aiMeds.loading} onDismiss={() => setAiMeds({ text: '', loading: false })} />
 
                         {medications.map((med, i) => (
                             <div key={i} className={styles.medRow}>
@@ -696,6 +689,9 @@ const EditPrescriptionPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* ── Плаваючий AI чат ── */}
+            <AiFloatingChat ref={chatRef} context={chatContext} lang={lang} />
 
             <Toast
                 open={toast.open}

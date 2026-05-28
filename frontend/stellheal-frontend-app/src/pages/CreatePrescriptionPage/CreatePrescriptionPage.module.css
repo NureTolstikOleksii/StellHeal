@@ -385,9 +385,10 @@
 }
 
 /* ── Medications ────────────────────────────────────────────────────────────── */
-.medRow { margin-bottom: 10px; display: flex; align-items: center;}
+.medRow { margin-bottom: 10px; display: flex; align-items: center; width: 100%; }
 
 .medFields {
+    width: 100%;
     display: grid;
     grid-template-columns: 28px 2.5fr 1fr 1fr 1fr 36px;
     gap: 8px;
@@ -436,6 +437,9 @@
     cursor: pointer;
     transition: background 0.15s;
     flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
 }
 .medRemoveBtn:hover { background: #fef2f2; }
 
@@ -635,3 +639,198 @@
     .formActions { flex-direction: column-reverse; }
     .cancelBtn, .submitBtn { width: 100%; justify-content: center; }
 }
+
+
+/* ── Додайте в кінець CreatePrescriptionPage.module.css ── */
+
+/* Кнопка "Уточнити" в хедері AI підказки */
+.aiClarifyBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7c3aed;
+    background: #faf5ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 5px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.aiClarifyBtn:hover { background: #ede9fe; }
+.aiClarifyBtnActive { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.aiClarifyBtnActive:hover { background: #6d28d9; }
+
+/* ── Inline chat ── */
+.inlineChat {
+    border-top: 1px solid #bfdbfe;
+    background: #f8faff;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+}
+
+.inlineChatHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #f3eeff;
+    border-bottom: 1px solid #e9d8fd;
+}
+
+.inlineChatIcon { color: #7c3aed; }
+
+/* Швидкі питання */
+.inlineChatQuick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e9d8fd;
+}
+
+.inlineChatQuickBtn {
+    padding: 5px 10px;
+    background: #fff;
+    color: #7c3aed;
+    border: 1px solid #ddd6fe;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.inlineChatQuickBtn:hover:not(:disabled) { background: #7c3aed; color: #fff; }
+.inlineChatQuickBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Повідомлення */
+.inlineChatMessages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.inlineChatMessages::-webkit-scrollbar { width: 3px; }
+.inlineChatMessages::-webkit-scrollbar-track { background: transparent; }
+.inlineChatMessages::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 3px; }
+
+.inlineChatMsg {
+    display: flex;
+    gap: 7px;
+    align-items: flex-start;
+}
+
+.inlineChatMsgUser { flex-direction: row-reverse; }
+
+.inlineChatAvatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+    font-size: 9px;
+}
+
+.inlineChatBubble {
+    max-width: 85%;
+    padding: 8px 11px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.inlineChatMsgAi .inlineChatBubble {
+    background: #fff;
+    border: 1px solid #e9d8fd;
+    color: #111827;
+    border-radius: 3px 10px 10px 10px;
+}
+
+.inlineChatMsgUser .inlineChatBubble {
+    background: #7c3aed;
+    color: #fff;
+    border-radius: 10px 3px 10px 10px;
+}
+
+/* Typing animation */
+.chatTyping {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.chatTyping span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: typingBounce 1.2s infinite;
+}
+
+.chatTyping span:nth-child(2) { animation-delay: 0.2s; }
+.chatTyping span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%            { transform: translateY(-5px); }
+}
+
+/* Поле вводу */
+.inlineChatInputWrap {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    border-top: 1px solid #e9d8fd;
+    background: #fff;
+}
+
+.inlineChatInput {
+    flex: 1;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #111827;
+    background: #faf5ff;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+.inlineChatInput:focus { border-color: #7c3aed; background: #fff; box-shadow: 0 0 0 2px rgba(124,58,237,0.08); }
+.inlineChatInput:disabled { opacity: 0.65; }
+
+.inlineChatSendBtn {
+    width: 34px;
+    height: 34px;
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+}
+.inlineChatSendBtn:hover:not(:disabled) { background: #6d28d9; }
+.inlineChatSendBtn:disabled { opacity: 0.5; cursor: not-allowed; }

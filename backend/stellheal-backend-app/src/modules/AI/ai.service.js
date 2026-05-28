@@ -33,6 +33,20 @@ ${payload.images?.length ? 'До повідомлення додані фото 
 
 Склади короткі практичні рекомендації щодо лікування (режим, дієта, активність, повторний огляд).
 2-4 пункти, українською, без зайвого.`,
+
+            // ── Уточнюючі питання до вже отриманої AI-підказки ──────────────
+            chat: `Ти — AI-асистент лікаря в медичній системі StellHeal.
+
+Контекст пацієнта:
+${payload.context || ''}
+
+Попередня відповідь AI:
+${payload.previousAnswer || ''}
+
+Лікар задає уточнююче питання:
+${payload.question || ''}
+
+Відповідай українською, коротко і конкретно. Якщо питання медичне — надай практичну відповідь. Не повторюй попередню відповідь повністю.`,
         };
 
         return prompts[type] || null;
@@ -40,7 +54,6 @@ ${payload.images?.length ? 'До повідомлення додані фото 
 
     async streamRecommendation(type, payload, res) {
         const prompt = this.buildPrompt(type, payload);
-
         if (!prompt) throw new Error(`Невідомий тип: ${type}`);
 
         res.setHeader('Content-Type', 'text/event-stream');
@@ -50,10 +63,10 @@ ${payload.images?.length ? 'До повідомлення додані фото 
         res.flushHeaders();
 
         const stream = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
+            model:      'llama-3.3-70b-versatile',
             max_tokens: 500,
-            stream: true,
-            messages: [{ role: 'user', content: prompt }],
+            stream:     true,
+            messages:   [{ role: 'user', content: prompt }],
         });
 
         for await (const chunk of stream) {

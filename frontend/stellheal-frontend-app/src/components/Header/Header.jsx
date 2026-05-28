@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './Header.module.css';
 import logo from '../../assets/logo.png';
-import flagUk from '../../assets/flag-uk.png';
-import flagEn from '../../assets/flag-en.png';
+import flagUk from '../../assets/icons/flag-uk.png';
+import flagEn from '../../assets/icons/flag-en.png';
 import i18n from '../../i18n';
 import { FaBars, FaChevronDown } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';

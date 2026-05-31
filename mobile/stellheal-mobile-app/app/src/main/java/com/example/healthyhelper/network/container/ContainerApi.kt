@@ -39,11 +39,12 @@ interface ContainerApi {
     @GET("containers/all-container-details")
     fun getAllContainerDetails(): Call<List<ContainerWithDetails>>
 
+
+    // Нові роути для device
     @POST("device/fill/clear")
     fun clearCompartmentWithRotate(@Body body: ClearCompartmentRequest): Call<Unit>
 
 
-    // Нові роути для device
     @GET("device/compartments/{containerId}")
     fun getCompartments(@Path("containerId") containerId: Int): Call<List<CompartmentResponse>>
 
@@ -59,14 +60,10 @@ interface ContainerApi {
     @POST("device/rfid-reset/{containerId}")
     fun resetRfidStatus(@Path("containerId") containerId: Int): Call<Unit>
 
-//   @GET("containers/{id}/compartments")
-//    fun getFilledCompartments(@Path("id") containerId: Int): Call<List<FilledCompartmentResponse>>
-//
+
 //    @POST("containers/compartments/fill")
 //    fun addMedicationToCompartment(@Body body: Map<String, Int>): Call<Unit>
 //
-//    @POST("containers/compartments/clear")
-//    fun clearCompartment(@Body body: Map<String, Int>): Call<Map<String, String>>
 
 
 }

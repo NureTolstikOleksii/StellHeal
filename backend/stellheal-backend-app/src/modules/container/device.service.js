@@ -5,36 +5,21 @@ import { ERROR_CODES } from "../../shared/constants/errorCodes.js";
 
 export class DeviceService {
 
-    /**
-     * Авторизація пристрою
-     */
     async authenticate(device_uid, secret) {
         const container = await prisma.containers.findFirst({
             where: { device_uid }
         });
 
         if (!container) {
-            console.log("Device not found")
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                "Device not found",
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, "Device not found", 404);
         }
 
         if (container.device_secret !== secret) {
-            throw new AppError(
-                ERROR_CODES.UNAUTHORIZED,
-                "Invalid device credentials",
-                401
-            );
+            throw new AppError(ERROR_CODES.UNAUTHORIZED, "Invalid device credentials", 401);
         }
 
         const token = jwt.sign(
-            {
-                containerId: container.container_id,
-                type: "device"
-            },
+            { containerId: container.container_id, type: "device" },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
@@ -54,56 +39,31 @@ export class DeviceService {
         };
     }
 
-    /**
-     * Heartbeat
-     */
     async heartbeat(containerId) {
         const now = new Date();
 
         await prisma.containers.update({
             where: { container_id: containerId },
-            data: {
-                last_seen: now,
-                is_online: true
-            }
+            data: { last_seen: now, is_online: true }
         });
 
-        return {
-            message: "Heartbeat received",
-            server_time: now
-        };
+        return { message: "Heartbeat received", server_time: now };
     }
 
-    /**
-     * Отримати команди
-     */
     async getPendingCommands(containerId) {
         return prisma.device_commands.findMany({
-            where: {
-                container_id: containerId,
-                status: "pending"
-            },
-            orderBy: {
-                created_at: "asc"
-            }
+            where: { container_id: containerId, status: "pending" },
+            orderBy: { created_at: "asc" }
         });
     }
 
-    /**
-     * авершити команду
-     */
     async completeCommand(commandId) {
         await prisma.device_commands.update({
             where: { id: Number(commandId) },
-            data: {
-                status: "done",
-                executed_at: new Date()
-            }
+            data: { status: "done", executed_at: new Date() }
         });
 
-        return {
-            message: "Command completed"
-        };
+        return { message: "Command completed" };
     }
 
     async getNextIntake(containerId) {
@@ -111,59 +71,41 @@ export class DeviceService {
             where: { container_id: containerId }
         });
 
-        if (!container || !container.patient_id) {
+        if (!container?.patient_id) {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Container not assigned to patient", 404);
         }
 
         const now = new Date();
-
-        // ← Використовуємо UTC дату
         const todayUTC = new Date(Date.UTC(
             now.getUTCFullYear(),
             now.getUTCMonth(),
             now.getUTCDate()
         ));
-
         const tomorrowUTC = new Date(todayUTC);
         tomorrowUTC.setUTCDate(tomorrowUTC.getUTCDate() + 1);
 
         const nextMed = await prisma.prescription_medications.findFirst({
             where: {
-                prescriptions: {
-                    patient_id: container.patient_id
-                },
+                prescriptions: { patient_id: container.patient_id },
                 intake_status: null,
                 compartment_medications: { some: {} },
                 OR: [
-                    { intake_date: { lt: todayUTC } }, // прострочені
-                    {
-                        intake_date: {
-                            gte: todayUTC,
-                            lt: tomorrowUTC
-                        }
-                        // intake_time не перевіряємо — ESP32 сам порівнює час
-                    }
+                    { intake_date: { lt: todayUTC } },
+                    { intake_date: { gte: todayUTC, lt: tomorrowUTC } }
                 ]
             },
-            include: {
-                medications: true
-            },
-            orderBy: [
-                { intake_date: "asc" },
-                { intake_time: "asc" }
-            ]
+            include: { medications: true },
+            orderBy: [{ intake_date: "asc" }, { intake_time: "asc" }]
         });
 
-        if (!nextMed) {
-            return null;
-        }
+        if (!nextMed) return null;
 
         const compartmentMed = await prisma.compartment_medications.findFirst({
             where: { prescription_med_id: nextMed.prescription_med_id },
             include: { compartments: true }
         });
 
-        if (!compartmentMed || !compartmentMed.compartments) {
+        if (!compartmentMed?.compartments) {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Medication not loaded into container", 404);
         }
 
@@ -172,47 +114,32 @@ export class DeviceService {
             compartment_number: compartmentMed.compartments.compartment_number,
             intake_time: nextMed.intake_time,
             intake_date: nextMed.intake_date,
-            medication_name: nextMed.medications?.name || "" // ← додайте
+            medication_name: nextMed.medications?.name || "Unknown"
         };
     }
 
     async confirmIntake(containerId, prescriptionMedId) {
-
-        // 🔍 перевірка існування
         const med = await prisma.prescription_medications.findUnique({
             where: { prescription_med_id: prescriptionMedId }
         });
 
         if (!med) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                "Prescription medication not found",
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, "Prescription medication not found", 404);
         }
 
-        // ❗ якщо вже прийнято
         if (med.intake_status === true) {
-            return {
-                message: "Already taken"
-            };
+            return { message: "Already taken" };
         }
 
         const now = new Date();
 
-        // ✅ оновлюємо статус прийому
         await prisma.prescription_medications.update({
             where: { prescription_med_id: prescriptionMedId },
-            data: {
-                intake_status: true
-            }
+            data: { intake_status: true }
         });
 
-        // 🔍 знайти відсік
         const compartmentMed = await prisma.compartment_medications.findFirst({
-            where: {
-                prescription_med_id: prescriptionMedId
-            }
+            where: { prescription_med_id: prescriptionMedId }
         });
 
         if (compartmentMed) {
@@ -221,13 +148,9 @@ export class DeviceService {
                 data: { open_time: now }
             });
 
-            // ← Додайте це
             await prisma.compartments.update({
                 where: { compartment_id: compartmentMed.compartment_id },
-                data: {
-                    is_filled: false,
-                    last_filled_at: null
-                }
+                data: { is_filled: false, last_filled_at: null }
             });
 
             await prisma.compartment_medications.delete({
@@ -235,29 +158,30 @@ export class DeviceService {
             });
         }
 
-        return {
-            message: "Intake confirmed",
-            time: now
-        };
+        await this.logDeviceEvent(
+            containerId,
+            "info",
+            "INTAKE_CONFIRMED",
+            `Прийом підтверджено: prescription_med_id=${prescriptionMedId}`
+        );
+
+        return { message: "Intake confirmed", time: now };
+    }
+
+    async startFill(containerId) {
+        const free = await this.getFreeCompartment(containerId);
+        await this.createRotateCommand(containerId, free.compartment_number);
+        return { compartment: free.compartment_number };
     }
 
     async getFreeCompartment(containerId) {
         const free = await prisma.compartments.findFirst({
-            where: {
-                container_id: containerId,
-                is_filled: false
-            },
-            orderBy: {
-                compartment_number: "asc"
-            }
+            where: { container_id: containerId, is_filled: false },
+            orderBy: { compartment_number: "asc" }
         });
 
         if (!free) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                "No free compartments",
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, "No free compartments", 404);
         }
 
         return free;
@@ -268,41 +192,26 @@ export class DeviceService {
             data: {
                 container_id: containerId,
                 command: "rotate_to",
-                payload: {
-                    compartment: compartmentNumber
-                }
+                payload: { compartment: compartmentNumber }
             }
         });
     }
 
     async fillCompartment(containerId, compartmentNumber, prescriptionMedId, userId) {
-
         const compartment = await prisma.compartments.findFirst({
-            where: {
-                container_id: containerId,
-                compartment_number: compartmentNumber
-            }
+            where: { container_id: containerId, compartment_number: compartmentNumber }
         });
 
         if (!compartment) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                "Compartment not found",
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, "Compartment not found", 404);
         }
 
         if (compartment.is_filled) {
-            throw new AppError(
-                ERROR_CODES.VALIDATION_ERROR,
-                "Compartment already filled",
-                400
-            );
+            throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Compartment already filled", 400);
         }
 
         const now = new Date();
 
-        // створюємо запис
         await prisma.compartment_medications.create({
             data: {
                 compartment_id: compartment.compartment_id,
@@ -312,37 +221,26 @@ export class DeviceService {
             }
         });
 
-        // оновлюємо відсік
         await prisma.compartments.update({
             where: { compartment_id: compartment.compartment_id },
-            data: {
-                is_filled: true,
-                last_filled_at: now
-            }
+            data: { is_filled: true, last_filled_at: now }
         });
-
-        // await prisma.device_commands.create({
-        //     data: {
-        //         container_id: containerId,
-        //         command: "close_lid",
-        //         payload: {}
-        //     }
-        // });
 
         return { message: "Compartment filled" };
     }
 
-
     async getCompartments(containerId) {
         const compartments = await prisma.compartments.findMany({
             where: { container_id: containerId },
-            orderBy: { compartment_number: 'asc' },
+            orderBy: { compartment_number: "asc" },
             include: {
                 compartment_medications: {
-                    orderBy: { fill_time: 'desc' },
+                    orderBy: { fill_time: "desc" },
                     take: 1,
                     include: {
-                        prescription_medications: true  // medications більше не потрібен
+                        prescription_medications: {
+                            include: { medications: true }
+                        }
                     }
                 }
             }
@@ -350,16 +248,17 @@ export class DeviceService {
 
         return compartments.map(c => {
             const med = c.compartment_medications[0]?.prescription_medications;
+            const medication_info = med?.medications;
 
             return {
                 compartment_id: c.compartment_id,
                 compartment_number: c.compartment_number,
                 is_filled: c.is_filled,
                 last_filled_at: c.last_filled_at,
-                medication: med
+                medication: medication_info
                     ? {
-                        name: med.medication_name || 'Unknown', // ← тепер з текстового поля
-                        dosage: `${med.quantity} од.`,
+                        name: medication_info.name,
+                        dosage: medication_info.dosage,
                         intake_time: med.intake_time
                             ? new Date(med.intake_time).toISOString().substring(11, 16)
                             : null,
@@ -374,32 +273,27 @@ export class DeviceService {
 
     async rotateToCompartment(containerId, compartmentNumber) {
         const compartment = await prisma.compartments.findFirst({
-            where: {
-                container_id: containerId,
-                compartment_number: compartmentNumber
-            }
+            where: { container_id: containerId, compartment_number: compartmentNumber }
         });
 
         if (!compartment) {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Compartment not found", 404);
         }
 
-        // 1. Команда прокрутки
         await this.createRotateCommand(containerId, compartmentNumber);
 
-        // 2. Команда відкриття люку
-        await this.createOpenLidCommand(containerId);
+        await prisma.device_commands.create({
+            data: {
+                container_id: containerId,
+                command: "open_lid",
+                payload: {}
+            }
+        });
 
         return { message: "Rotate command sent", compartment_number: compartmentNumber };
     }
 
-
     async clearCompartment(containerId, compartmentId, compartmentNumber) {
-        // 1. Крутимо барабан
-        //await this.createRotateCommand(containerId, compartmentNumber);
-        await this.createOpenLidCommand(containerId);
-
-        // 2. Видаляємо останній запис compartment_medications
         const latest = await prisma.compartment_medications.findFirst({
             where: { compartment_id: compartmentId },
             orderBy: { fill_time: "desc" }
@@ -413,122 +307,108 @@ export class DeviceService {
             where: { compartment_med_id: latest.compartment_med_id }
         });
 
-        // 3. Оновлюємо статус відсіку
         await prisma.compartments.update({
             where: { compartment_id: compartmentId },
-            data: {
-                is_filled: false,
-                last_filled_at: null
-            }
+            data: { is_filled: false, last_filled_at: null }
         });
-
-        // await prisma.device_commands.create({
-        //     data: {
-        //         container_id: containerId,
-        //         command: "close_lid",
-        //         payload: {}
-        //     }
-        // });
 
         return { message: "Compartment cleared" };
     }
 
+    async updateRfidStatus(containerId, authenticated) {
+        await prisma.containers.update({
+            where: { container_id: containerId },
+            data: { rfid_authenticated: authenticated }
+        });
 
+        if (authenticated) {
+            const staffUser = await prisma.users.findFirst({
+                where: { role_id: 2 }
+            });
 
-    // device.service.js — новий метод
-    async createOpenLidCommand(containerId) {
-        return prisma.device_commands.create({
+            if (staffUser) {
+                await this.startFillSession(containerId, staffUser.user_id);
+            }
+
+            await this.logDeviceEvent(containerId, "info", "RFID_AUTH", "Медсестра авторизувалась через RFID");
+        } else {
+            await this.logDeviceEvent(containerId, "info", "RFID_LOGOUT", "RFID сесія завершена");
+        }
+
+        return { message: "RFID status updated" };
+    }
+
+    async getRfidStatus(containerId) {
+        const container = await prisma.containers.findUnique({
+            where: { container_id: containerId },
+            select: { rfid_authenticated: true }
+        });
+
+        return { rfid_authenticated: container?.rfid_authenticated ?? false };
+    }
+
+    async resetRfid(containerId) {
+        await prisma.containers.update({
+            where: { container_id: containerId },
+            data: { rfid_authenticated: false }
+        });
+
+        await this.finishFillSession(containerId);
+
+        await this.logDeviceEvent(
+            containerId,
+            "info",
+            "FILL_SESSION_FINISHED",
+            "Сесія заповнення завершена медсестрою"
+        );
+
+        await prisma.device_commands.create({
             data: {
                 container_id: containerId,
-                command: "open_lid",
+                command: "close_lid",
                 payload: {}
             }
         });
+
+        return { message: "RFID reset" };
     }
 
-
-    async getRfidStatus(containerId) {
-        // Перевіряємо чи є незавершені open_lid команди
-        // Якщо є pending rotate_to але немає done open_lid — картка не прикладена
-        const pendingCommands = await prisma.device_commands.findMany({
-            where: {
-                container_id: containerId,
-                status: "pending"
-            }
+    async startFillSession(containerId, userId) {
+        await prisma.fill_sessions.updateMany({
+            where: { container_id: containerId, status: "active" },
+            data: { status: "finished", finished_at: new Date() }
         });
 
-        // Простіший підхід — зберігаємо rfid статус в containers
-        const container = await prisma.containers.findUnique({
-            where: { container_id: containerId }
-        });
-
-        return { rfid_authenticated: container.rfid_authenticated ?? false };
-    }
-
-
-    async sendWeightAlert(containerId, prescriptionMedId) {
-        const now = new Date();
-
-        // Знаходимо пацієнта через контейнер
-        const container = await prisma.containers.findUnique({
-            where: { container_id: containerId },
-            select: { patient_id: true }
-        });
-
-        if (!container?.patient_id) {
-            throw new AppError(ERROR_CODES.NOT_FOUND, "Patient not found", 404);
-        }
-
-        // Знаходимо медсестер (role_id = 2)
-        const nurses = await prisma.users.findMany({
-            where: { role_id: 2 },
-            select: { user_id: true, firebase_token: true }
-        });
-
-        // Пацієнт
-        const patient = await prisma.users.findUnique({
-            where: { user_id: container.patient_id },
-            select: { user_id: true, firebase_token: true }
-        });
-
-        const recipients = [
-            ...(patient ? [patient] : []),
-            ...nurses
-        ];
-
-        // Записуємо сповіщення в БД
-        const notification = await prisma.notifications.create({
+        return prisma.fill_sessions.create({
             data: {
-                notification_type: "PILL_NOT_TAKEN",
-                message: "Пацієнт не забрав таблетки протягом 5 хвилин",
-                sent_date: now,
-                sent_time: now,
                 container_id: containerId,
-                notification_recipients: {
-                    create: recipients.map(r => ({
-                        user_id: r.user_id,
-                        is_read: false
-                    }))
-                }
+                started_by: userId,
+                status: "active"
             }
         });
+    }
 
-        // Відправляємо push кожному хто має FCM токен
-        const pushPromises = recipients
-            .filter(r => r.firebase_token)
-            .map(r => {
-                console.log(`Sending push to user ${r.user_id}, token: ${r.firebase_token?.substring(0, 20)}...`);
-                return this.sendNotification(
-                    r.firebase_token,
-                    "⚠️ Таблетки не прийняті",
-                    "Пацієнт не забрав таблетки протягом 5 хвилин"
-                ).catch(err => {
-                    console.error(`Failed to send push to user ${r.user_id}:`, err.message);
-                });
-            });
+    async finishFillSession(containerId) {
+        return prisma.fill_sessions.updateMany({
+            where: { container_id: containerId, status: "active" },
+            data: { status: "finished", finished_at: new Date() }
+        });
+    }
 
-        await Promise.all(pushPromises);
+    async getActiveFillSession(containerId) {
+        return prisma.fill_sessions.findFirst({
+            where: { container_id: containerId, status: "active" }
+        });
+    }
 
-        return { message: "Alert sent", notification_id: notification.notification_id };
+    async logDeviceEvent(containerId, type, code, message) {
+        return prisma.device_events.create({
+            data: {
+                container_id: containerId,
+                type,
+                code: code || null,
+                message: message || null
+            }
+        });
     }
 }

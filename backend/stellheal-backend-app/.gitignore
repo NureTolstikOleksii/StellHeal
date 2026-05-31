@@ -26,4 +26,4 @@ dist-ssr
 backups
 .env
 backups-temp
-firebase-service-account.json
+secrets

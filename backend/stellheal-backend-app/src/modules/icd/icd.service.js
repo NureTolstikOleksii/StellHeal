@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const raw = JSON.parse(readFileSync(join(__dirname, 'icd_uk.json'), 'utf8'));
+const raw = JSON.parse(readFileSync(join(__dirname, '../../shared/resources/icd_uk.json'), 'utf8'));
 
 // Конвертуємо в зручний формат при старті
 const ICD_DATA = raw.data.map(row => ({

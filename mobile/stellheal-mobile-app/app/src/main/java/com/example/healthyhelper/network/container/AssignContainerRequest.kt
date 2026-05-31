@@ -5,11 +5,6 @@ data class AssignContainerRequest(
     val patientId: Int
 )
 
-data class IntakeRequest(
-    val patientId: Int,
-    val date: String
-)
-
 data class ClearCompartmentRequest(
     val containerId: Int,
     val compartmentId: Int,

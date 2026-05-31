@@ -2,8 +2,7 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-// Шлях до файлу (на Render він буде в корені проєкту)
-const serviceAccountPath = join(process.cwd(), 'firebase-service-account.json');
+const serviceAccountPath = join(process.cwd(), 'secrets/firebase-service-account.json');
 
 try {
     const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));

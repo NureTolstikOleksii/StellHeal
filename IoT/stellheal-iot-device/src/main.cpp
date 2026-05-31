@@ -44,8 +44,8 @@ const int COMPARTMENT_STEPS[9] = {
     1792  // [8]
 };
 
-const char* API_BASE = "http://192.168.0.104:4200/api/device";
-const char* API_BASE_NOTIFIC = "http://192.168.0.104:4200/api/notification";
+const char* API_BASE = "http://192.168.0.100:4200/api/device";
+const char* API_BASE_NOTIFIC = "http://192.168.0.100:4200/api/notification";
 const char* DEVICE_UID = "esp32_container_1";
 const char* DEVICE_SECRET = "s3cr3t_container_1_2026";
 int lastPrescriptionMedId = -1;
@@ -89,7 +89,7 @@ void toggleLoadingMode();
 void triggerBuzzer();
 void shutdownDevice();
 
-// ⬇️ ДОДАЙ ЦЕ
+// ДОДАЙ ЦЕ
 void authenticateDevice();
 void sendHeartbeat();
 bool checkNextIntake();
@@ -99,6 +99,9 @@ void completeCommand(int id);
 void handleCommands();
 void sendRfidStatus(bool authenticated);
 void sendWeightAlert(int prescriptionMedId);
+void logDeviceEvent(String type, String code, String message);
+void playIntakeMelody();
+void sendIntakeReminder(int prescriptionMedId);
 
 void setup() {
   Serial.begin(115200);
@@ -333,7 +336,8 @@ void checkRFID() {
     rfidAuthenticated = true;
     triggerBuzzer();
     showMsg("AUTH OK", "Button Active");
-    sendRfidStatus(true); // ← надсилаємо
+    sendRfidStatus(true);
+    logDeviceEvent("info", "RFID_AUTH", "Nurse authenticated via RFID"); // ← додайте
     delay(1000);
   }
 }
@@ -559,22 +563,20 @@ bool checkNextIntake() {
     if (nextIntakeTime == String(currentTime)) {
       if (nextIntakeComp != lastOpenedCompartment) {
         Serial.println("TIME MATCH → OPENING COMPARTMENT");
-    
-        lastPrescriptionMedId = prescriptionMedId;
 
+        lastPrescriptionMedId = prescriptionMedId;
         rotateToCompartment(nextIntakeComp);
 
-        // Відкриваємо нижній люк
         unloadServo.write(20);
         delay(3000);
         unloadServo.write(83);
 
-        triggerBuzzer();
+        playIntakeMelody(); // ← замість triggerBuzzer()
         lastOpenedCompartment = nextIntakeComp;
         confirmIntake(prescriptionMedId);
-
-        // Запускаємо моніторинг ваги
-        weightAtStart = scale.get_units(5); // середнє з 5 вимірів
+        sendIntakeReminder(prescriptionMedId);
+        
+        weightAtStart = scale.get_units(5);
         weightMonitorStart = millis();
         weightMonitoring = true;
         alertSent = false;
@@ -616,14 +618,13 @@ void confirmIntake(int prescriptionMedId) {
   http.end();
 }
 
-// заповнення выдсіку
 void rotateToCompartment(int target) {
   if (target < 1 || target > 8) return;
   if (target == currentCompartment) return;
 
   Serial.println("Returning to HOME...");
   
-  drum.step(20); // невеликий відступ перед пошуком
+  drum.step(20);
   delay(50);
   
   int hallStableCount = 0;
@@ -638,6 +639,13 @@ void rotateToCompartment(int target) {
         hallStableCount = 0;
     }
   }
+
+  // ← Логуємо помилку якщо датчик не знайдено
+  if (steps >= 2500) {
+    Serial.println("Hall sensor not found!");
+    logDeviceEvent("error", "MOTOR_ERROR", "Hall sensor not found during calibration");
+    return; // ← виходимо щоб не крутити далі з неправильної позиції
+  }
   
   currentCompartment = 1;
 
@@ -648,6 +656,9 @@ void rotateToCompartment(int target) {
 
   drum.step(stepsToMove);
   currentCompartment = target;
+
+  // ← Логуємо успішну прокрутку
+  logDeviceEvent("info", "MOTOR_OK", "Rotated to compartment " + String(target));
 }
 
 // отримання та обробка команд
@@ -764,10 +775,66 @@ void sendWeightAlert(int prescriptionMedId) {
   Serial.printf("WEIGHT ALERT CODE: %d\n", code);
 
   if (code == 200) {
-    Serial.println("Weight alert sent!");
-    showMsg("ALERT!", "Take pills!");
-    delay(2000);
+      Serial.println("Weight alert sent!");
+      logDeviceEvent("warning", "PILL_NOT_TAKEN", "Patient did not take pills");
+      showMsg("ALERT!", "Take pills!");
+      delay(2000);
   }
 
   http.end();
+}
+
+void logDeviceEvent(String type, String code, String message) {
+  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+
+  WiFiClient client;
+  HTTPClient http;
+  http.begin(client, String(API_BASE) + "/event");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Bearer " + deviceToken);
+
+  StaticJsonDocument<300> doc;
+  doc["type"] = type;
+  doc["code"] = code;
+  doc["message"] = message;
+
+  String body;
+  serializeJson(doc, body);
+  http.POST(body);
+  http.end();
+}
+
+void playIntakeMelody() {
+    // Три зростаючих сигнали
+    for (int i = 0; i < 3; i++) {
+        digitalWrite(BUZZER_LED, HIGH);
+        delay(100 + i * 100); // 100, 200, 300 мс
+        digitalWrite(BUZZER_LED, LOW);
+        delay(100);
+    }
+    // Довгий фінальний сигнал
+    digitalWrite(BUZZER_LED, HIGH);
+    delay(600);
+    digitalWrite(BUZZER_LED, LOW);
+}
+
+void sendIntakeReminder(int prescriptionMedId) {
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+
+    WiFiClient client;
+    HTTPClient http;
+    http.begin(client, String(API_BASE_NOTIFIC) + "/intake-reminder");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
+
+    StaticJsonDocument<200> doc;
+    doc["prescription_med_id"] = prescriptionMedId;
+
+    String body;
+    serializeJson(doc, body);
+
+    int code = http.POST(body);
+    Serial.printf("INTAKE REMINDER CODE: %d\n", code);
+
+    http.end();
 }

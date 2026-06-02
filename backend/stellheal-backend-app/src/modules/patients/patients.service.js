@@ -311,46 +311,76 @@ export class PatientsService {
             complaints, anamnesis, objective_status, recommendations, notes,
         } = data;
 
-        const parsedMeds = typeof medications === 'string' ? JSON.parse(medications) : medications;
+        const parsedMeds     = typeof medications === 'string' ? JSON.parse(medications) : medications;
         const parsedSchedule = typeof data.schedule === 'string' ? JSON.parse(data.schedule) : data.schedule || [];
 
         if (!diagnosis || !wardId || !Array.isArray(parsedMeds) || parsedMeds.length === 0) {
             throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Invalid data for prescription creation', 400);
         }
 
-        const timezone = await getUserTimezone(doctorId);
-        const maxDuration = Math.max(...parsedMeds.map(m => Number(m.duration) || 0));
+        const timezone     = await getUserTimezone(doctorId);
         const startOfToday = getStartOfDayInTz(timezone);
-        const endDate = addDays(startOfToday, maxDuration - 1);
+        const now          = new Date();
 
+        // ── Визначаємо реальну тривалість з урахуванням extraDay ─────────────────
+        // Якщо сьогоднішній час прийому вже минув — препарат починається завтра
+        let maxRealDuration = 0;
+        const medExtraMap   = new Map();
+
+        for (const med of parsedMeds) {
+            const medEntries     = parsedSchedule.filter(s => s.name === med.medicationName);
+            const todayDateStr   = startOfToday.toISOString().substring(0, 10);
+
+            const hasTodayFuture = medEntries.some(entry => {
+                const todayIntake = localToUtc(todayDateStr, entry.time, timezone);
+                return todayIntake > now;
+            });
+
+            // При створенні немає існуючих записів — тільки перевіряємо час
+            const extraDay     = hasTodayFuture ? 0 : 1;
+            const realDuration = Number(med.duration) + extraDay;
+
+            medExtraMap.set(med.medicationName, extraDay);
+            if (realDuration > maxRealDuration) maxRealDuration = realDuration;
+        }
+
+        const endDate = addDays(startOfToday, maxRealDuration - 1);
+
+        // ── Створюємо призначення ─────────────────────────────────────────────────
         const prescription = await prisma.prescriptions.create({
             data: {
                 diagnosis,
-                icd_code:         icd_code         || null,
+                icd_code:         icd_code        || null,
                 ward_id:          Number(wardId),
                 patient_id:       Number(patientId),
-                duration:         maxDuration,
+                duration:         maxRealDuration,
                 doctor_id:        doctorId,
                 date_issued:      startOfToday,
                 end_date:         endDate,
-                complaints:       complaints        || null,
-                anamnesis:        anamnesis         || null,
-                objective_status: objective_status  || null,
-                recommendations:  recommendations   || null,
-                notes:            notes             || null,
+                complaints:       complaints       || null,
+                anamnesis:        anamnesis        || null,
+                objective_status: objective_status || null,
+                recommendations:  recommendations  || null,
+                notes:            notes            || null,
             }
         });
 
+        // ── Створюємо записи препаратів ───────────────────────────────────────────
         for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
             const medEntries = parsedSchedule.filter(s => s.name === medicationName);
+            const extraDay   = medExtraMap.get(medicationName) ?? 0;
+            const totalDays  = Number(duration) + extraDay;
 
-            for (let day = 0; day < Number(duration); day++) {
-                const date = addDays(startOfToday, day);
+            for (let day = 0; day < totalDays; day++) {
+                const date    = addDays(startOfToday, day);
                 const dateStr = date.toISOString().substring(0, 10);
 
                 for (const entry of medEntries) {
                     const intake_at = localToUtc(dateStr, entry.time, timezone);
+
+                    // Пропускаємо якщо час вже минув
+                    if (intake_at <= now) continue;
 
                     await prisma.prescription_medications.create({
                         data: {
@@ -366,6 +396,7 @@ export class PatientsService {
             }
         }
 
+        // ── Файли ─────────────────────────────────────────────────────────────────
         if (files && files.length > 0) {
             const fileTypes = Array.isArray(data.fileTypes)
                 ? data.fileTypes
@@ -386,6 +417,7 @@ export class PatientsService {
             await prisma.prescription_files.createMany({ data: uploadedFiles });
         }
 
+        // ── Лог ───────────────────────────────────────────────────────────────────
         await logAction({
             userId:      doctorId,
             action:      ACTIONS.CREATE_PRESCRIPTION,
@@ -620,14 +652,17 @@ export class PatientsService {
             where: { prescription_id: Number(prescriptionId) },
             include: {
                 users_prescriptions_doctor_idTousers: true,
-                prescription_medications: true,
-                prescription_files: true,
-                wards: true,
+                prescription_medications:             true,
+                prescription_files:                   true,
+                wards:                                true,
             }
         });
 
         if (!p) throw new AppError(ERROR_CODES.NOT_FOUND, 'Призначення не знайдено', 404);
 
+        const now = new Date();
+
+        // ── Препарати — унікальні по назві ───────────────────────────────────────
         const medsMap = new Map();
         p.prescription_medications.forEach(pm => {
             if (!pm.medication_name) return;
@@ -636,41 +671,79 @@ export class PatientsService {
                     medicationName: pm.medication_name,
                     quantity:       String(pm.quantity || ''),
                     timesPerDay:    pm.frequency?.match(/\d+/)?.[0] || '',
-                    duration:       String(p.duration || ''),
+                    duration:       String(p.duration || ''), // поки що дефолт
+                    _dates:         new Set(), // для підрахунку унікальних дат
                 });
+            }
+            // Збираємо унікальні дати для цього препарату
+            if (pm.intake_at) {
+                const dateStr = pm.intake_at.toISOString().substring(0, 10);
+                medsMap.get(pm.medication_name)._dates.add(dateStr);
             }
         });
 
+        // Після збору — рахуємо duration по унікальних датах
+        const medications = Array.from(medsMap.values()).map(({ _dates, ...med }) => ({
+            ...med,
+            duration: String(_dates.size || p.duration || ''),
+        }));
+
+        // ── Розклад — пріоритет майбутнім записам ────────────────────────────────
+        // Якщо є майбутній запис для препарату — показуємо його час
+        // Якщо немає — показуємо останній минулий (щоб лікар бачив поточний час)
         const scheduleMap = new Map();
-        p.prescription_medications.forEach((pm, idx) => {
-            if (!pm.medication_name || !pm.intake_at) return;
 
-            // UTC ISO — веб конвертує в локальний час при відображенні
-            const intake_at_iso = pm.intake_at.toISOString();
-            const key = `${pm.medication_name}-${intake_at_iso.substring(11, 16)}`;
+        // 1. Спочатку додаємо майбутні записи
+        p.prescription_medications
+            .filter(pm => pm.medication_name && pm.intake_at && new Date(pm.intake_at) > now)
+            .sort((a, b) => new Date(a.intake_at) - new Date(b.intake_at)) // найранніші першими
+            .forEach((pm, idx) => {
+                const intake_at_iso = pm.intake_at.toISOString();
+                const key = `${pm.medication_name}-${intake_at_iso.substring(11, 16)}`;
+                if (!scheduleMap.has(key)) {
+                    scheduleMap.set(key, {
+                        id:        `db-${idx}`,
+                        name:      pm.medication_name,
+                        intake_at: intake_at_iso,
+                        quantity:  pm.quantity || 1,
+                    });
+                }
+            });
 
-            if (!scheduleMap.has(key)) {
-                scheduleMap.set(key, {
-                    id:        `db-${idx}`,
-                    name:      pm.medication_name,
-                    intake_at: intake_at_iso,
-                    quantity:  pm.quantity || 1,
-                });
-            }
-        });
+        // 2. Для препаратів без майбутніх — беремо останній минулий
+        p.prescription_medications
+            .filter(pm => pm.medication_name && pm.intake_at && new Date(pm.intake_at) <= now)
+            .sort((a, b) => new Date(b.intake_at) - new Date(a.intake_at)) // найновіші першими
+            .forEach((pm, idx) => {
+                // Якщо для цього препарату вже є майбутній запис — пропускаємо
+                const hasFuture = Array.from(scheduleMap.keys())
+                    .some(k => k.startsWith(`${pm.medication_name}-`));
+                if (hasFuture) return;
+
+                const intake_at_iso = pm.intake_at.toISOString();
+                const key = `${pm.medication_name}-${intake_at_iso.substring(11, 16)}`;
+                if (!scheduleMap.has(key)) {
+                    scheduleMap.set(key, {
+                        id:        `db-past-${idx}`,
+                        name:      pm.medication_name,
+                        intake_at: intake_at_iso,
+                        quantity:  pm.quantity || 1,
+                    });
+                }
+            });
 
         return {
             prescriptionId:  p.prescription_id,
-            diagnosis:       p.diagnosis || '',
-            icdCode:         p.icd_code  || '',
-            wardId:          p.ward_id || '',
-            complaints:      p.complaints || '',
-            anamnesis:       p.anamnesis || '',
+            diagnosis:       p.diagnosis        || '',
+            icdCode:         p.icd_code         || '',
+            wardId:          p.ward_id          || '',
+            complaints:      p.complaints       || '',
+            anamnesis:       p.anamnesis        || '',
             objectiveStatus: p.objective_status || '',
-            recommendations: p.recommendations || '',
-            notes:           p.notes || '',
-            duration:        p.duration || 0,
-            medications:     Array.from(medsMap.values()),
+            recommendations: p.recommendations  || '',
+            notes:           p.notes            || '',
+            duration:        p.duration         || 0,
+            medications:     medications,
             schedule:        Array.from(scheduleMap.values()),
             filesCount:      p.prescription_files.length,
             doctor:          `${p.users_prescriptions_doctor_idTousers?.first_name || ''} ${p.users_prescriptions_doctor_idTousers?.last_name || ''}`,
@@ -684,47 +757,111 @@ export class PatientsService {
             complaints, anamnesis, objective_status, recommendations, notes,
         } = data;
 
-        const parsedMeds = typeof medications === 'string' ? JSON.parse(medications) : medications;
-        const maxDuration = Math.max(...parsedMeds.map(m => Number(m.duration) || 0));
-
-        const timezone = await getUserTimezone(req.user.userId);
-        const startDate = getStartOfDayInTz(timezone);
-        const endDate = addDays(startDate, maxDuration - 1);
-
-        await prisma.prescriptions.update({
-            where: { prescription_id: Number(prescriptionId) },
-            data: {
-                diagnosis,
-                icd_code:         icd_code         || null,
-                ward_id:          Number(wardId),
-                duration:         maxDuration,
-                end_date:         endDate,
-                complaints:       complaints        || null,
-                anamnesis:        anamnesis         || null,
-                objective_status: objective_status  || null,
-                recommendations:  recommendations   || null,
-                notes:            notes             || null,
-            }
-        });
-
-        await prisma.prescription_medications.deleteMany({
-            where: { prescription_id: Number(prescriptionId) }
-        });
+        const parsedMeds   = typeof medications === 'string' ? JSON.parse(medications) : medications;
+        const timezone     = await getUserTimezone(req.user.userId);
+        const startOfToday = getStartOfDayInTz(timezone);
+        const now          = new Date();
 
         const parsedSchedule = typeof data.schedule === 'string'
             ? JSON.parse(data.schedule)
             : data.schedule || [];
 
+        // ── Визначаємо реальну тривалість з урахуванням extraDay ─────────────────
+        // Якщо сьогоднішній час прийому вже минув — препарат починається завтра,
+        // тому реальна тривалість = duration + 1
+        let maxRealDuration = 0;
+
+        const medExtraMap = new Map(); // medicationName → extraDay
+
+        for (const med of parsedMeds) {
+            const medEntries   = parsedSchedule.filter(s => s.name === med.medicationName);
+            const todayDateStr = startOfToday.toISOString().substring(0, 10);
+            const todayEnd     = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+            // Чи є майбутній прийом сьогодні
+            const hasTodayFuture = medEntries.some(entry => {
+                const todayIntake = localToUtc(todayDateStr, entry.time, timezone);
+                return todayIntake > now;
+            });
+
+            // ← Чи вже є будь-який запис сьогодні (прийнятий, пропущений, в контейнері)
+            const hasTodayRecord = await prisma.prescription_medications.findFirst({
+                where: {
+                    prescription_id: Number(prescriptionId),
+                    medication_name: med.medicationName,
+                    intake_at: {
+                        gte: startOfToday,
+                        lt:  todayEnd,
+                    }
+                }
+            });
+
+            // extraDay = 1 тільки якщо немає ні майбутнього прийому сьогодні,
+            // ні вже існуючого запису на сьогодні
+            const extraDay = (!hasTodayFuture && !hasTodayRecord) ? 1 : 0;
+
+            const realDuration = Number(med.duration) + extraDay;
+            medExtraMap.set(med.medicationName, extraDay);
+            if (realDuration > maxRealDuration) maxRealDuration = realDuration;
+        }
+
+        const endDate = addDays(startOfToday, maxRealDuration - 1);
+
+        // ── 1. Оновлюємо саме призначення ────────────────────────────────────────
+        await prisma.prescriptions.update({
+            where: { prescription_id: Number(prescriptionId) },
+            data: {
+                diagnosis,
+                icd_code:         icd_code        || null,
+                ward_id:          Number(wardId),
+                duration:         maxRealDuration,
+                end_date:         endDate,
+                complaints:       complaints       || null,
+                anamnesis:        anamnesis        || null,
+                objective_status: objective_status || null,
+                recommendations:  recommendations  || null,
+                notes:            notes            || null,
+            }
+        });
+
+        // ── 2. Видаляємо майбутні записи що НЕ в контейнері ──────────────────────
+        // Минулі і записи в контейнері — не чіпаємо
+        await prisma.prescription_medications.deleteMany({
+            where: {
+                prescription_id: Number(prescriptionId),
+                intake_at:       { gt: now },
+                compartment_medications: { none: {} }
+            }
+        });
+
+        // ── 3. Створюємо нові записи для майбутніх днів ───────────────────────────
         for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
             const medEntries = parsedSchedule.filter(s => s.name === medicationName);
+            const extraDay   = medExtraMap.get(medicationName) ?? 0;
+            const totalDays  = Number(duration) + extraDay;
 
-            for (let day = 0; day < Number(duration); day++) {
-                const date = addDays(startDate, day);
+            for (let day = 0; day < totalDays; day++) {
+                const date    = addDays(startOfToday, day);
                 const dateStr = date.toISOString().substring(0, 10);
 
                 for (const entry of medEntries) {
                     const intake_at = localToUtc(dateStr, entry.time, timezone);
+
+                    // Пропускаємо якщо час вже минув
+                    if (intake_at <= now) continue;
+
+                    // Пропускаємо якщо на цю дату/час вже є запис в контейнері
+                    const inContainer = await prisma.prescription_medications.findFirst({
+                        where: {
+                            prescription_id: Number(prescriptionId),
+                            medication_name: medicationName,
+                            intake_at,
+                            compartment_medications: { some: {} }
+                        }
+                    });
+
+                    if (inContainer) continue;
 
                     await prisma.prescription_medications.create({
                         data: {
@@ -740,6 +877,7 @@ export class PatientsService {
             }
         }
 
+        // ── 4. Файли ──────────────────────────────────────────────────────────────
         if (files && files.length > 0) {
             const { uploadPrescriptionFile } = await import('../../integrations/azure/azure.storage.js');
             const fileTypes = Array.isArray(data.fileTypes)
@@ -761,11 +899,12 @@ export class PatientsService {
             await prisma.prescription_files.createMany({ data: uploadedFiles });
         }
 
+        // ── 5. Лог ────────────────────────────────────────────────────────────────
         await logAction({
-            userId: req.user?.userId,
-            action: ACTIONS.UPDATE_PRESCRIPTION,
-            entity: 'PRESCRIPTION',
-            entityId: Number(prescriptionId),
+            userId:      req.user?.userId,
+            action:      ACTIONS.UPDATE_PRESCRIPTION,
+            entity:      'PRESCRIPTION',
+            entityId:    Number(prescriptionId),
             description: `Prescription updated (timezone: ${timezone})`,
             req
         });

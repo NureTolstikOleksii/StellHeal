@@ -50,8 +50,8 @@ const int COMPARTMENT_STEPS[9] = {
 };
 
 // ── API ───────────────────────────────────────────────────────────────────────
-const char* API_BASE         = "http://192.168.0.103:4200/api/device";
-const char* API_BASE_NOTIFIC = "http://192.168.0.103:4200/api/notification";
+const char* API_BASE         = "http://192.168.0.102:4200/api/device";
+const char* API_BASE_NOTIFIC = "http://192.168.0.102:4200/api/notification";
 const char* DEVICE_UID       = "esp32_container_1";
 const char* DEVICE_SECRET    = "s3cr3t_container_1_2026";
 
@@ -229,27 +229,26 @@ void loop() {
     // ── Моніторинг ваги після видачі ─────────────────────────────────────────
     // confirmIntake викликається ТІЛЬКИ тут — після підтвердження вагою
     if (weightMonitoring) {
-        float currentWeight = scale.get_units(3);
-        float weightDiff    = weightAtStart - currentWeight;
-        Serial.printf("Вага: %.2f г, різниця: %.2f г\n", currentWeight, weightDiff);
+    float currentWeight = scale.get_units(3);
+    float weightDiff    = weightAtStart - currentWeight;
+    Serial.printf("Вага: %.2f г, різниця: %.2f г\n", currentWeight, weightDiff);
 
-        if (weightDiff >= WEIGHT_THRESHOLD) {
-            // ← Пацієнт забрав таблетки — підтверджуємо прийом
-            Serial.println("Таблетки взято — підтверджуємо прийом");
-            confirmIntake(lastPrescriptionMedId);
-            weightMonitoring = false;
-            alertSent        = false;
-            showMsg("ДОБРЕ!", "Таблетки взято");
-            delay(1000);
+    if (weightDiff >= WEIGHT_THRESHOLD) {
+      Serial.println("Таблетки взято — підтверджуємо прийом");
+      confirmIntake(lastPrescriptionMedId);
+      lastOpenedCompartment = -1;  // ← скидаємо
+      weightMonitoring      = false;
+      alertSent             = false;
+      showMsg("ДОБРЕ!", "Таблетки взято");
+      delay(1000);
 
-        } else if (millis() - weightMonitorStart > WEIGHT_MONITOR_DURATION && !alertSent) {
-            // ← Час вийшов — пацієнт НЕ взяв таблетки
-            // intake_status залишається null (пропущено)
-            Serial.println("Таблетки НЕ взято — надсилаємо алерт");
-            sendWeightAlert(lastPrescriptionMedId);
-            alertSent        = true;
-            weightMonitoring = false;
-        }
+      } else if (millis() - weightMonitorStart > WEIGHT_MONITOR_DURATION && !alertSent) {
+          Serial.println("Таблетки НЕ взято — надсилаємо алерт");
+          sendWeightAlert(lastPrescriptionMedId);
+          lastOpenedCompartment = -1;  // ← скидаємо
+          alertSent             = true;
+          weightMonitoring      = false;
+      }
     }
 
     if (!rfidAuthenticated) {
@@ -536,39 +535,47 @@ bool checkNextIntake() {
     sprintf(currentTime, "%02d:%02d", now.Hour(), now.Minute());
     Serial.printf("RTC (Київ): %s\n", currentTime);
 
-    if (nextIntakeTimeLocal == String(currentTime)) {
-        if (nextIntakeComp != lastOpenedCompartment) {
-            Serial.println("ЧАС СПІВПАВ - ВІДКРИВАЄМО ВІДСІК");
-            logDeviceEvent("info", "INTAKE_TRIGGERED",
-                "Відкриття відсіку " + String(nextIntakeComp) +
-                " о " + nextIntakeTimeLocal);
+    int nowMinutes    = now.Hour() * 60 + now.Minute();
+    int intakeHour    = nextIntakeTimeLocal.substring(0, 2).toInt();
+    int intakeMin     = nextIntakeTimeLocal.substring(3, 5).toInt();
+    int intakeMinutes = intakeHour * 60 + intakeMin;
+    int diff          = abs(nowMinutes - intakeMinutes);
+    if (diff > 12 * 60) diff = 24 * 60 - diff; // через північ
 
-            lastPrescriptionMedId = prescriptionMedId;
+    if (diff <= 1) {
+      if (nextIntakeComp != lastOpenedCompartment) {
+        Serial.println("ЧАС СПІВПАВ - ВІДКРИВАЄМО ВІДСІК");
+        logDeviceEvent("info", "INTAKE_TRIGGERED",
+            "Відкриття відсіку " + String(nextIntakeComp) +
+            " о " + nextIntakeTimeLocal);
 
-            // 1. Повертаємо барабан
-            rotateToCompartment(nextIntakeComp);
+        lastPrescriptionMedId = prescriptionMedId;
 
-            // 2. Відкриваємо відсік видачі
-            unloadServo.write(20);
-            delay(3000);
-            // 3. Закриваємо відсік видачі
-            unloadServo.write(83);
+        // 1. Повертаємо барабан
+        rotateToCompartment(nextIntakeComp);
 
-            // 4. Грати мелодію (серво від'єднані всередині)
-            playBeethovenMelody();
+        // 2. Відкриваємо відсік видачі
+        unloadServo.write(20);
+        delay(3000);
+        // 3. Закриваємо відсік видачі
+        unloadServo.write(83);
+        delay(1000);
 
-            lastOpenedCompartment = nextIntakeComp;
+        // 4. Грати мелодію (серво від'єднані всередині)
+        playBeethovenMelody();
 
-            // 5. Надсилаємо нагадування (НЕ confirmIntake — чекаємо на вагу)
-            sendIntakeReminder(prescriptionMedId);
+        lastOpenedCompartment = nextIntakeComp;
 
-            // 6. Починаємо моніторинг ваги
-            weightAtStart        = scale.get_units(5);
-            weightMonitorStart   = millis();
-            weightMonitoring     = true;
-            alertSent            = false;
-            Serial.printf("Моніторинг ваги розпочато, початкова: %.2f г\n", weightAtStart);
-        }
+        // 5. Надсилаємо нагадування (НЕ confirmIntake — чекаємо на вагу)
+        sendIntakeReminder(prescriptionMedId);
+
+        // 6. Починаємо моніторинг ваги
+        weightAtStart        = scale.get_units(5);
+        weightMonitorStart   = millis();
+        weightMonitoring     = true;
+        alertSent            = false;
+        Serial.printf("Моніторинг ваги розпочато, початкова: %.2f г\n", weightAtStart);
+      }
     }
 
     http.end();

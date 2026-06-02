@@ -83,13 +83,16 @@ export class DeviceService {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Container not assigned to patient", 404);
         }
 
+        const now = new Date();
+
+        // ← тільки майбутні прийоми
         const nextMed = await prisma.prescription_medications.findFirst({
             where: {
                 prescriptions:           { patient_id: container.patient_id },
                 intake_status:           null,
                 compartment_medications: { some: {} },
+                intake_at:               { gte: now }
             },
-            // ← прибрати include medications
             orderBy: { intake_at: "asc" }
         });
 
@@ -108,7 +111,6 @@ export class DeviceService {
             prescription_med_id: nextMed.prescription_med_id,
             compartment_number:  compartmentMed.compartments.compartment_number,
             intake_at:           nextMed.intake_at?.toISOString() ?? null,
-            // ← тільки з поля medication_name
             medication_name:     nextMed.medication_name || "Unknown"
         };
     }

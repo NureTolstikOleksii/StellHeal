@@ -5,7 +5,7 @@ import {
     FaRobot, FaCheckCircle,
     FaUpload, FaFileMedical, FaFileImage, FaFile,
     FaPills, FaClock, FaSun, FaMoon, FaCloudSun,
-    FaHeartbeat, FaSyncAlt, FaExternalLinkAlt,
+    FaHeartbeat, FaExternalLinkAlt,
 } from 'react-icons/fa';
 import { MdSick } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
@@ -68,37 +68,12 @@ const addMinutes = (time, mins) => {
     return `${String(Math.floor(total / 60) % 24).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
 };
 
-const buildSchedule = (medications) => {
-    const entries = [];
-    medications.forEach((med, medIdx) => {
-        if (!med.medicationName || !med.timesPerDay) return;
-        const slots = TIME_SLOTS[Math.min(parseInt(med.timesPerDay), 6)] || TIME_SLOTS[1];
-        slots.forEach((time, slotIdx) => {
-            entries.push({
-                id: `${medIdx}-${slotIdx}`,
-                name: med.medicationName,
-                time,
-                quantity: med.quantity || 1,
-                period: getPeriod(time)
-            });
-        });
-    });
-    entries.sort((a, b) => a.time.localeCompare(b.time));
-    const used = {};
-    entries.forEach(e => {
-        while (used[e.time]) e.time = addMinutes(e.time, 30);
-        used[e.time] = true;
-        e.period = getPeriod(e.time);
-    });
-    return entries;
-};
-
 // ─── Конвертація schedule з беку (intake_at UTC → локальний time "HH:mm") ────
 const normalizeSchedule = (rawSchedule) => {
     if (!rawSchedule?.length) return [];
     return rawSchedule.map((s, idx) => {
         const time = s.intake_at
-            ? formatTimeForInput(s.intake_at)   // UTC → локальний "HH:mm"
+            ? formatTimeForInput(s.intake_at)
             : s.time || '08:00';
         return {
             id:       s.id || `db-${idx}`,
@@ -182,8 +157,8 @@ const ScheduleItem = ({ item, onTimeChange }) => (
     </div>
 );
 
-// ─── SchedulePreview ──────────────────────────────────────────────────────────
-const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
+// ─── SchedulePreview (без кнопки Перегенерувати) ──────────────────────────────
+const SchedulePreview = ({ schedule, onScheduleChange, lang }) => {
     const { t } = useTranslation();
     if (!schedule.length) return null;
 
@@ -196,8 +171,11 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
         ));
     };
 
-    const periods = ['morning', 'afternoon', 'evening'];
-    const byPeriod = periods.reduce((acc, p) => { acc[p] = schedule.filter(s => s.period === p); return acc; }, {});
+    const periods  = ['morning', 'afternoon', 'evening'];
+    const byPeriod = periods.reduce((acc, p) => {
+        acc[p] = schedule.filter(s => s.period === p);
+        return acc;
+    }, {});
 
     return (
         <div className={styles.schedulePreview}>
@@ -206,9 +184,7 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
                     <FaClock className={styles.scheduleHeaderIcon} />
                     <span className={styles.scheduleTitle}>{t('prescription_form.schedule_title')}</span>
                 </div>
-                <button type="button" className={styles.rebuildBtn} onClick={onRebuild}>
-                    <FaSyncAlt size={11} /> {t('prescription_form.rebuild')}
-                </button>
+                {/* Кнопку Перегенерувати прибрано */}
             </div>
             {periods.map(period => {
                 const items = byPeriod[period];
@@ -221,7 +197,9 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
                             <span className={styles.schedulePeriodLabel}>{labels[labelKey]}</span>
                             <span className={styles.schedulePeriodRange}>{range}</span>
                         </div>
-                        {items.map(item => <ScheduleItem key={item.id} item={item} onTimeChange={handleTimeChange} />)}
+                        {items.map(item => (
+                            <ScheduleItem key={item.id} item={item} onTimeChange={handleTimeChange} />
+                        ))}
                     </div>
                 );
             })}
@@ -286,7 +264,6 @@ const EditPrescriptionPage = () => {
     const [availableWards, setAvailableWards] = useState([]);
     const [loadingPage, setLoadingPage]       = useState(true);
     const [existingFiles, setExistingFiles]   = useState([]);
-    const [scheduleLoaded, setScheduleLoaded] = useState(false);
 
     const [complaints, setComplaints]           = useState('');
     const [anamnesis, setAnamnesis]             = useState('');
@@ -300,6 +277,7 @@ const EditPrescriptionPage = () => {
     const [newFiles, setNewFiles]               = useState([]);
     const [schedule, setSchedule]               = useState([]);
     const [saving, setSaving]                   = useState(false);
+    const [scheduleInitialized, setScheduleInitialized] = useState(false);
     const [toast, setToast]                     = useState({ open: false, type: 'error', title: '', message: '' });
 
     const chatRef      = useRef(null);
@@ -309,6 +287,7 @@ const EditPrescriptionPage = () => {
 
     const showToast = (type, title, message = '') => setToast({ open: true, type, title, message });
 
+    // ── Початкове завантаження ────────────────────────────────────────────────
     useEffect(() => {
         Promise.all([
             getPatientById(id),
@@ -332,9 +311,10 @@ const EditPrescriptionPage = () => {
                     ? prescription.medications
                     : [{ medicationName: '', quantity: '', timesPerDay: '', duration: '' }]
                 );
-                // ← конвертуємо intake_at (UTC) в локальний time для відображення
-                setSchedule(normalizeSchedule(prescription.schedule));
-                setScheduleLoaded(true);
+                // Конвертуємо intake_at UTC → локальний time
+                const normalized = normalizeSchedule(prescription.schedule);
+                setSchedule(normalized);
+                setScheduleInitialized(true);
             })
             .catch(console.error)
             .finally(() => setLoadingPage(false));
@@ -346,11 +326,40 @@ const EditPrescriptionPage = () => {
         recAbortRef.current?.abort();
     }, []);
 
+    // ── Автододавання нових препаратів в розклад ──────────────────────────────
+    // Спрацьовує тільки після ініціалізації і тільки для препаратів яких ще немає
     useEffect(() => {
-        if (scheduleLoaded) return;
-        const hasAny = medications.some(m => m.medicationName && m.timesPerDay);
-        setSchedule(hasAny ? buildSchedule(medications) : []);
-    }, [medications, scheduleLoaded]);
+        if (!scheduleInitialized) return;
+
+        medications.forEach((med, idx) => {
+            if (!med.medicationName || !med.timesPerDay) return;
+
+            const alreadyInSchedule = schedule.some(s => s.name === med.medicationName);
+            if (alreadyInSchedule) return;
+
+            const slots     = TIME_SLOTS[Math.min(parseInt(med.timesPerDay), 6)] || TIME_SLOTS[1];
+            const usedTimes = new Set(schedule.map(s => s.time));
+
+            const newEntries = slots.map((time, slotIdx) => {
+                let t = time;
+                while (usedTimes.has(t)) t = addMinutes(t, 30);
+                usedTimes.add(t);
+                return {
+                    id:       `auto-${idx}-${slotIdx}-${Date.now()}`,
+                    name:     med.medicationName,
+                    time:     t,
+                    quantity: Number(med.quantity) || 1,
+                    period:   getPeriod(t),
+                };
+            });
+
+            if (newEntries.length > 0) {
+                setSchedule(prev =>
+                    [...prev, ...newEntries].sort((a, b) => a.time.localeCompare(b.time))
+                );
+            }
+        });
+    }, [medications, scheduleInitialized]);
 
     const patientPayload = () => ({
         age: patient?.dob ? String(new Date().getFullYear() - new Date(patient.dob).getFullYear()) : '',
@@ -379,9 +388,70 @@ const EditPrescriptionPage = () => {
     const suggestMedications     = () => requestAiToChat('medications',     { ...patientPayload(), diagnosis, complaints },                  'Препарати',     null,                               medsAbortRef);
     const suggestRecommendations = () => requestAiToChat('recommendations', { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') }, 'Рекомендації', (text) => setRecommendations(text), recAbortRef);
 
-    const handleMedChange  = (i, f, v) => { const u = [...medications]; u[i][f] = v; setMedications(u); };
-    const handleAddMed     = () => setMedications([...medications, { medicationName: '', quantity: '', timesPerDay: '', duration: '' }]);
-    const handleRemoveMed  = (i) => setMedications(medications.filter((_, j) => j !== i));
+    // ── Управління препаратами ────────────────────────────────────────────────
+    const handleMedChange = (i, field, value) => {
+        const updated = [...medications];
+        const oldName = updated[i].medicationName;
+        updated[i][field] = value;
+        setMedications(updated);
+
+        // Якщо змінилась назва — оновити name в розкладі
+        if (field === 'medicationName' && oldName) {
+            setSchedule(prev => prev.map(s =>
+                s.name === oldName ? { ...s, name: value } : s
+            ));
+        }
+
+        // Якщо змінилась кількість прийомів — перебудувати тільки цей препарат
+        if (field === 'timesPerDay' && updated[i].medicationName && value) {
+            const medName   = updated[i].medicationName;
+            const qty       = updated[i].quantity || 1;
+            const slots     = TIME_SLOTS[Math.min(parseInt(value), 6)] || TIME_SLOTS[1];
+
+            setSchedule(prev => {
+                const withoutMed = prev.filter(s => s.name !== medName);
+                const usedTimes  = new Set(withoutMed.map(s => s.time));
+
+                const newEntries = slots.map((time, idx) => {
+                    let t = time;
+                    while (usedTimes.has(t)) t = addMinutes(t, 30);
+                    usedTimes.add(t);
+                    return {
+                        id:       `rebuilt-${medName}-${idx}-${Date.now()}`,
+                        name:     medName,
+                        time:     t,
+                        quantity: Number(qty),
+                        period:   getPeriod(t),
+                    };
+                });
+
+                return [...withoutMed, ...newEntries].sort((a, b) => a.time.localeCompare(b.time));
+            });
+        }
+
+        // Якщо змінилась кількість таблеток — оновити quantity в розкладі
+        if (field === 'quantity' && updated[i].medicationName) {
+            const medName = updated[i].medicationName;
+            setSchedule(prev => prev.map(s =>
+                s.name === medName ? { ...s, quantity: Number(value) } : s
+            ));
+        }
+    };
+
+    const handleAddMed = () => {
+        setMedications(prev => [...prev, { medicationName: '', quantity: '', timesPerDay: '', duration: '' }]);
+        // Розклад не чіпаємо — новий запис додасться автоматично через useEffect коли заповнять поля
+    };
+
+    const handleRemoveMed = (i) => {
+        const removed = medications[i];
+        setMedications(prev => prev.filter((_, j) => j !== i));
+
+        // Видаляємо з розкладу тільки записи цього препарату
+        if (removed.medicationName) {
+            setSchedule(prev => prev.filter(s => s.name !== removed.medicationName));
+        }
+    };
 
     const handleFileAdd = (e) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -392,11 +462,6 @@ const EditPrescriptionPage = () => {
         }));
         setNewFiles(prev => [...prev, ...chosenFiles]);
         setTimeout(() => { e.target.value = ''; }, 0);
-    };
-
-    const handleRebuild = () => {
-        setScheduleLoaded(false);
-        setSchedule(buildSchedule(medications));
     };
 
     const handleSubmit = async () => {
@@ -416,7 +481,6 @@ const EditPrescriptionPage = () => {
             fd.append('recommendations', recommendations);
             fd.append('notes', notes);
             fd.append('medications', JSON.stringify(medications));
-            // schedule вже містить локальний time "HH:mm" — бек конвертує через localToUtc
             fd.append('schedule', JSON.stringify(schedule));
             newFiles.forEach(f => { fd.append('files', f.file); fd.append('fileTypes', f.fileType); });
             await updatePrescription(prescriptionId, fd);
@@ -437,7 +501,6 @@ const EditPrescriptionPage = () => {
 
     return (
         <div className={styles.pageWrapper}>
-
             <div className={styles.pageHeader}>
                 <div>
                     <div className={styles.breadcrumb}>
@@ -584,7 +647,7 @@ const EditPrescriptionPage = () => {
                         </button>
                     </div>
 
-                    <SchedulePreview schedule={schedule} onScheduleChange={setSchedule} onRebuild={handleRebuild} lang={lang} />
+                    <SchedulePreview schedule={schedule} onScheduleChange={setSchedule} lang={lang} />
 
                     <div className={styles.fieldGroup} style={{ marginTop: 20 }}>
                         <label className={styles.label}>{t('prescription_form.notes')}</label>

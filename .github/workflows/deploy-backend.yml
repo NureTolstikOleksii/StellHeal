@@ -11,7 +11,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend  # ← всі команди виконуються в папці backend
+        working-directory: backend/stellheal-backend-app  # ← всі команди виконуються в папці backend
 
     steps:
       - name: Checkout code

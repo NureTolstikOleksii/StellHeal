@@ -50,8 +50,10 @@ const int COMPARTMENT_STEPS[9] = {
 };
 
 // ── API ───────────────────────────────────────────────────────────────────────
-const char* API_BASE         = "http://192.168.0.102:4200/api/device";
-const char* API_BASE_NOTIFIC = "http://192.168.0.102:4200/api/notification";
+// const char* API_BASE         = "http://192.168.0.102:4200/api/device";
+// const char* API_BASE_NOTIFIC = "http://192.168.0.102:4200/api/notification";
+const char* API_BASE         = "https://stellheal-backend-f9e5azcyamhmg8b6.northeurope-01.azurewebsites.net/api/device";
+const char* API_BASE_NOTIFIC = "https://stellheal-backend-f9e5azcyamhmg8b6.northeurope-01.azurewebsites.net/api/notification";
 const char* DEVICE_UID       = "esp32_container_1";
 const char* DEVICE_SECRET    = "s3cr3t_container_1_2026";
 

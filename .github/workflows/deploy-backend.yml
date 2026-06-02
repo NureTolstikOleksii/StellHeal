@@ -27,7 +27,7 @@ jobs:
 
       - name: Generate Prisma client
         working-directory: backend/stellheal-backend-app
-        run: npx prisma generate
+        run: npx prisma generate --no-engine
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

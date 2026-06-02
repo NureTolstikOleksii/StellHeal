@@ -2,11 +2,16 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const serviceAccountPath = join(process.cwd(), 'secrets/firebase-service-account.json');
+let serviceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else {
+    const serviceAccountPath = join(process.cwd(), 'secrets/firebase-service-account.json');
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+}
 
 try {
-    const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
     });

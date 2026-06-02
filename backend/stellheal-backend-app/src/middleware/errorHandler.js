@@ -2,7 +2,10 @@ import { ERROR_CODES } from "../shared/constants/errorCodes.js";
 import { AppError } from "../shared/errors/AppError.js";
 
 export const errorHandler = (err, req, res, next) => {
-    console.error(err);
+    // ← логуємо тільки серверні помилки (5xx), 4xx — очікувані клієнтські
+    if (!err.status || err.status >= 500) {
+        console.error(err);
+    }
 
     // Prisma errors
     if (err.code && err.code.startsWith('P') && err.meta) {
@@ -14,15 +17,14 @@ export const errorHandler = (err, req, res, next) => {
 
     if (err instanceof AppError) {
         return res.status(err.status).json({
-            code: err.code,
+            code:    err.code,
             message: err.message,
             details: err.details || undefined
         });
     }
 
-    // fallback
     return res.status(500).json({
-        code: ERROR_CODES.INTERNAL_ERROR,
+        code:    ERROR_CODES.INTERNAL_ERROR,
         message: 'Something went wrong'
     });
 };

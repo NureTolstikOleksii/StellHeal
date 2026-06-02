@@ -88,7 +88,8 @@ class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
                         item.findViewById<TextView>(R.id.medName).text = "${index + 1}. ${med.name}"
                         item.findViewById<TextView>(R.id.medDosage).text = med.frequency
                         item.findViewById<TextView>(R.id.medDuration).text = "${med.duration} днів"
-                        med.intake_times.joinToString("\n") { "${utcToLocalTime(it.intake_at)} - ${it.quantity} табл." }
+                        item.findViewById<TextView>(R.id.medTimes).text =
+                            med.intake_times.joinToString("\n") { "${utcToLocalTime(it.intake_at)} - ${it.quantity} табл." }
 
                         medicationContainer.addView(item)
                     }

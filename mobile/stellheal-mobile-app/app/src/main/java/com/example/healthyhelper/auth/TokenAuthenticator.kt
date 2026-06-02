@@ -39,8 +39,7 @@ class TokenAuthenticator : Authenticator {
 
             if (refreshResponse.isSuccessful) {
                 val body = refreshResponse.body()
-
-                val newAccess = body?.accessToken
+                val newAccess  = body?.accessToken
                 val newRefresh = body?.refreshToken
 
                 if (newAccess != null && newRefresh != null) {

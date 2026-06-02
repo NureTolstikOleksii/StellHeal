@@ -13,3 +13,8 @@ data class LoggedUser(
     val role: String,
     val avatar: String?
 )
+
+data class RefreshResponse(
+    val accessToken: String,
+    val refreshToken: String
+)

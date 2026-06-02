@@ -113,10 +113,13 @@ export class PatientsService {
     async exportPatientsToExcel() {
         const patients = await prisma.users.findMany({
             where: { role_id: 3 },
-            select: {
-                user_id: true, first_name: true, last_name: true,
-                patronymic: true, login: true, phone: true,
-                contact_info: true, date_of_birth: true
+            include: {
+                prescriptions_prescriptions_patient_idTousers: {
+                    include: {
+                        wards:                                true,
+                        users_prescriptions_doctor_idTousers: true,
+                    }
+                }
             }
         });
 
@@ -567,7 +570,7 @@ export class PatientsService {
     // ─── prescription details (mobile) ───────────────────────────────────────
     async getPrescriptionDetails(prescriptionId) {
         const prescription = await prisma.prescriptions.findUnique({
-            where: { prescription_id: prescriptionId },
+            where: { prescription_id: Number(prescriptionId) },
             include: {
                 users_prescriptions_doctor_idTousers: true,
                 prescription_medications: { include: { medications: true } }
@@ -581,37 +584,46 @@ export class PatientsService {
         const medsMap = {};
 
         for (const pm of prescription.prescription_medications) {
-            const name = pm.medications?.name || pm.medication_name || "Unknown";
+            const name = pm.medication_name || pm.medications?.name || "Unknown";
 
             if (!medsMap[name]) {
                 medsMap[name] = {
                     name,
                     frequency:    pm.frequency,
-                    duration:     prescription.duration,
-                    intake_times: []
+                    duration:     0,
+                    intake_times: [],
+                    _dates:       new Set(), // для підрахунку унікальних дат
+                    _times:       new Set(), // для унікальних часів дня
                 };
             }
 
-            if (pm.intake_at && pm.quantity !== null) {
-                // UTC ISO — мобайл конвертує в локальний час через ZonedDateTime
-                const intake_at_iso = pm.intake_at.toISOString();
+            if (pm.intake_at) {
+                const iso     = pm.intake_at.toISOString();
+                const dateStr = iso.substring(0, 10);       // "yyyy-MM-dd"
+                const timeStr = iso.substring(11, 16);      // "HH:mm" UTC
 
-                const exists = medsMap[name].intake_times.some(
-                    it => it.intake_at === intake_at_iso && it.quantity === pm.quantity
-                );
+                medsMap[name]._dates.add(dateStr);
 
-                if (!exists) {
+                // Додаємо унікальний час дня (не кожен день окремо)
+                if (!medsMap[name]._times.has(timeStr)) {
+                    medsMap[name]._times.add(timeStr);
                     medsMap[name].intake_times.push({
-                        intake_at: intake_at_iso,
+                        intake_at: iso,  // UTC ISO — мобайл конвертує
                         quantity:  pm.quantity
                     });
                 }
             }
         }
 
+        // Рахуємо duration по унікальних датах для кожного препарату
+        const medications = Object.values(medsMap).map(({ _dates, _times, ...med }) => ({
+            ...med,
+            duration: _dates.size,
+        }));
+
         const totalTaken = await prisma.prescription_medications.aggregate({
-            where: { prescription_id: prescriptionId, intake_status: true },
-            _sum: { quantity: true }
+            where: { prescription_id: Number(prescriptionId), intake_status: true },
+            _sum:  { quantity: true }
         }).then(res => res._sum.quantity || 0);
 
         return {
@@ -619,7 +631,7 @@ export class PatientsService {
             date:        prescription.date_issued?.toISOString() ?? null,
             doctor:      `${prescription.users_prescriptions_doctor_idTousers.last_name} ${prescription.users_prescriptions_doctor_idTousers.first_name.charAt(0)}.`,
             total_taken: totalTaken,
-            medications: Object.values(medsMap)
+            medications,
         };
     }
 

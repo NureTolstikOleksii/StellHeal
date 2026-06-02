@@ -14,5 +14,5 @@ interface AuthApi {
     ): Call<LoginResponse>
 
     @POST("auth/refresh")
-    fun refresh(@Body request: RefreshRequest): Call<LoginResponse>
+    fun refresh(@Body request: RefreshRequest): Call<RefreshResponse>
 }

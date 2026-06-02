@@ -2,119 +2,331 @@ import ExcelJS from 'exceljs';
 
 export const generateTreatmentExcel = async (patient, prescriptions) => {
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Звіт з лікування');
 
-    const now = new Date().toLocaleString('uk-UA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    });
-
-    // === Назва звіту ===
-    sheet.mergeCells('A1:H1');
-    const titleCell = sheet.getCell('A1');
-    titleCell.value = 'Звіт про лікування пацієнта';
-    titleCell.font = { size: 16, bold: true };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    // === Пацієнт ===
-    sheet.mergeCells('A2:H2');
-    const patientInfoCell = sheet.getCell('A2');
-    patientInfoCell.value = `Пацієнт: ${patient.last_name} ${patient.first_name}`;
-    patientInfoCell.font = { italic: true };
-    patientInfoCell.alignment = { horizontal: 'left' };
-
-    // === Дата формування ===
-    sheet.mergeCells('A3:H3');
-    const dateCell = sheet.getCell('A3');
-    dateCell.value = `Дата формування звіту: ${now}`;
-    dateCell.font = { italic: true };
-    dateCell.alignment = { horizontal: 'left' };
-
-    // === Колонки ===
-    const headers = [
-        '№',
-        'Дата призначення',
-        'Дата завершення',
-        'Діагноз',
-        'Палата',
-        'Лікар',
-        'Тривалість (днів)',
-        'Призначені препарати'
-    ];
-
-    const columnWidths = [5, 15, 15, 20, 10, 20, 15, 60];
-    sheet.columns = columnWidths.map(width => ({ width }));
-
-    // === Header row ===
-    const headerRow = sheet.addRow(headers);
-    headerRow.font = { bold: true };
-    headerRow.alignment = {
-        horizontal: 'center',
-        vertical: 'middle',
-        wrapText: true
+    const formatDate = (val) => {
+        if (!val) return '—';
+        return new Date(val).toLocaleDateString('uk-UA', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
     };
 
-    headerRow.eachCell(cell => {
-        cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFFFE599' }
-        };
-        cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-        };
+    const formatDateTime = (val) => {
+        if (!val) return '—';
+        return new Date(val).toLocaleString('uk-UA', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
+    const formatTime = (isoString) => {
+        if (!isoString) return '—';
+        return new Date(isoString).toLocaleTimeString('uk-UA', {
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
+    const now = new Date();
+
+    // ── Стилі ────────────────────────────────────────────────────────────────
+    const COLORS = {
+        headerBg:    'FF1565C0', // синій заголовок
+        subHeaderBg: 'FFE3F2FD', // світло-синій
+        titleBg:     'FF0D47A1', // темно-синій
+        takenBg:     'FFE8F5E9', // зелений
+        missedBg:    'FFFCE4EC', // червоний
+        pendingBg:   'FFFFF9C4', // жовтий
+        borderColor: 'FFB0BEC5',
+        white:       'FFFFFFFF',
+        gray:        'FF9E9E9E',
+        darkText:    'FF212121',
+    };
+
+    const border = (color = COLORS.borderColor) => ({
+        top:    { style: 'thin', color: { argb: color } },
+        left:   { style: 'thin', color: { argb: color } },
+        bottom: { style: 'thin', color: { argb: color } },
+        right:  { style: 'thin', color: { argb: color } },
     });
 
-    // === Дані ===
-    prescriptions.forEach((p, index) => {
-        const uniqueMedMap = new Map();
+    const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 
+    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 1: Зведений звіт ──────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    const summary = workbook.addWorksheet('Зведений звіт');
+    summary.columns = [
+        { width: 5  },  // №
+        { width: 14 },  // Дата призначення
+        { width: 14 },  // Дата завершення
+        { width: 28 },  // Діагноз
+        { width: 8  },  // Палата
+        { width: 22 },  // Лікар
+        { width: 10 },  // Тривалість
+        { width: 12 },  // Прийнято %
+        { width: 42 },  // Препарати
+    ];
+
+    // Заголовок
+    summary.mergeCells('A1:I1');
+    const t1 = summary.getCell('A1');
+    t1.value = 'ЗВІТ З ЛІКУВАННЯ ПАЦІЄНТА';
+    t1.font      = { size: 16, bold: true, color: { argb: COLORS.white } };
+    t1.alignment = { horizontal: 'center', vertical: 'middle' };
+    t1.fill      = fill(COLORS.titleBg);
+    summary.getRow(1).height = 36;
+
+    // Інфо про пацієнта
+    const patientName = `${patient.last_name} ${patient.first_name} ${patient.patronymic || ''}`.trim();
+    const dob         = patient.date_of_birth ? formatDate(patient.date_of_birth) : '—';
+
+    summary.mergeCells('A2:I2');
+    const p2 = summary.getCell('A2');
+    p2.value     = `Пацієнт: ${patientName}   |   Дата народження: ${dob}   |   Телефон: ${patient.phone || '—'}`;
+    p2.font      = { size: 11, italic: true, color: { argb: COLORS.darkText } };
+    p2.alignment = { horizontal: 'left', vertical: 'middle' };
+    p2.fill      = fill(COLORS.subHeaderBg);
+    summary.getRow(2).height = 22;
+
+    summary.mergeCells('A3:I3');
+    const p3 = summary.getCell('A3');
+    p3.value     = `Дата формування звіту: ${formatDateTime(now)}   |   Всього призначень: ${prescriptions.length}`;
+    p3.font      = { size: 10, italic: true, color: { argb: COLORS.gray } };
+    p3.alignment = { horizontal: 'left', vertical: 'middle' };
+    p3.fill      = fill(COLORS.subHeaderBg);
+    summary.getRow(3).height = 20;
+
+    summary.addRow([]); // порожній рядок
+
+    // Заголовки колонок
+    const summaryHeaders = ['№', 'Дата призначення', 'Дата завершення', 'Діагноз', 'Палата', 'Лікар', 'Днів', 'Прийнято', 'Препарати'];
+    const hRow = summary.addRow(summaryHeaders);
+    hRow.height = 28;
+    hRow.eachCell((cell, col) => {
+        cell.font      = { bold: true, size: 11, color: { argb: COLORS.white } };
+        cell.fill      = fill(COLORS.headerBg);
+        cell.border    = border();
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
+
+    // Дані
+    prescriptions.forEach((p, idx) => {
+        const total   = p.prescription_medications?.length || 0;
+        const taken   = p.prescription_medications?.filter(pm => pm.intake_status === true).length  || 0;
+        const missed  = p.prescription_medications?.filter(pm => pm.intake_status === false).length || 0;
+        const rate    = total > 0 ? Math.round((taken / total) * 100) : 0;
+
+        // Унікальні препарати по medication_name
+        const medSet  = new Set();
+        const medList = [];
         (p.prescription_medications || []).forEach(pm => {
-            const name = pm?.medications?.name || 'Невідомо';
-            const freq = pm?.frequency || 'н/д';
-            const key = `${name}__${freq}`;
-
-            if (!uniqueMedMap.has(key)) {
-                uniqueMedMap.set(key, `${name} — ${freq}`);
+            const name = pm.medication_name || pm.medications?.name || 'Невідомо';
+            const freq = pm.frequency || '—';
+            const key  = `${name}__${freq}`;
+            if (!medSet.has(key)) {
+                medSet.add(key);
+                medList.push(`${medList.length + 1}. ${name} — ${freq}`);
             }
         });
 
-        const meds = Array.from(uniqueMedMap.values())
-            .map((text, i) => `${i + 1}. ${text}`)
-            .join('\n');
+        const doctorName = `${p.users_prescriptions_doctor_idTousers?.last_name || ''} ${p.users_prescriptions_doctor_idTousers?.first_name || ''}`.trim();
+        const wardNum    = p.wards?.ward_number || p.ward_id || '—';
 
-        const row = sheet.addRow([
-            index + 1,
-            p.date_issued ? new Date(p.date_issued).toLocaleDateString('uk-UA') : '',
-            p.end_date ? new Date(p.end_date).toLocaleDateString('uk-UA') : '',
-            p.diagnosis || '',
-            p.ward_id || '-',
-            `${p.users_prescriptions_doctor_idTousers?.last_name || ''} ${p.users_prescriptions_doctor_idTousers?.first_name || ''}`,
+        const row = summary.addRow([
+            idx + 1,
+            formatDate(p.date_issued),
+            formatDate(p.end_date),
+            p.diagnosis || '—',
+            wardNum,
+            doctorName,
             p.duration || 0,
-            meds
+            `${taken}/${total} (${rate}%)`,
+            medList.join('\n'),
         ]);
 
-        const medLines = meds.split('\n').length;
-        row.height = Math.max(20, medLines * 18);
-
+        row.height    = Math.max(24, medList.length * 18);
         row.alignment = { vertical: 'top', wrapText: true };
 
+        // Колір рядка залежно від відсотка виконання
+        const rowFill = rate >= 80 ? COLORS.takenBg : rate >= 50 ? COLORS.pendingBg : total === 0 ? COLORS.white : COLORS.missedBg;
         row.eachCell(cell => {
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
+            cell.border    = border();
+            cell.alignment = { vertical: 'top', wrapText: true };
+            cell.fill      = fill(rowFill);
+        });
+        // Центрувати певні колонки
+        [1, 2, 3, 5, 7, 8].forEach(c => {
+            row.getCell(c).alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
         });
     });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 2: Деталі по кожному призначенню ──────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    const details = workbook.addWorksheet('Деталі призначень');
+    details.columns = [
+        { width: 5  },  // №
+        { width: 22 },  // Препарат
+        { width: 12 },  // Частота
+        { width: 10 },  // Тривалість
+        { width: 12 },  // Час прийому
+        { width: 8  },  // К-сть
+        { width: 10 },  // Статус
+        { width: 14 },  // Прийнято/Пропущено
+    ];
+
+    prescriptions.forEach((p, pIdx) => {
+        // Заголовок призначення
+        details.addRow([]);
+        const presTitle = details.addRow([
+            `Призначення №${pIdx + 1}`,
+            `Дата: ${formatDate(p.date_issued)} — ${formatDate(p.end_date)}`,
+            '',
+            `Діагноз: ${p.diagnosis || '—'}`,
+            '',
+            '',
+            `Палата: ${p.wards?.ward_number || '—'}`,
+            `Лікар: ${p.users_prescriptions_doctor_idTousers?.last_name || ''} ${p.users_prescriptions_doctor_idTousers?.first_name || ''}`.trim(),
+        ]);
+        presTitle.getCell(1).font      = { bold: true, size: 12, color: { argb: COLORS.white } };
+        presTitle.getCell(1).fill      = fill(COLORS.headerBg);
+        presTitle.height               = 24;
+        presTitle.eachCell(cell => {
+            cell.fill   = fill(COLORS.headerBg);
+            cell.font   = { bold: true, color: { argb: COLORS.white } };
+            cell.border = border();
+        });
+
+        // Клінічна картина
+        if (p.complaints || p.recommendations) {
+            if (p.complaints) {
+                const cRow = details.addRow(['', 'Скарги:', p.complaints]);
+                cRow.getCell(2).font = { bold: true };
+                cRow.getCell(3).alignment = { wrapText: true };
+                cRow.height = Math.max(18, Math.ceil(p.complaints.length / 60) * 16);
+            }
+            if (p.recommendations) {
+                const rRow = details.addRow(['', 'Рекомендації:', p.recommendations]);
+                rRow.getCell(2).font = { bold: true };
+                rRow.getCell(3).alignment = { wrapText: true };
+                rRow.height = Math.max(18, Math.ceil(p.recommendations.length / 60) * 16);
+            }
+        }
+
+        // Заголовки таблиці препаратів
+        const medHeader = details.addRow(['№', 'Препарат', 'Частота', 'Днів', 'Час прийому (Київ)', 'Табл.', 'Статус', 'Дата прийому']);
+        medHeader.height = 22;
+        medHeader.eachCell(cell => {
+            cell.font      = { bold: true, size: 10, color: { argb: COLORS.white } };
+            cell.fill      = fill('FF1976D2');
+            cell.border    = border();
+            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        });
+
+        // Рядки препаратів
+        const meds = p.prescription_medications || [];
+        meds
+            .sort((a, b) => new Date(a.intake_at) - new Date(b.intake_at))
+            .forEach((pm, mIdx) => {
+                const name   = pm.medication_name || pm.medications?.name || '—';
+                const time   = pm.intake_at ? formatTime(pm.intake_at.toISOString()) : '—';
+                const date   = pm.intake_at ? formatDate(pm.intake_at.toISOString()) : '—';
+                const status = pm.intake_status === true  ? '✓ Прийнято'
+                    : pm.intake_status === false ? '✗ Пропущено'
+                        : '◯ Очікується';
+
+                const mRow = details.addRow([
+                    mIdx + 1,
+                    name,
+                    pm.frequency || '—',
+                    '—', // duration на рівні запису не зберігається
+                    time,
+                    pm.quantity || '—',
+                    status,
+                    date,
+                ]);
+
+                const mFill = pm.intake_status === true  ? COLORS.takenBg
+                    : pm.intake_status === false ? COLORS.missedBg
+                        : COLORS.pendingBg;
+
+                mRow.eachCell(cell => {
+                    cell.border    = border();
+                    cell.fill      = fill(mFill);
+                    cell.font      = { size: 10 };
+                    cell.alignment = { vertical: 'middle', wrapText: true };
+                });
+                mRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                mRow.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+                mRow.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+                mRow.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+                mRow.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+                mRow.height = 18;
+            });
+    });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 3: Статистика виконання ───────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    const stats = workbook.addWorksheet('Статистика');
+    stats.columns = [{ width: 30 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }];
+
+    stats.mergeCells('A1:E1');
+    const st1 = stats.getCell('A1');
+    st1.value     = 'СТАТИСТИКА ВИКОНАННЯ ПРИЗНАЧЕНЬ';
+    st1.font      = { size: 14, bold: true, color: { argb: COLORS.white } };
+    st1.alignment = { horizontal: 'center', vertical: 'middle' };
+    st1.fill      = fill(COLORS.titleBg);
+    stats.getRow(1).height = 30;
+
+    stats.addRow([]);
+
+    const statsHeader = stats.addRow(['Призначення', 'Всього', 'Прийнято', 'Пропущено', 'Виконання']);
+    statsHeader.height = 24;
+    statsHeader.eachCell(cell => {
+        cell.font      = { bold: true, color: { argb: COLORS.white } };
+        cell.fill      = fill(COLORS.headerBg);
+        cell.border    = border();
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    let grandTotal = 0, grandTaken = 0, grandMissed = 0;
+
+    prescriptions.forEach((p, idx) => {
+        const total  = p.prescription_medications?.length || 0;
+        const taken  = p.prescription_medications?.filter(pm => pm.intake_status === true).length  || 0;
+        const missed = p.prescription_medications?.filter(pm => pm.intake_status === false).length || 0;
+        const rate   = total > 0 ? `${Math.round((taken / total) * 100)}%` : '—';
+
+        grandTotal  += total;
+        grandTaken  += taken;
+        grandMissed += missed;
+
+        const sRow = stats.addRow([
+            `${idx + 1}. ${p.diagnosis || '—'} (${formatDate(p.date_issued)})`,
+            total, taken, missed, rate,
+        ]);
+
+        const rFill = taken / total >= 0.8 ? COLORS.takenBg : taken / total >= 0.5 ? COLORS.pendingBg : COLORS.missedBg;
+        sRow.eachCell(cell => {
+            cell.border    = border();
+            cell.fill      = fill(rFill);
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        });
+        sRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+        sRow.height = 20;
+    });
+
+    // Підсумок
+    const totalRate = grandTotal > 0 ? `${Math.round((grandTaken / grandTotal) * 100)}%` : '—';
+    const totRow = stats.addRow(['РАЗОМ', grandTotal, grandTaken, grandMissed, totalRate]);
+    totRow.height = 24;
+    totRow.eachCell(cell => {
+        cell.font      = { bold: true, color: { argb: COLORS.white } };
+        cell.fill      = fill(COLORS.titleBg);
+        cell.border    = border();
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    totRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
 
     return await workbook.xlsx.writeBuffer();
 };

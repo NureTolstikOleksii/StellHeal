@@ -1,13 +1,12 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { ERROR_CODES } from '../shared/constants/errorCodes.js';
 
-// ← спільний keyGenerator — бере тільки IP без порту
 const keyGenerator = (req) => {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
         || req.ip
         || req.connection.remoteAddress
         || 'unknown';
-    return ip.replace(/:\d+$/, ''); // ← відрізаємо порт якщо є
+    return ipKeyGenerator(ip);  // ← вбудований хелпер для IPv4/IPv6
 };
 
 const createLimiter = (max, message) =>

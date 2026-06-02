@@ -27,9 +27,9 @@ jobs:
 
       - name: Generate Prisma client
         working-directory: backend/stellheal-backend-app
-        run: npx prisma generate --no-engine
+        run: npx prisma generate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3

@@ -59,11 +59,4 @@ interface ContainerApi {
 
     @POST("device/rfid-reset/{containerId}")
     fun resetRfidStatus(@Path("containerId") containerId: Int): Call<Unit>
-
-
-//    @POST("containers/compartments/fill")
-//    fun addMedicationToCompartment(@Body body: Map<String, Int>): Call<Unit>
-//
-
-
 }

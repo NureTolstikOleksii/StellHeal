@@ -4,18 +4,12 @@ import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 import StaffProfileModal from '../modals/StaffProfileModal/StaffProfileModal.jsx';
 import { useTranslation } from 'react-i18next';
 import { FaBan } from 'react-icons/fa';
+import { formatDate } from '../../../utils/dateTime';
+import i18n from "i18next";
 
 const StaffTable = ({ staffList, onEditStaff, onDeleteStaff, onBlockStaff }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [viewStaff, setViewStaff] = useState(null);
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleDateString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'short', year: 'numeric' }
-        );
-    };
 
     return (
         <>
@@ -83,7 +77,7 @@ const StaffTable = ({ staffList, onEditStaff, onDeleteStaff, onBlockStaff }) => 
                                         )}
                                     </td>
                                     <td className={styles.dateCell}>
-                                        {formatDate(user.medical_staff?.admission_date)}
+                                        {formatDate(user.medical_staff?.admission_date, i18n.language)}
                                     </td>
                                 </tr>
                             );

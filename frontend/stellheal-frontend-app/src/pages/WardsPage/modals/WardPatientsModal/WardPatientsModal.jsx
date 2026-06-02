@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './WardPatientsModal.module.css';
 import {
-    FaTimes, FaHospital, FaUserInjured,
+    FaTimes, FaUserInjured,
     FaUserMd, FaCalendarAlt, FaNotesMedical,
     FaBan, FaLock, FaLockOpen,
 } from 'react-icons/fa';
@@ -9,9 +9,12 @@ import { useTranslation } from 'react-i18next';
 import { getWardPatients, blockWard, unblockWard } from '../../../../services/wardsService.js';
 import LoaderOverlay from '../../../../components/LoaderOverlay/LoaderOverlay.jsx';
 import defaultAvatar from '../../../../assets/icons/default_avatar.svg';
+import { formatDate } from '../../../../utils/dateTime';
 
 const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
     const { t, i18n } = useTranslation();
+    const lang = i18n.language || 'uk';
+
     const [ward, setWard]         = useState(initialWard);
     const [patients, setPatients] = useState([]);
     const [loading, setLoading]   = useState(true);
@@ -32,24 +35,13 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
             } else {
                 await blockWard(ward.ward_id);
             }
-
-            // Спочатку повідомляємо батьківський компонент, щоб він оновив список палат
             onBlockToggle?.();
-            // Закриваємо модальне вікно
             onClose();
         } catch (err) {
             console.error(err);
         } finally {
             setBlocking(false);
         }
-    };
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleDateString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'short', year: 'numeric' }
-        );
     };
 
     const daysLeft = (endDate) => {
@@ -69,9 +61,6 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
-                        {/*<div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>*/}
-                        {/*    <FaHospital size={16} />*/}
-                        {/*</div>*/}
                         <div>
                             <div className={styles.titleRow}>
                                 <h3 className={styles.title}>
@@ -170,7 +159,7 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
                                             {p.end_date && (
                                                 <span className={`${styles.metaItem} ${days !== null && days <= 3 ? styles.metaUrgent : ''}`}>
                                                     <FaCalendarAlt size={11} />
-                                                    {t('wards.until') || 'До'} {formatDate(p.end_date)}
+                                                    {t('wards.until') || 'До'} {formatDate(p.end_date, lang)}
                                                     {days !== null && days >= 0 && (
                                                         <span className={styles.daysLeft}>
                                                             ({days} {t('wards.days') || 'дн.'})

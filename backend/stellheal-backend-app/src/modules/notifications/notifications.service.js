@@ -4,48 +4,52 @@ import { AppError } from '../../shared/errors/AppError.js';
 import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 import { logAction } from '../../shared/logger/auditLogger.js';
 import { ACTIONS } from '../../shared/constants/actions.js';
+import { utcToLocalTime } from '../../shared/timezone/timezone.service.js';
 
 export class NotificationService {
 
+    // ─── отримати свої сповіщення ─────────────────────────────────────────────
     async getUserNotifications(userId) {
         const recipients = await prisma.notification_recipients.findMany({
-            where: { user_id: userId },
-            orderBy: { notifications: { sent_date: 'desc' } },
+            where:   { user_id: userId },
+            orderBy: { notifications: { sent_at: 'desc' } },
             include: { notifications: true }
         });
 
-        return recipients.map(recipient => ({
-            id: recipient.notification_id,
-            type: recipient.notifications.notification_type,
-            message: recipient.notifications.message,
-            date: recipient.notifications.sent_date,
-            time: recipient.notifications.sent_time,
-            is_read: recipient.is_read
+        return recipients.map(r => ({
+            id:      r.notification_id,
+            type:    r.notifications.notification_type,
+            message: r.notifications.message,
+            sent_at: r.notifications.sent_at?.toISOString() ?? null,
+            is_read: r.is_read
         }));
     }
 
+    // ─── позначити як прочитані ───────────────────────────────────────────────
     async markNotificationsRead(userId) {
         await prisma.notification_recipients.updateMany({
             where: { user_id: userId, is_read: false },
-            data: { is_read: true }
+            data:  { is_read: true }
         });
     }
 
+    // ─── зберегти FCM токен ───────────────────────────────────────────────────
     async saveFcmToken(userId, token) {
         await prisma.users.update({
             where: { user_id: userId },
-            data: { firebase_token: token },
+            data:  { firebase_token: token },
         });
 
         await logAction({
             userId,
-            action: ACTIONS.UPDATE,
-            entity: 'USER',
-            entityId: userId,
+            action:      ACTIONS.UPDATE,
+            entity:      'USER',
+            entityId:    userId,
             description: 'FCM token updated',
         });
     }
 
+    // ─── відправити push ──────────────────────────────────────────────────────
     async sendNotification(token, title, body) {
         try {
             await admin.messaging().send({
@@ -57,22 +61,22 @@ export class NotificationService {
         }
     }
 
-    // Отримуємо інформацію про контейнер, пацієнта та палату
+    // ─── контекст контейнера ──────────────────────────────────────────────────
     async getContainerContext(containerId) {
         const container = await prisma.containers.findUnique({
-            where: { container_id: containerId },
+            where:   { container_id: containerId },
             include: {
                 users: {
                     select: {
-                        user_id: true,
-                        first_name: true,
-                        last_name: true,
-                        patronymic: true,
+                        user_id:       true,
+                        first_name:    true,
+                        last_name:     true,
+                        patronymic:    true,
                         firebase_token: true,
                         prescriptions_prescriptions_patient_idTousers: {
-                            where: { end_date: { gte: new Date() } },
+                            where:   { end_date: { gte: new Date() } },
                             orderBy: { date_issued: 'desc' },
-                            take: 1,
+                            take:    1,
                             include: { wards: true }
                         }
                     }
@@ -82,9 +86,9 @@ export class NotificationService {
 
         if (!container?.users) return null;
 
-        const patient = container.users;
+        const patient      = container.users;
         const prescription = patient.prescriptions_prescriptions_patient_idTousers[0];
-        const ward = prescription?.wards?.ward_number || '—';
+        const ward         = prescription?.wards?.ward_number || '—';
 
         return {
             patient,
@@ -94,8 +98,43 @@ export class NotificationService {
         };
     }
 
+    // ─── сповіщення про неприйнятий препарат ─────────────────────────────────
     async sendWeightAlert(containerId, prescriptionMedId) {
         const now = new Date();
+
+        // 1. Позначаємо прийом як пропущений
+        await prisma.prescription_medications.update({
+            where: { prescription_med_id: prescriptionMedId },
+            data:  { intake_status: false }
+        });
+
+        // 2. Очищаємо відсік — так само як в confirmIntake
+        const compartmentMed = await prisma.compartment_medications.findFirst({
+            where: { prescription_med_id: prescriptionMedId }
+        });
+
+        if (compartmentMed) {
+            await prisma.compartment_medications.update({
+                where: { compartment_med_id: compartmentMed.compartment_med_id },
+                data:  { open_time: now }
+            });
+
+            await prisma.compartments.update({
+                where: { compartment_id: compartmentMed.compartment_id },
+                data:  { is_filled: false, last_filled_at: null }
+            });
+
+            await prisma.compartment_medications.delete({
+                where: { compartment_med_id: compartmentMed.compartment_med_id }
+            });
+        }
+
+        await logAction({
+            action:      ACTIONS.UPDATE,
+            entity:      'PRESCRIPTION_MED',
+            entityId:    prescriptionMedId,
+            description: `Intake missed — marked as false, compartment cleared (container_id=${containerId})`,
+        });
 
         const context = await this.getContainerContext(containerId);
         if (!context) {
@@ -104,49 +143,40 @@ export class NotificationService {
 
         const { patient, ward, containerNumber, patientFullName } = context;
 
-        // Назва препарату
         const med = await prisma.prescription_medications.findUnique({
-            where: { prescription_med_id: prescriptionMedId },
+            where:   { prescription_med_id: prescriptionMedId },
             include: { medications: true }
         });
-        const medName = med?.medications?.name || 'препарат';
 
-        // Знаходимо медсестер
+        const medName = med?.medications?.name || med?.medication_name || 'препарат';
+
         const nurses = await prisma.users.findMany({
-            where: { role_id: 2 },
+            where:  { role_id: 2 },
             select: { user_id: true, firebase_token: true }
         });
 
-        // Повідомлення для медсестри
-        const nurseMessage = `Пацієнт ${patientFullName} (палата ${ward}, контейнер №${containerNumber}) не забрав препарат "${medName}" протягом 5 хвилин після відкриття відсіку.`;
-
-        // Повідомлення для пацієнта
+        const nurseMessage   = `Пацієнт ${patientFullName} (палата ${ward}, контейнер №${containerNumber}) не забрав препарат "${medName}" протягом 5 хвилин після відкриття відсіку.`;
         const patientMessage = `Будь ласка, прийміть препарат "${medName}". Відсік залишається відкритим — не забудьте взяти таблетки.`;
 
-        // Записуємо окремі сповіщення для пацієнта і медсестер
-        // Для пацієнта
         await prisma.notifications.create({
             data: {
                 notification_type: "PILL_NOT_TAKEN",
-                message: patientMessage,
-                sent_date: now,
-                sent_time: now,
-                container_id: containerId,
+                message:           patientMessage,
+                sent_at:           now,
+                container_id:      containerId,
                 notification_recipients: {
                     create: [{ user_id: patient.user_id, is_read: false }]
                 }
             }
         });
 
-        // Для медсестер
         if (nurses.length > 0) {
             await prisma.notifications.create({
                 data: {
                     notification_type: "PILL_NOT_TAKEN",
-                    message: nurseMessage,
-                    sent_date: now,
-                    sent_time: now,
-                    container_id: containerId,
+                    message:           nurseMessage,
+                    sent_at:           now,
+                    container_id:      containerId,
                     notification_recipients: {
                         create: nurses.map(n => ({ user_id: n.user_id, is_read: false }))
                     }
@@ -154,7 +184,6 @@ export class NotificationService {
             });
         }
 
-        // Push пацієнту
         if (patient.firebase_token) {
             await this.sendNotification(
                 patient.firebase_token,
@@ -163,20 +192,20 @@ export class NotificationService {
             ).catch(err => console.error(`Push to patient failed: ${err.message}`));
         }
 
-        // Push медсестрам
-        const nursePushes = nurses
-            .filter(n => n.firebase_token)
-            .map(n => this.sendNotification(
-                n.firebase_token,
-                "Пацієнт не забрав таблетки",
-                nurseMessage
-            ).catch(err => console.error(`Push to nurse failed: ${err.message}`)));
-
-        await Promise.all(nursePushes);
+        await Promise.all(
+            nurses
+                .filter(n => n.firebase_token)
+                .map(n => this.sendNotification(
+                    n.firebase_token,
+                    "Пацієнт не забрав таблетки",
+                    nurseMessage
+                ).catch(err => console.error(`Push to nurse failed: ${err.message}`)))
+        );
 
         return { message: "Alert sent" };
     }
 
+    // ─── нагадування пацієнту про прийом ─────────────────────────────────────
     async sendIntakeReminder(containerId, prescriptionMedId) {
         const now = new Date();
 
@@ -185,27 +214,37 @@ export class NotificationService {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Patient not found", 404);
         }
 
-        const { patient, ward, containerNumber } = context;
+        const { patient, containerNumber } = context;
 
         const med = await prisma.prescription_medications.findUnique({
-            where: { prescription_med_id: prescriptionMedId },
-            include: { medications: true }
+            where:   { prescription_med_id: prescriptionMedId },
+            include: {
+                medications: true,
+                prescriptions: {
+                    include: {
+                        users_prescriptions_doctor_idTousers: {
+                            select: { timezone: true }
+                        }
+                    }
+                }
+            }
         });
 
-        const medName = med?.medications?.name || 'препарат';
+        const medName  = med?.medications?.name || med?.medication_name || 'препарат';
         const quantity = med?.quantity || 1;
-        const intakeTime = med?.intake_time
-            ? new Date(med.intake_time).toISOString().substring(11, 16)
+
+        const doctorTimezone  = med?.prescriptions?.users_prescriptions_doctor_idTousers?.timezone || 'UTC';
+        const intakeTimeLocal = med?.intake_at
+            ? utcToLocalTime(med.intake_at, doctorTimezone)
             : '';
 
-        const message = `Час прийняти "${medName}" — ${quantity} табл. о ${intakeTime}. Відсік контейнера №${containerNumber} відкрито та чекає на вас.`;
+        const message = `Час прийняти "${medName}" — ${quantity} табл. о ${intakeTimeLocal}. Відсік контейнера №${containerNumber} відкрито та чекає на вас.`;
 
         await prisma.notifications.create({
             data: {
                 notification_type: "INTAKE_REMINDER",
                 message,
-                sent_date: now,
-                sent_time: now,
+                sent_at:      now,
                 container_id: containerId,
                 notification_recipients: {
                     create: [{ user_id: patient.user_id, is_read: false }]

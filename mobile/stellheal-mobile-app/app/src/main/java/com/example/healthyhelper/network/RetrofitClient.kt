@@ -13,6 +13,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.TimeZone
 
 object RetrofitClient {
 
@@ -23,18 +24,21 @@ object RetrofitClient {
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)
         .addInterceptor { chain ->
-
             val token = AuthManager.getAccessToken()
 
-            val request = if (token != null) {
-                chain.request().newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-            } else {
-                chain.request()
+            // Автоматично визначаємо поточну таймзону девайсу (наприклад: "Europe/Kyiv")
+            val systemTimezone = TimeZone.getDefault().id
+
+            val requestBuilder = chain.request().newBuilder()
+                // Додаємо заголовок таймзони для всіх запитів додатку
+                .header("x-timezone", systemTimezone)
+
+            // Додаємо токен авторизації, якщо він існує
+            if (token != null) {
+                requestBuilder.header("Authorization", "Bearer $token")
             }
 
-            chain.proceed(request)
+            chain.proceed(requestBuilder.build())
         }
         .authenticator(TokenAuthenticator())
         .build()

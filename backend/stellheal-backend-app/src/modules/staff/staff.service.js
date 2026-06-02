@@ -43,7 +43,6 @@ export class StaffService {
 
     // add employee ok
     async addStaff(data, req) {
-
         const existingUser = await prisma.users.findUnique({
             where: { login: data.login }
         });
@@ -56,7 +55,7 @@ export class StaffService {
             );
         }
 
-        const plainPassword = nanoid(10);
+        const plainPassword  = nanoid(10);
         const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
         const createdUser = await prisma.users.create({
@@ -86,21 +85,15 @@ export class StaffService {
 
         await sendStaffCredentialsEmail(data.login, plainPassword);
 
-        const now = new Date();
-        const notification = await prisma.notifications.create({
+        // ← sent_at як UTC, вкладені recipients
+        await prisma.notifications.create({
             data: {
                 notification_type: 'success',
-                message:   `Вітаємо вас у системі, ${createdUser.last_name} ${createdUser.first_name}!`,
-                sent_date: now,
-                sent_time: new Date(now.getTime() + 3 * 60 * 60 * 1000),
-            }
-        });
-
-        await prisma.notification_recipients.create({
-            data: {
-                notification_id: notification.notification_id,
-                user_id:         createdUser.user_id,
-                is_read:         false
+                message:  `Вітаємо вас у системі, ${createdUser.last_name} ${createdUser.first_name}!`,
+                sent_at:  new Date(),
+                notification_recipients: {
+                    create: [{ user_id: createdUser.user_id, is_read: false }]
+                }
             }
         });
 

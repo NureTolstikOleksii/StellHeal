@@ -70,7 +70,7 @@ const AddPatientModal = ({ onClose, setPatients }) => {
                 email:   formData.email,
                 phone:   formData.phone,
                 address: formData.address,
-                dob:     formData.birth_date?.toLocaleDateString('uk-UA'),
+                dob: toLocalYYYYMMDD(formData.birth_date),
                 avatar:  null,
             }]);
             onClose();

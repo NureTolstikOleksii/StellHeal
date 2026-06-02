@@ -24,6 +24,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import androidx.core.content.edit
+import java.util.TimeZone
 
 class LoginFragment : Fragment() {
 
@@ -77,7 +78,8 @@ class LoginFragment : Fragment() {
 
             val loginRequest = LoginRequest(email, password)
 
-            RetrofitClient.authApi.login(loginRequest)
+            val timezone = TimeZone.getDefault().id
+            RetrofitClient.authApi.login(timezone, loginRequest)
                 .enqueue(object : Callback<LoginResponse> {
 
                     override fun onResponse(

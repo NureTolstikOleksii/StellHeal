@@ -61,10 +61,17 @@ export const getTreatmentHistory = async (patientId) => {
 // };
 
 export const createPrescription = async (patientId, formData) => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
     const response = await axios.post(
         '/patients/prescriptions/create',
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'x-timezone': timezone  // ← додаємо таймзону
+            }
+        }
     );
     return response.data;
 };

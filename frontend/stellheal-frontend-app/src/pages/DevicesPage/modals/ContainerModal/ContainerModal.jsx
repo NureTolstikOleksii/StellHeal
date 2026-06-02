@@ -8,6 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { fetchAdminCompartments, fetchContainerEvents, fetchContainerSessions } from '../../../../services/containerService.js';
 import LoaderOverlay from '../../../../components/LoaderOverlay/LoaderOverlay.jsx';
+import { formatDateTime, formatTime } from '../../../../utils/dateTime';
 
 // ── Drum SVG ──────────────────────────────────────────────────────────────────
 const Drum = ({ compartments, selected, onSelect }) => {
@@ -45,11 +46,10 @@ const Drum = ({ compartments, selected, onSelect }) => {
         const fill   = isSelected ? '#1976d2' : isFilled ? '#22c55e' : '#f3f4f6';
         const stroke = isSelected ? '#1565c0' : '#fff';
 
-        const intakeTime = comp?.compartment_medications?.[0]
-            ?.prescription_medications?.intake_time;
-        const timeLabel = intakeTime
-            ? new Date(intakeTime).toISOString().substring(11, 16)
-            : null;
+        // ← intake_at замість intake_time, форматуємо через formatTime
+        const intakeAt  = comp?.compartment_medications?.[0]
+            ?.prescription_medications?.intake_at;
+        const timeLabel = intakeAt ? formatTime(intakeAt) : null;
 
         return (
             <g key={i} onClick={() => onSelect(i)} style={{ cursor: 'pointer' }}>
@@ -110,7 +110,7 @@ const EventIcon = ({ type }) => {
 // ── Relative time ─────────────────────────────────────────────────────────────
 const relativeTime = (dateStr, lang) => {
     if (!dateStr) return '—';
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff  = Date.now() - new Date(dateStr).getTime();
     const mins  = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days  = Math.floor(diff / 86400000);
@@ -131,6 +131,7 @@ const relativeTime = (dateStr, lang) => {
 // ── Main ──────────────────────────────────────────────────────────────────────
 const ContainerModal = ({ container, onClose }) => {
     const { t, i18n } = useTranslation();
+    const lang = i18n.language || 'uk';
 
     const [compartments, setCompartments] = useState([]);
     const [events, setEvents]             = useState([]);
@@ -154,14 +155,6 @@ const ContainerModal = ({ container, onClose }) => {
     }, [container.container_id]);
 
     const selectedComp = selected !== null ? compartments[selected] : null;
-
-    const formatDateTime = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }
-        );
-    };
 
     const filledCount = compartments.filter(c => c?.is_filled).length;
     const emptyCount  = 8 - filledCount;
@@ -204,7 +197,8 @@ const ContainerModal = ({ container, onClose }) => {
                     {lastFillDate && (
                         <div className={styles.infoItem}>
                             <FaCalendarAlt size={12} className={styles.infoIcon} />
-                            <span>Заповнено: {formatDateTime(lastFillDate)}</span>
+                            {/* ← UTC ISO → локальний час через утиліту */}
+                            <span>Заповнено: {formatDateTime(lastFillDate, lang)}</span>
                         </div>
                     )}
                 </div>
@@ -265,16 +259,17 @@ const ContainerModal = ({ container, onClose }) => {
                                             )}
                                         </div>
 
+                                        {/* ← intake_at замість intake_time */}
                                         {selectedComp?.compartment_medications?.[0]
-                                            ?.prescription_medications?.intake_time && (
+                                            ?.prescription_medications?.intake_at && (
                                             <div className={styles.intakeTime}>
                                                 <FaClock size={12} />
                                                 Час прийому:{' '}
                                                 <strong>
-                                                    {new Date(
+                                                    {formatTime(
                                                         selectedComp.compartment_medications[0]
-                                                            .prescription_medications.intake_time
-                                                    ).toISOString().substring(11, 16)}
+                                                            .prescription_medications.intake_at
+                                                    )}
                                                 </strong>
                                             </div>
                                         )}
@@ -292,8 +287,9 @@ const ContainerModal = ({ container, onClose }) => {
                                                                     {med.prescription_medications.quantity} од.
                                                                 </span>
                                                             )}
+                                                            {/* ← fill_time UTC ISO → локальний */}
                                                             {med.fill_time && (
-                                                                <span>Засипано: {formatDateTime(med.fill_time)}</span>
+                                                                <span>Засипано: {formatDateTime(med.fill_time, lang)}</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -349,8 +345,9 @@ const ContainerModal = ({ container, onClose }) => {
                                                             : '—'
                                                         }
                                                     </div>
+                                                    {/* ← started_at UTC ISO → локальний */}
                                                     <div className={styles.sessionMeta}>
-                                                        {formatDateTime(s.started_at)}
+                                                        {formatDateTime(s.started_at, lang)}
                                                         {durationStr && (
                                                             <span className={styles.sessionDuration}>
                                                                 <FaHourglass size={10} /> {durationStr}
@@ -410,8 +407,9 @@ const ContainerModal = ({ container, onClose }) => {
                                                     <div className={styles.eventMessage}>{ev.message}</div>
                                                 )}
                                             </div>
+                                            {/* ← created_at UTC ISO → відносний час */}
                                             <div className={styles.eventTime}>
-                                                {relativeTime(ev.created_at, i18n.language)}
+                                                {relativeTime(ev.created_at, lang)}
                                             </div>
                                         </div>
                                     ))}

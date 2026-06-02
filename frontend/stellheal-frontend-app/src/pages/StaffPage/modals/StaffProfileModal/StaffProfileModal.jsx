@@ -8,18 +8,13 @@ import {
     FaClock, FaCalendarAlt, FaCheckCircle,
 } from 'react-icons/fa';
 
+// Імпортуємо обидві функції з вашого dateTime.js
+import { formatDateLong } from '../../../../utils/dateTime';
+
 const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
     const { t, i18n } = useTranslation();
 
     const isBlocked = !!staff.lock_until && new Date(staff.lock_until) > new Date();
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleDateString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'long', year: 'numeric' }
-        );
-    };
 
     const InfoRow = ({ icon: Icon, label, value }) => {
         if (!value || value === '—') return null;
@@ -88,12 +83,14 @@ const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
                     <InfoRow
                         icon={FaCalendarAlt}
                         label={t('staff.table.admission_date') || 'Дата прийому'}
-                        value={formatDate(staff.medical_staff?.admission_date)}
+                        // Використовуємо довгу локалізовану функцію з утілс
+                        value={formatDateLong(staff.medical_staff?.admission_date, i18n.language)}
                     />
                     <InfoRow
                         icon={FaCalendarAlt}
                         label={t('patient_form.birth_date')}
-                        value={formatDate(staff.date_of_birth)}
+                        // Використовуємо коротку локалізовану функцію з утілс ("dd.mm.yyyy")
+                        value={formatDateLong(staff.date_of_birth, i18n.language)}
                     />
                 </div>
 

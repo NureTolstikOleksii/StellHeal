@@ -1,100 +1,72 @@
 import prisma from '../../config/prisma.js';
 import bcrypt from 'bcryptjs';
-import {randomBytes} from 'crypto';
-import path from 'path';
-import fs from 'fs';
-// import Anthropic from '@anthropic-ai/sdk';
-import Groq from 'groq-sdk';
-// import { GoogleGenerativeAI } from '@google/generative-ai';
+import { randomBytes } from 'crypto';
+import { addDays } from 'date-fns';
 
 import { AppError } from "../../shared/errors/AppError.js";
 import { ERROR_CODES } from "../../shared/constants/errorCodes.js";
 import { logAction } from "../../shared/logger/auditLogger.js";
 import { ACTIONS } from "../../shared/constants/actions.js";
 
+import {
+    getUserTimezone,
+    getStartOfDayInTz,
+    localToUtc,
+} from '../../shared/timezone/timezone.service.js';
 
-import {getPrescriptionFileUrl, uploadPrescriptionFile} from '../../integrations/azure/azure.storage.js';
+import { getPrescriptionFileUrl, uploadPrescriptionFile } from '../../integrations/azure/azure.storage.js';
 import { sendWelcomeEmail } from "../../integrations/resend/emailService.js";
-import {generatePatientsExcel} from "../../integrations/reports/patientsExcel.service.js";
-import {generateTreatmentExcel} from "../../integrations/reports/treatmentReport.service.js";
-import {generatePrescriptionPdf} from "../../integrations/reports/prescriptionPdf.service.js";
-
-// ─── Anthropic client (ключ береться з .env) ──────────────────────────────────
-// const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+import { generatePatientsExcel } from "../../integrations/reports/patientsExcel.service.js";
+import { generateTreatmentExcel } from "../../integrations/reports/treatmentReport.service.js";
+import { generatePrescriptionPdf } from "../../integrations/reports/prescriptionPdf.service.js";
 
 export class PatientsService {
 
-    // get all patients
+    // ─── get all patients ─────────────────────────────────────────────────────
     async getAllPatients() {
         const patients = await prisma.users.findMany({
             where: { role_id: 3 },
             select: {
-                user_id: true,
-                first_name: true,
-                last_name: true,
-                patronymic: true,
-                login: true,
-                phone: true,
-                contact_info: true,
-                avatar: true,
-                date_of_birth: true
+                user_id: true, first_name: true, last_name: true,
+                patronymic: true, login: true, phone: true,
+                contact_info: true, avatar: true, date_of_birth: true
             }
         });
 
         return patients.map(p => ({
-            id: p.user_id,
-            name: `${p.first_name} ${p.last_name} ${p.patronymic}`,
-            email: p.login,
-            phone: p.phone,
+            id:      p.user_id,
+            name:    `${p.first_name} ${p.last_name} ${p.patronymic}`,
+            email:   p.login,
+            phone:   p.phone,
             address: p.contact_info,
-            dob: p.date_of_birth?.toLocaleDateString('uk-UA'),
-            avatar: p.avatar || null
+            dob:     p.date_of_birth?.toISOString().substring(0, 10) ?? null,
+            avatar:  p.avatar || null
         }));
     }
 
-    // count the number of patients
+    // ─── count patients ───────────────────────────────────────────────────────
     async getCounts() {
-        const totalPatients = await prisma.users.count({
-            where: { role_id: 3 }
-        });
+        const totalPatients = await prisma.users.count({ where: { role_id: 3 } });
 
         const onTreatment = await prisma.prescriptions.count({
             where: {
                 patient_id: { not: null },
                 end_date: { gte: new Date() },
-                users_prescriptions_patient_idTousers: {
-                    role_id: 3
-                }
+                users_prescriptions_patient_idTousers: { role_id: 3 }
             }
         });
 
         return { totalPatients, onTreatment };
     }
 
-    // create patient
+    // ─── create patient ───────────────────────────────────────────────────────
     async createPatient(data, req) {
-        const {
-            last_name,
-            first_name,
-            patronymic,
-            email,
-            birth_date,
-            phone,
-            address
-        } = data;
+        const { last_name, first_name, patronymic, email, birth_date, phone, address } = data;
 
-        const exists = await prisma.users.findUnique({
-            where: { login: email }
-        });
+        const exists = await prisma.users.findUnique({ where: { login: email } });
 
         if (exists) {
-            throw new AppError(
-                ERROR_CODES.USER_EXISTS,
-                'A user with this email already exists',
-                400
-            );
+            throw new AppError(ERROR_CODES.USER_EXISTS, 'A user with this email already exists', 400);
         }
 
         const plainPassword = randomBytes(4).toString('hex');
@@ -102,9 +74,7 @@ export class PatientsService {
 
         const user = await prisma.users.create({
             data: {
-                first_name,
-                last_name,
-                patronymic,
+                first_name, last_name, patronymic,
                 login: email,
                 password: hashedPassword,
                 date_of_birth: birth_date ? new Date(birth_date) : null,
@@ -114,30 +84,19 @@ export class PatientsService {
             },
         });
 
-        // email
         await sendWelcomeEmail(email, plainPassword);
 
-        // notification
-        const now = new Date();
-
-        const notification = await prisma.notifications.create({
+        await prisma.notifications.create({
             data: {
                 notification_type: 'success',
                 message: `Вітаємо вас у системі, ${user.last_name} ${user.first_name}!`,
-                sent_date: now,
-                sent_time: new Date(now.getTime() + (3 * 60 * 60 * 1000))
+                sent_at: new Date(),
+                notification_recipients: {
+                    create: [{ user_id: user.user_id, is_read: false }]
+                }
             }
         });
 
-        await prisma.notification_recipients.create({
-            data: {
-                notification_id: notification.notification_id,
-                user_id: user.user_id,
-                is_read: false
-            }
-        });
-
-        // audit log
         await logAction({
             userId: req.user?.userId,
             action: ACTIONS.CREATE_PATIENT,
@@ -147,77 +106,53 @@ export class PatientsService {
             req
         });
 
-        return {
-            message: 'Patient created successfully',
-            userId: user.user_id,
-            email,
-        };
+        return { message: 'Patient created successfully', userId: user.user_id, email };
     }
 
-    // Excel patient report ok
+    // ─── Excel patient report ─────────────────────────────────────────────────
     async exportPatientsToExcel() {
         const patients = await prisma.users.findMany({
             where: { role_id: 3 },
             select: {
-                user_id: true,
-                first_name: true,
-                last_name: true,
-                patronymic: true,
-                login: true,
-                phone: true,
-                contact_info: true,
-                date_of_birth: true
+                user_id: true, first_name: true, last_name: true,
+                patronymic: true, login: true, phone: true,
+                contact_info: true, date_of_birth: true
             }
         });
 
         return generatePatientsExcel(patients);
     }
 
-    // get patient by id ok
+    // ─── get patient by id ────────────────────────────────────────────────────
     async getById(id) {
         const user = await prisma.users.findUnique({
             where: { user_id: id },
             select: {
-                user_id: true,
-                first_name: true,
-                last_name: true,
-                patronymic: true,
-                login: true,
-                phone: true,
-                contact_info: true,
-                avatar: true,
-                date_of_birth: true
+                user_id: true, first_name: true, last_name: true,
+                patronymic: true, login: true, phone: true,
+                contact_info: true, avatar: true, date_of_birth: true
             }
         });
 
         if (!user) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Patient not found',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Patient not found', 404);
         }
 
         return {
-            id: user.user_id,
-            name: `${user.last_name} ${user.first_name} ${user.patronymic}`,
-            email: user.login,
-            phone: user.phone,
+            id:      user.user_id,
+            name:    `${user.last_name} ${user.first_name} ${user.patronymic}`,
+            email:   user.login,
+            phone:   user.phone,
             address: user.contact_info,
-            avatar: user.avatar,
-            dob: user.date_of_birth
-                ? new Date(user.date_of_birth).toLocaleDateString('uk-UA')
-                : ''
+            avatar:  user.avatar,
+            dob:     user.date_of_birth?.toISOString().substring(0, 10) ?? ''
         };
     }
 
-    // get current treatment ok
+    // ─── get current treatment ────────────────────────────────────────────────
     async getCurrentTreatment(patientId) {
         const prescriptions = await prisma.prescriptions.findMany({
-            where: {
-                patient_id: patientId,
-                end_date: { gte: new Date() }
-            },
+            where: { patient_id: patientId, end_date: { gte: new Date() } },
             include: {
                 users_prescriptions_doctor_idTousers: true,
                 prescription_medications: true,
@@ -245,8 +180,8 @@ export class PatientsService {
                 prescriptionId:  p.prescription_id,
                 name:            p.diagnosis,
                 icdCode:         p.icd_code || null,
-                date:            p.date_issued?.toISOString(),
-                endDate:         p.end_date?.toISOString(),
+                date:            p.date_issued?.toISOString() ?? null,
+                endDate:         p.end_date?.toISOString() ?? null,
                 medications:     uniqueMeds,
                 ward:            p.ward_id || '-',
                 doctor:          `${p.users_prescriptions_doctor_idTousers?.first_name || ''} ${p.users_prescriptions_doctor_idTousers?.last_name || ''}`,
@@ -261,12 +196,10 @@ export class PatientsService {
         });
     }
 
+    // ─── get treatment history ────────────────────────────────────────────────
     async getTreatmentHistory(patientId) {
         const prescriptions = await prisma.prescriptions.findMany({
-            where: {
-                patient_id: patientId,
-                end_date: { lt: new Date() }
-            },
+            where: { patient_id: patientId, end_date: { lt: new Date() } },
             include: {
                 users_prescriptions_doctor_idTousers: true,
                 prescription_medications: true,
@@ -290,9 +223,9 @@ export class PatientsService {
                 prescriptionId:  p.prescription_id,
                 name:            p.diagnosis,
                 icdCode:         p.icd_code || null,
-                date:            p.date_issued?.toISOString(),
-                endDate:         p.end_date?.toISOString(),
-                medications:     Array.from(seen.values()), // ← виправлено
+                date:            p.date_issued?.toISOString() ?? null,
+                endDate:         p.end_date?.toISOString() ?? null,
+                medications:     Array.from(seen.values()),
                 ward:            p.ward_id || '-',
                 doctor:          `${p.users_prescriptions_doctor_idTousers?.first_name || ''} ${p.users_prescriptions_doctor_idTousers?.last_name || ''}`,
                 duration:        p.duration || 0,
@@ -306,25 +239,17 @@ export class PatientsService {
         });
     }
 
-    // delete patient ok
+    // ─── delete patient ───────────────────────────────────────────────────────
     async deletePatient(patientId, req) {
         const id = Number(patientId);
 
-        const patient = await prisma.users.findUnique({
-            where: { user_id: id },
-        });
+        const patient = await prisma.users.findUnique({ where: { user_id: id } });
 
         if (!patient) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Patient not found',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Patient not found', 404);
         }
 
-        await prisma.users.delete({
-            where: { user_id: id }
-        });
+        await prisma.users.delete({ where: { user_id: id } });
 
         await logAction({
             userId: req.user?.userId,
@@ -338,39 +263,21 @@ export class PatientsService {
         return { message: 'Patient successfully deleted' };
     }
 
-    // patient editing ok
+    // ─── update patient ───────────────────────────────────────────────────────
     async updatePatient(id, data, req) {
-        const {
-            last_name,
-            first_name,
-            patronymic,
-            email,
-            phone,
-            contact_info,
-            birth_date,
-        } = data;
+        const { last_name, first_name, patronymic, email, phone, contact_info, birth_date } = data;
 
-        const existing = await prisma.users.findUnique({
-            where: { user_id: id },
-        });
+        const existing = await prisma.users.findUnique({ where: { user_id: id } });
 
         if (!existing) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Patient not found',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Patient not found', 404);
         }
 
         const updated = await prisma.users.update({
             where: { user_id: id },
             data: {
-                last_name,
-                first_name,
-                patronymic,
-                login: email,
-                phone,
-                contact_info,
+                last_name, first_name, patronymic,
+                login: email, phone, contact_info,
                 date_of_birth: birth_date ? new Date(birth_date) : null,
             },
         });
@@ -387,78 +294,63 @@ export class PatientsService {
         return {
             message: 'Patient successfully updated',
             user: {
-                id: updated.user_id,
-                name: `${updated.last_name} ${updated.first_name} ${updated.patronymic}`,
-                email: updated.login,
-                phone: updated.phone,
+                id:      updated.user_id,
+                name:    `${updated.last_name} ${updated.first_name} ${updated.patronymic}`,
+                email:   updated.login,
+                phone:   updated.phone,
                 address: updated.contact_info,
-                dob: updated.date_of_birth?.toLocaleDateString('uk-UA'),
+                dob:     updated.date_of_birth?.toISOString().substring(0, 10) ?? null,
             },
         };
     }
 
-    // ─── createPrescription (ОНОВЛЕНО) ────────────────────────────────────────
-    // Тепер приймає нові клінічні поля + файли від multer
+    // ─── create prescription ──────────────────────────────────────────────────
     async createPrescription(doctorId, patientId, data, files, req) {
         const {
             diagnosis, icd_code, wardId, medications,
             complaints, anamnesis, objective_status, recommendations, notes,
         } = data;
 
-        const parsedMeds = typeof medications === 'string'
-            ? JSON.parse(medications)
-            : medications;
+        const parsedMeds = typeof medications === 'string' ? JSON.parse(medications) : medications;
+        const parsedSchedule = typeof data.schedule === 'string' ? JSON.parse(data.schedule) : data.schedule || [];
 
         if (!diagnosis || !wardId || !Array.isArray(parsedMeds) || parsedMeds.length === 0) {
             throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Invalid data for prescription creation', 400);
         }
 
+        const timezone = await getUserTimezone(doctorId);
         const maxDuration = Math.max(...parsedMeds.map(m => Number(m.duration) || 0));
-        const endDate = addDays(new Date(), maxDuration);
+        const startOfToday = getStartOfDayInTz(timezone);
+        const endDate = addDays(startOfToday, maxDuration - 1);
 
         const prescription = await prisma.prescriptions.create({
             data: {
                 diagnosis,
-                icd_code:        icd_code        || null,
-                ward_id: Number(wardId),
-                patient_id: Number(patientId),
-                duration: maxDuration,
-                doctor_id: doctorId,
-                date_issued: new Date(),
-                end_date: endDate,
-                complaints:       complaints       || null,
-                anamnesis:        anamnesis        || null,
-                objective_status: objective_status || null,
-                recommendations:  recommendations  || null,
-                notes:            notes            || null,
+                icd_code:         icd_code         || null,
+                ward_id:          Number(wardId),
+                patient_id:       Number(patientId),
+                duration:         maxDuration,
+                doctor_id:        doctorId,
+                date_issued:      startOfToday,
+                end_date:         endDate,
+                complaints:       complaints        || null,
+                anamnesis:        anamnesis         || null,
+                objective_status: objective_status  || null,
+                recommendations:  recommendations   || null,
+                notes:            notes             || null,
             }
         });
 
-        const startDate = new Date();
-        const usedTimesByDay = {};
-
-        for (let medIndex = 0; medIndex < parsedMeds.length; medIndex++) {
-            const med = parsedMeds[medIndex]; // ← ОСЬ ЦЕЙ РЯДОК БУВ ВІДСУТНІЙ
+        for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
-            const times = getIntakeTimes(Number(timesPerDay));
+            const medEntries = parsedSchedule.filter(s => s.name === medicationName);
 
             for (let day = 0; day < Number(duration); day++) {
-                const date = addDays(startDate, day);
+                const date = addDays(startOfToday, day);
                 const dateStr = date.toISOString().substring(0, 10);
 
-                if (!usedTimesByDay[dateStr]) usedTimesByDay[dateStr] = new Set();
-
-                for (const timeStr of times) {
-                    const [hours, minutes] = timeStr.split(':');
-                    let totalMinutes = Number(hours) * 60 + Number(minutes);
-
-                    while (usedTimesByDay[dateStr].has(totalMinutes)) totalMinutes += 30;
-
-                    usedTimesByDay[dateStr].add(totalMinutes);
-
-                    const finalHours = Math.floor(totalMinutes / 60) % 24;
-                    const finalMinutes = totalMinutes % 60;
-                    const timeStr_final = `${String(finalHours).padStart(2,'0')}:${String(finalMinutes).padStart(2,'0')}:00`;
+                for (const entry of medEntries) {
+                    const intake_at = localToUtc(dateStr, entry.time, timezone);
 
                     await prisma.prescription_medications.create({
                         data: {
@@ -467,15 +359,13 @@ export class PatientsService {
                             medication_name: medicationName,
                             quantity:        Number(quantity),
                             frequency:       `${timesPerDay} раз(и) на день`,
-                            intake_date:     date,
-                            intake_time:     new Date(`1970-01-01T${timeStr_final}.000Z`)
+                            intake_at,
                         }
                     });
                 }
             }
         }
 
-        // Файли з типами
         if (files && files.length > 0) {
             const fileTypes = Array.isArray(data.fileTypes)
                 ? data.fileTypes
@@ -487,7 +377,7 @@ export class PatientsService {
                     return {
                         prescription_id: prescription.prescription_id,
                         file_name:       Buffer.from(f.originalname, 'latin1').toString('utf8'),
-                        file_url:        blobName,  // ← blobName замість локального шляху
+                        file_url:        blobName,
                         file_type:       fileTypes[idx] || 'other',
                     };
                 })
@@ -497,41 +387,29 @@ export class PatientsService {
         }
 
         await logAction({
-            userId: doctorId,
-            action: ACTIONS.CREATE_PRESCRIPTION,
-            entity: 'PRESCRIPTION',
-            entityId: prescription.prescription_id,
-            description: 'Prescription created',
+            userId:      doctorId,
+            action:      ACTIONS.CREATE_PRESCRIPTION,
+            entity:      'PRESCRIPTION',
+            entityId:    prescription.prescription_id,
+            description: `Prescription created (timezone: ${timezone})`,
             req
         });
 
         return { message: 'Призначення успішно створено', prescriptionId: prescription.prescription_id };
     }
 
-
-    // delete prescription ok
+    // ─── delete prescription ──────────────────────────────────────────────────
     async deletePrescription(prescriptionId, req) {
         const id = Number(prescriptionId);
 
-        const exists = await prisma.prescriptions.findUnique({
-            where: { prescription_id: id }
-        });
+        const exists = await prisma.prescriptions.findUnique({ where: { prescription_id: id } });
 
         if (!exists) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Призначення не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Призначення не знайдено', 404);
         }
 
-        await prisma.prescription_medications.deleteMany({
-            where: { prescription_id: id }
-        });
-
-        await prisma.prescriptions.delete({
-            where: { prescription_id: id }
-        });
+        await prisma.prescription_medications.deleteMany({ where: { prescription_id: id } });
+        await prisma.prescriptions.delete({ where: { prescription_id: id } });
 
         await logAction({
             userId: req.user?.userId,
@@ -543,33 +421,28 @@ export class PatientsService {
         });
     }
 
+    // ─── get prescription files ───────────────────────────────────────────────
     async getPrescriptionFiles(prescriptionId) {
         const files = await prisma.prescription_files.findMany({
             where: { prescription_id: Number(prescriptionId) }
         });
 
-        // Генеруємо тимчасові URL для кожного файлу
-        const filesWithUrls = await Promise.all(
+        return Promise.all(
             files.map(async (f) => ({
-                file_id: f.file_id,
-                file_name: f.file_name,
-                file_type: f.file_type,
-                uploaded_at: f.uploaded_at,
-                url: await getPrescriptionFileUrl(f.file_url),
+                file_id:     f.file_id,
+                file_name:   f.file_name,
+                file_type:   f.file_type,
+                uploaded_at: f.uploaded_at?.toISOString() ?? null,
+                url:         await getPrescriptionFileUrl(f.file_url),
             }))
         );
-
-        return filesWithUrls;
     }
 
+    // ─── get all patient files ────────────────────────────────────────────────
     async getAllPatientFiles(patientId) {
         const files = await prisma.prescription_files.findMany({
-            where: {
-                prescriptions: { patient_id: patientId }
-            },
-            include: {
-                prescriptions: { select: { diagnosis: true } }
-            },
+            where: { prescriptions: { patient_id: patientId } },
+            include: { prescriptions: { select: { diagnosis: true } } },
             orderBy: { uploaded_at: 'desc' }
         });
 
@@ -579,33 +452,25 @@ export class PatientsService {
             file_id:     f.file_id,
             file_name:   f.file_name,
             file_type:   f.file_type,
-            uploaded_at: f.uploaded_at,
+            uploaded_at: f.uploaded_at?.toISOString() ?? null,
             diagnosis:   f.prescriptions?.diagnosis || '—',
             url:         await getPrescriptionFileUrl(f.file_url),
         })));
     }
 
-    // treatment report ok
+    // ─── treatment report ─────────────────────────────────────────────────────
     async generateTreatmentReport(patientId) {
-        const patient = await prisma.users.findUnique({
-            where: { user_id: patientId }
-        });
+        const patient = await prisma.users.findUnique({ where: { user_id: patientId } });
 
         if (!patient) {
-            throw new AppError(
-                ERROR_CODES.USER_NOT_FOUND,
-                'Пацієнта не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Пацієнта не знайдено', 404);
         }
 
         const prescriptions = await prisma.prescriptions.findMany({
             where: { patient_id: patientId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
-                prescription_medications: {
-                    include: { medications: true }
-                }
+                prescription_medications: { include: { medications: true } }
             },
             orderBy: { date_issued: 'desc' }
         });
@@ -613,9 +478,7 @@ export class PatientsService {
         return generateTreatmentExcel(patient, prescriptions);
     }
 
-    // --- mobile ---
-
-    // receiving patients for treatment for nurses
+    // ─── patients for staff (mobile) ──────────────────────────────────────────
     async getAllPatientsForStaff() {
         const now = new Date();
 
@@ -623,246 +486,135 @@ export class PatientsService {
             where: {
                 role_id: 3,
                 prescriptions_prescriptions_patient_idTousers: {
-                    some: {
-                        end_date: { gt: now }
-                    }
+                    some: { end_date: { gt: now } }
                 }
             },
             select: {
-                user_id: true,
-                first_name: true,
-                last_name: true,
-                patronymic: true,
-                login: true,
-                phone: true,
-                contact_info: true,
-                avatar: true,
-                date_of_birth: true,
+                user_id: true, first_name: true, last_name: true,
+                patronymic: true, login: true, phone: true,
+                contact_info: true, avatar: true, date_of_birth: true,
                 prescriptions_prescriptions_patient_idTousers: {
-                    select: {
-                        wards: {
-                            select: {
-                                ward_number: true
-                            }
-                        }
-                    },
-                    orderBy: {
-                        date_issued: 'desc'
-                    },
+                    select: { wards: { select: { ward_number: true } } },
+                    orderBy: { date_issued: 'desc' },
                     take: 1
                 }
             }
         });
 
         return patients.map(p => ({
-            id: p.user_id,
-            name: `${p.first_name} ${p.last_name} ${p.patronymic}`,
-            email: p.login,
-            phone: p.phone,
+            id:      p.user_id,
+            name:    `${p.first_name} ${p.last_name} ${p.patronymic}`,
+            email:   p.login,
+            phone:   p.phone,
             address: p.contact_info,
-            dob: p.date_of_birth?.toLocaleDateString('uk-UA'),
-            avatar: p.avatar || null,
-            ward: p.prescriptions_prescriptions_patient_idTousers[0]?.wards?.ward_number || "—"
+            dob:     p.date_of_birth?.toISOString().substring(0, 10) ?? null,
+            avatar:  p.avatar || null,
+            ward:    p.prescriptions_prescriptions_patient_idTousers[0]?.wards?.ward_number || "—"
         }));
     }
 
-    // treatment history
+    // ─── prescription history (mobile) ───────────────────────────────────────
     async getPrescriptionHistoryByPatient(patientId) {
-
         if (!patientId) {
-            throw new AppError(
-                ERROR_CODES.VALIDATION_ERROR,
-                'patientId is required',
-                400
-            );
+            throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'patientId is required', 400);
         }
 
         const history = await prisma.prescriptions.findMany({
             where: { patient_id: patientId },
-            select: {
-                prescription_id: true,
-                diagnosis: true,
-                date_issued: true
-            },
-            orderBy: {
-                date_issued: 'desc'
-            }
+            select: { prescription_id: true, diagnosis: true, date_issued: true },
+            orderBy: { date_issued: 'desc' }
         });
 
         return history.map(p => ({
             prescriptionId: p.prescription_id,
-            diagnosis: p.diagnosis,
-            date: p.date_issued?.toLocaleDateString('uk-UA')
+            diagnosis:      p.diagnosis,
+            date:           p.date_issued?.toISOString() ?? null
         }));
     }
 
-    // destination details
+    // ─── prescription details (mobile) ───────────────────────────────────────
     async getPrescriptionDetails(prescriptionId) {
-
         const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: prescriptionId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
-                prescription_medications: {
-                    include: {
-                        medications: true
-                    }
-                }
+                prescription_medications: { include: { medications: true } }
             }
         });
 
         if (!prescription) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Prescription not found',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Prescription not found', 404);
         }
-
-        const formatDate = (date) =>
-            new Date(date).toLocaleDateString('uk-UA');
 
         const medsMap = {};
 
         for (const pm of prescription.prescription_medications) {
-            const name = pm.medications?.name || "Unknown";
+            const name = pm.medications?.name || pm.medication_name || "Unknown";
 
             if (!medsMap[name]) {
                 medsMap[name] = {
                     name,
-                    frequency: pm.frequency,
-                    duration: prescription.duration,
+                    frequency:    pm.frequency,
+                    duration:     prescription.duration,
                     intake_times: []
                 };
             }
 
-            if (pm.intake_time && pm.quantity !== null) {
-                const timeStr = pm.intake_time.toLocaleTimeString('uk-UA', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+            if (pm.intake_at && pm.quantity !== null) {
+                // UTC ISO — мобайл конвертує в локальний час через ZonedDateTime
+                const intake_at_iso = pm.intake_at.toISOString();
 
                 const exists = medsMap[name].intake_times.some(
-                    it => it.time === timeStr && it.quantity === pm.quantity
+                    it => it.intake_at === intake_at_iso && it.quantity === pm.quantity
                 );
 
                 if (!exists) {
                     medsMap[name].intake_times.push({
-                        time: timeStr,
-                        quantity: pm.quantity
+                        intake_at: intake_at_iso,
+                        quantity:  pm.quantity
                     });
                 }
             }
         }
 
         const totalTaken = await prisma.prescription_medications.aggregate({
-            where: {
-                prescription_id: prescriptionId,
-                intake_status: true
-            },
-            _sum: {
-                quantity: true
-            }
+            where: { prescription_id: prescriptionId, intake_status: true },
+            _sum: { quantity: true }
         }).then(res => res._sum.quantity || 0);
 
         return {
-            diagnosis: prescription.diagnosis || "N/A",
-            date: formatDate(prescription.date_issued),
-            doctor: `${prescription.users_prescriptions_doctor_idTousers.last_name} ${prescription.users_prescriptions_doctor_idTousers.first_name.charAt(0)}.`,
+            diagnosis:   prescription.diagnosis || "N/A",
+            date:        prescription.date_issued?.toISOString() ?? null,
+            doctor:      `${prescription.users_prescriptions_doctor_idTousers.last_name} ${prescription.users_prescriptions_doctor_idTousers.first_name.charAt(0)}.`,
             total_taken: totalTaken,
             medications: Object.values(medsMap)
         };
     }
 
-    // PDF report
+    // ─── PDF report ───────────────────────────────────────────────────────────
     async generatePrescriptionReport(prescriptionId) {
-
         const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: prescriptionId },
             include: {
                 users_prescriptions_doctor_idTousers: true,
                 users_prescriptions_patient_idTousers: true,
-                prescription_medications: {
-                    include: {
-                        medications: true
-                    }
-                }
+                prescription_medications: { include: { medications: true } }
             }
         });
 
         if (!prescription) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Prescription not found',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Prescription not found', 404);
         }
 
         const totalTaken = await prisma.prescription_medications.aggregate({
-            where: {
-                prescription_id: prescriptionId,
-                intake_status: true
-            },
-            _sum: {
-                quantity: true
-            }
+            where: { prescription_id: prescriptionId, intake_status: true },
+            _sum: { quantity: true }
         }).then(res => res._sum.quantity || 0);
 
         return generatePrescriptionPdf(prescription, totalTaken);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Отримати деталі призначення для редагування
+    // ─── get prescription for edit ────────────────────────────────────────────
     async getPrescriptionById(prescriptionId) {
         const p = await prisma.prescriptions.findUnique({
             where: { prescription_id: Number(prescriptionId) },
@@ -876,7 +628,6 @@ export class PatientsService {
 
         if (!p) throw new AppError(ERROR_CODES.NOT_FOUND, 'Призначення не знайдено', 404);
 
-        // Унікальні препарати для форми
         const medsMap = new Map();
         p.prescription_medications.forEach(pm => {
             if (!pm.medication_name) return;
@@ -890,19 +641,20 @@ export class PatientsService {
             }
         });
 
-        // ── Реальний графік з БД (унікальні комбінації препарат+час) ─────────────
         const scheduleMap = new Map();
         p.prescription_medications.forEach((pm, idx) => {
-            if (!pm.medication_name || !pm.intake_time) return;
-            const timeStr = new Date(pm.intake_time).toISOString().substring(11, 16);
-            const key = `${pm.medication_name}-${timeStr}`;
+            if (!pm.medication_name || !pm.intake_at) return;
+
+            // UTC ISO — веб конвертує в локальний час при відображенні
+            const intake_at_iso = pm.intake_at.toISOString();
+            const key = `${pm.medication_name}-${intake_at_iso.substring(11, 16)}`;
+
             if (!scheduleMap.has(key)) {
                 scheduleMap.set(key, {
-                    id:       `db-${idx}`,
-                    name:     pm.medication_name,
-                    time:     timeStr,
-                    quantity: pm.quantity || 1,
-                    period:   getPeriod(timeStr),
+                    id:        `db-${idx}`,
+                    name:      pm.medication_name,
+                    intake_at: intake_at_iso,
+                    quantity:  pm.quantity || 1,
                 });
             }
         });
@@ -925,62 +677,54 @@ export class PatientsService {
         };
     }
 
-// Оновити призначення
+    // ─── update prescription ──────────────────────────────────────────────────
     async updatePrescription(prescriptionId, data, files, req) {
         const {
             diagnosis, icd_code, wardId, medications,
             complaints, anamnesis, objective_status, recommendations, notes,
         } = data;
 
-        const parsedMeds = typeof medications === 'string'
-            ? JSON.parse(medications)
-            : medications;
-
+        const parsedMeds = typeof medications === 'string' ? JSON.parse(medications) : medications;
         const maxDuration = Math.max(...parsedMeds.map(m => Number(m.duration) || 0));
-        const endDate = addDays(new Date(), maxDuration);
 
-        // Оновлюємо основні поля
+        const timezone = await getUserTimezone(req.user.userId);
+        const startDate = getStartOfDayInTz(timezone);
+        const endDate = addDays(startDate, maxDuration - 1);
+
         await prisma.prescriptions.update({
             where: { prescription_id: Number(prescriptionId) },
             data: {
                 diagnosis,
-                icd_code:        icd_code        || null,
-                ward_id:         Number(wardId),
-                duration:        maxDuration,
-                end_date:        endDate,
-                complaints:      complaints      || null,
-                anamnesis:       anamnesis       || null,
-                objective_status: objective_status || null,
-                recommendations: recommendations || null,
-                notes:           notes           || null,
+                icd_code:         icd_code         || null,
+                ward_id:          Number(wardId),
+                duration:         maxDuration,
+                end_date:         endDate,
+                complaints:       complaints        || null,
+                anamnesis:        anamnesis         || null,
+                objective_status: objective_status  || null,
+                recommendations:  recommendations   || null,
+                notes:            notes             || null,
             }
         });
 
-        // Видаляємо старі препарати і створюємо нові
         await prisma.prescription_medications.deleteMany({
             where: { prescription_id: Number(prescriptionId) }
         });
-
-        const startDate = new Date();
-        const usedTimesByDay = {};
 
         const parsedSchedule = typeof data.schedule === 'string'
             ? JSON.parse(data.schedule)
             : data.schedule || [];
 
-// Замість getIntakeTimes — беремо часи з відредагованого графіку
         for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
-
-            // Знаходимо прийоми цього препарату в графіку
             const medEntries = parsedSchedule.filter(s => s.name === medicationName);
 
             for (let day = 0; day < Number(duration); day++) {
                 const date = addDays(startDate, day);
+                const dateStr = date.toISOString().substring(0, 10);
 
                 for (const entry of medEntries) {
-                    const [hours, minutes] = entry.time.split(':').map(Number);
-                    const timeStr_final = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`;
+                    const intake_at = localToUtc(dateStr, entry.time, timezone);
 
                     await prisma.prescription_medications.create({
                         data: {
@@ -989,15 +733,13 @@ export class PatientsService {
                             medication_name: medicationName,
                             quantity:        Number(quantity),
                             frequency:       `${timesPerDay} раз(и) на день`,
-                            intake_date:     date,
-                            intake_time:     new Date(`1970-01-01T${timeStr_final}.000Z`)
+                            intake_at,
                         }
                     });
                 }
             }
         }
 
-        // Додаємо нові файли якщо є
         if (files && files.length > 0) {
             const { uploadPrescriptionFile } = await import('../../integrations/azure/azure.storage.js');
             const fileTypes = Array.isArray(data.fileTypes)
@@ -1024,110 +766,64 @@ export class PatientsService {
             action: ACTIONS.UPDATE_PRESCRIPTION,
             entity: 'PRESCRIPTION',
             entityId: Number(prescriptionId),
-            description: 'Prescription updated',
+            description: `Prescription updated (timezone: ${timezone})`,
             req
         });
 
         return { message: 'Призначення оновлено' };
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // ─── intake stats (web admin) ─────────────────────────────────────────────
     async getIntakeStats(patientId, prescriptionId, date) {
         const targetDate = date ? new Date(date) : new Date();
-        const start = new Date(targetDate); start.setHours(0,0,0,0);
-        const end   = new Date(targetDate); end.setHours(23,59,59,999);
+        const dayStr = targetDate.toISOString().substring(0, 10);
+
+        const dayStart = new Date(`${dayStr}T00:00:00.000Z`);
+        const dayEnd   = new Date(`${dayStr}T23:59:59.999Z`);
 
         const where = {
             prescriptions: { patient_id: patientId },
-            intake_date: { gte: start, lte: end }
+            intake_at: { gte: dayStart, lte: dayEnd }
         };
 
-        // якщо передано prescriptionId — фільтруємо по ньому
         if (prescriptionId) {
             where.prescription_id = Number(prescriptionId);
         }
 
         const meds = await prisma.prescription_medications.findMany({
             where,
-            include: { prescriptions: { select: { diagnosis: true } } },
-            orderBy: { intake_time: 'asc' }
+            include: {
+                prescriptions: {
+                    select: { diagnosis: true }
+                }
+            },
+            orderBy: { intake_at: 'asc' }
         });
 
-        // Статистика за весь курс призначення
         const allWhere = prescriptionId
             ? { prescription_id: Number(prescriptionId) }
             : { prescriptions: { patient_id: patientId, end_date: { gte: new Date() } } };
 
         const allMeds = await prisma.prescription_medications.findMany({ where: allWhere });
 
-        const total   = allMeds.length;
-        const taken   = allMeds.filter(m => m.intake_status === true).length;
-        const missed  = allMeds.filter(m => m.intake_status === false).length;
+        const total  = allMeds.length;
+        const taken  = allMeds.filter(m => m.intake_status === true).length;
+        const missed = allMeds.filter(m => m.intake_status === false).length;
 
         return {
-            date: targetDate.toISOString().substring(0, 10),
+            date: dayStr,
             summary: { total, taken, missed, pending: total - taken - missed },
             schedule: meds.map(m => ({
                 id:        m.prescription_med_id,
                 name:      m.medication_name || '—',
                 quantity:  m.quantity,
-                time:      m.intake_time ? new Date(m.intake_time).toISOString().substring(11, 16) : null,
-                status:    m.intake_status === true ? 'taken' : m.intake_status === false ? 'missed' : 'pending',
+                // UTC ISO — фронт конвертує в локальний час
+                intake_at: m.intake_at?.toISOString() ?? null,
+                status:    m.intake_status === true  ? 'taken'
+                    : m.intake_status === false ? 'missed'
+                        : 'pending',
                 diagnosis: m.prescriptions?.diagnosis || '—',
             }))
         };
     }
-
 }
-
-// ─── helper functions (незмінні) ──────────────────────────────────────────────
-function getIntakeTimes(timesPerDay) {
-    switch (timesPerDay) {
-        case 1:  return ['14:00'];
-        case 2:  return ['08:00', '20:00'];
-        case 3:  return ['08:00', '14:00', '20:00'];
-        case 4:  return ['08:00', '12:00', '16:00', '20:00'];
-        case 5:  return ['08:00', '10:00', '13:00', '16:00', '20:00'];
-        case 6:  return ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'];
-        case 7:  return ['06:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
-        case 8:  return ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-        case 9:  return ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
-        case 10: return ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
-        default: return ['10:00'];
-    }
-}
-
-function addDays(date, days) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
-
-
-const getPeriod = (time) => {
-    const h = parseInt(time.split(':')[0]);
-    if (h < 12) return 'morning';
-    if (h < 18) return 'afternoon';
-    return 'evening';
-};
-
-
-

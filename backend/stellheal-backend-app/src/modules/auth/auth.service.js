@@ -120,7 +120,7 @@ export class AuthService {
         return newUser;
     }
 
-    async loginUser(email, password, platform, req) {
+    async loginUser(email, password, platform, timezone, req) {
 
         if (!platform) {
             throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Platform is required', 400);
@@ -191,7 +191,8 @@ export class AuthService {
             where: { user_id: user.user_id },
             data: {
                 failed_login_attempts: 0,
-                lock_until: null
+                lock_until: null,
+                timezone: timezone || 'Europe/Kyiv'
             }
         });
 

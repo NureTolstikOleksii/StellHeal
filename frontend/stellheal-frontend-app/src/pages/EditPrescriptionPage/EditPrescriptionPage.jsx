@@ -4,10 +4,10 @@ import {
     FaTimes, FaSpinner, FaPlus, FaTrash,
     FaRobot, FaCheckCircle,
     FaUpload, FaFileMedical, FaFileImage, FaFile,
-    FaPills, FaHospital, FaUserMd, FaClock, FaSun, FaMoon, FaCloudSun,
-    FaNotesMedical, FaHeartbeat, FaEdit, FaSyncAlt, FaExternalLinkAlt,
+    FaPills, FaClock, FaSun, FaMoon, FaCloudSun,
+    FaHeartbeat, FaSyncAlt, FaExternalLinkAlt,
 } from 'react-icons/fa';
-import { MdSick, MdDescription } from 'react-icons/md';
+import { MdSick } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
 import styles from '../CreatePrescriptionPage/CreatePrescriptionPage.module.css';
 import Toast from '../../components/Toast/Toast';
@@ -23,6 +23,7 @@ import {
 } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import AiFloatingChat from '../../components/AiFloatingChat/AiFloatingChat';
+import { formatTimeForInput } from '../../utils/dateTime';
 
 // ─── Константи ────────────────────────────────────────────────────────────────
 const FILE_TYPES = [
@@ -73,7 +74,13 @@ const buildSchedule = (medications) => {
         if (!med.medicationName || !med.timesPerDay) return;
         const slots = TIME_SLOTS[Math.min(parseInt(med.timesPerDay), 6)] || TIME_SLOTS[1];
         slots.forEach((time, slotIdx) => {
-            entries.push({ id: `${medIdx}-${slotIdx}`, name: med.medicationName, time, quantity: med.quantity || 1, period: getPeriod(time) });
+            entries.push({
+                id: `${medIdx}-${slotIdx}`,
+                name: med.medicationName,
+                time,
+                quantity: med.quantity || 1,
+                period: getPeriod(time)
+            });
         });
     });
     entries.sort((a, b) => a.time.localeCompare(b.time));
@@ -84,6 +91,23 @@ const buildSchedule = (medications) => {
         e.period = getPeriod(e.time);
     });
     return entries;
+};
+
+// ─── Конвертація schedule з беку (intake_at UTC → локальний time "HH:mm") ────
+const normalizeSchedule = (rawSchedule) => {
+    if (!rawSchedule?.length) return [];
+    return rawSchedule.map((s, idx) => {
+        const time = s.intake_at
+            ? formatTimeForInput(s.intake_at)   // UTC → локальний "HH:mm"
+            : s.time || '08:00';
+        return {
+            id:       s.id || `db-${idx}`,
+            name:     s.name,
+            time,
+            quantity: s.quantity || 1,
+            period:   getPeriod(time),
+        };
+    });
 };
 
 // ─── ICDSearch ────────────────────────────────────────────────────────────────
@@ -105,79 +129,41 @@ const ICDSearch = ({ value, onChange, placeholder, searchingText, notFoundText }
 
     const handleInput = (e) => {
         const val = e.target.value;
-        setQuery(val);
-        onChange(val);
-        setOpen(true);
+        setQuery(val); onChange(val); setOpen(true);
         clearTimeout(timerRef.current);
         if (val.length < 2) { setResults([]); return; }
         timerRef.current = setTimeout(async () => {
             setLoading(true);
-            try {
-                const data = await searchICDCodes(val);
-                setResults(data);
-            } catch { setResults([]); }
+            try { const data = await searchICDCodes(val); setResults(data); }
+            catch { setResults([]); }
             finally { setLoading(false); }
         }, 400);
     };
 
     const handleSelect = (item) => {
         const val = `${item.code} — ${item.name}`;
-        setQuery(val);
-        onChange(val);
-        setOpen(false);
-        setResults([]);
+        setQuery(val); onChange(val); setOpen(false); setResults([]);
     };
 
     return (
         <div ref={ref} style={{ position: 'relative' }}>
-            <input
-                type="text"
-                className={styles.medInput}
-                style={{ width: '100%', height: 38 }}
-                placeholder={placeholder}
-                value={query}
-                onChange={handleInput}
-                onFocus={() => results.length > 0 && setOpen(true)}
-                autoComplete="off"
-            />
+            <input type="text" className={styles.medInput} style={{ width: '100%', height: 38 }}
+                   placeholder={placeholder} value={query} onChange={handleInput}
+                   onFocus={() => results.length > 0 && setOpen(true)} autoComplete="off" />
             {open && (loading || results.length > 0 || query.length >= 2) && (
-                <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0,
-                    background: '#fff', border: '1px solid #e5e7eb',
-                    borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                    zIndex: 9999, maxHeight: 280, overflowY: 'auto', marginTop: 4,
-                }}>
-                    {loading && (
-                        <div style={{ padding: '12px 14px', color: '#9ca3af', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <FaSpinner className={styles.spinner} /> {searchingText}
-                        </div>
-                    )}
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 9999, maxHeight: 280, overflowY: 'auto', marginTop: 4 }}>
+                    {loading && <div style={{ padding: '12px 14px', color: '#9ca3af', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}><FaSpinner className={styles.spinner} /> {searchingText}</div>}
                     {!loading && results.map(item => (
-                        <div
-                            key={item.code}
-                            onMouseDown={() => handleSelect(item)}
-                            style={{
-                                padding: '10px 14px', cursor: 'pointer',
-                                borderBottom: '1px solid #f3f4f6',
-                                display: 'flex', gap: 10, alignItems: 'flex-start',
-                                background: '#fff', transition: 'background 0.1s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                        >
-                            <span style={{
-                                fontFamily: 'monospace', fontWeight: 700,
-                                color: '#1976d2', fontSize: 13, flexShrink: 0,
-                                background: '#eff6ff', padding: '2px 6px',
-                                borderRadius: 4, marginTop: 1,
-                            }}>{item.code}</span>
+                        <div key={item.code} onMouseDown={() => handleSelect(item)}
+                             style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', gap: 10, alignItems: 'flex-start', background: '#fff', transition: 'background 0.1s' }}
+                             onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                             onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1976d2', fontSize: 13, flexShrink: 0, background: '#eff6ff', padding: '2px 6px', borderRadius: 4, marginTop: 1 }}>{item.code}</span>
                             <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.name}</span>
                         </div>
                     ))}
                     {!loading && results.length === 0 && query.length >= 2 && (
-                        <div style={{ padding: '12px 14px', color: '#9ca3af', fontSize: 13 }}>
-                            {notFoundText}
-                        </div>
+                        <div style={{ padding: '12px 14px', color: '#9ca3af', fontSize: 13 }}>{notFoundText}</div>
                     )}
                 </div>
             )}
@@ -191,12 +177,8 @@ const ScheduleItem = ({ item, onTimeChange }) => (
         <FaPills className={styles.scheduleItemIcon} />
         <div className={styles.scheduleItemName}>{item.name}</div>
         <div className={styles.scheduleItemQty}>{item.quantity} од.</div>
-        <input
-            type="time"
-            className={styles.scheduleTime}
-            value={item.time}
-            onChange={e => onTimeChange(item.id, e.target.value)}
-        />
+        <input type="time" className={styles.scheduleTime} value={item.time}
+               onChange={e => onTimeChange(item.id, e.target.value)} />
     </div>
 );
 
@@ -224,11 +206,9 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
                     <FaClock className={styles.scheduleHeaderIcon} />
                     <span className={styles.scheduleTitle}>{t('prescription_form.schedule_title')}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button type="button" className={styles.rebuildBtn} onClick={onRebuild}>
-                        <FaSyncAlt size={11} /> {t('prescription_form.rebuild')}
-                    </button>
-                </div>
+                <button type="button" className={styles.rebuildBtn} onClick={onRebuild}>
+                    <FaSyncAlt size={11} /> {t('prescription_form.rebuild')}
+                </button>
             </div>
             {periods.map(period => {
                 const items = byPeriod[period];
@@ -237,12 +217,11 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
                 return (
                     <div key={period} className={styles.schedulePeriod}>
                         <div className={styles.schedulePeriodHeader}>
+                            <Icon style={{ color, fontSize: 15 }} />
                             <span className={styles.schedulePeriodLabel}>{labels[labelKey]}</span>
                             <span className={styles.schedulePeriodRange}>{range}</span>
                         </div>
-                        {items.map(item => (
-                            <ScheduleItem key={item.id} item={item} onTimeChange={handleTimeChange} />
-                        ))}
+                        {items.map(item => <ScheduleItem key={item.id} item={item} onTimeChange={handleTimeChange} />)}
                     </div>
                 );
             })}
@@ -250,39 +229,7 @@ const SchedulePreview = ({ schedule, onScheduleChange, onRebuild, lang }) => {
     );
 };
 
-// ─── AISuggestion ─────────────────────────────────────────────────────────────
-const AISuggestion = ({ text, loading, onApply, onDismiss }) => {
-    const { t } = useTranslation();
-    if (!loading && !text) return null;
-    return (
-        <div className={styles.aiSuggestion}>
-            <div className={styles.aiSuggestionHeader}>
-                <div className={styles.aiLabel}>
-                    <FaRobot className={styles.aiIcon} />
-                    <span>{t('prescription_form.ai_hint')}</span>
-                </div>
-                {!loading && (
-                    <div className={styles.aiActions}>
-                        {onApply && (
-                            <button className={styles.aiApplyBtn} onClick={onApply}>
-                                <FaCheckCircle size={11} /> {t('prescription_form.ai_apply')}
-                            </button>
-                        )}
-                        <button className={styles.aiDismissBtn} onClick={onDismiss}>
-                            <FaTimes size={11} />
-                        </button>
-                    </div>
-                )}
-            </div>
-            {loading
-                ? <div className={styles.aiLoading}><FaSpinner className={styles.spinner} /><span>{t('prescription_form.ai_analyzing')}</span></div>
-                : <div className={styles.aiText}>{text}</div>
-            }
-        </div>
-    );
-};
-
-// ─── FileItem (нові) ──────────────────────────────────────────────────────────
+// ─── FileItem ─────────────────────────────────────────────────────────────────
 const FileItem = ({ file, index, onRemove, onTypeChange }) => {
     const ft = FILE_TYPES.find(t => t.value === file.fileType) || FILE_TYPES[0];
     return (
@@ -310,7 +257,9 @@ const ExistingFileItem = ({ file }) => {
                 <span className={styles.fileName}>{file.file_name}</span>
                 <span className={styles.fileSize}>{ft.label}</span>
             </div>
-            <span className={styles.fileDate}>{new Date(file.uploaded_at).toLocaleDateString('uk-UA')}</span>
+            <span className={styles.fileDate}>
+                {new Date(file.uploaded_at).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
             <FaExternalLinkAlt size={11} className={styles.fileExternal} />
         </a>
     );
@@ -350,18 +299,15 @@ const EditPrescriptionPage = () => {
     const [medications, setMedications]         = useState([{ medicationName: '', quantity: '', timesPerDay: '', duration: '' }]);
     const [newFiles, setNewFiles]               = useState([]);
     const [schedule, setSchedule]               = useState([]);
-
-    const [saving, setSaving]           = useState(false);
-    const [toast, setToast]             = useState({ open: false, type: 'error', title: '', message: '' });
+    const [saving, setSaving]                   = useState(false);
+    const [toast, setToast]                     = useState({ open: false, type: 'error', title: '', message: '' });
 
     const chatRef      = useRef(null);
     const diagAbortRef = useRef(null);
     const medsAbortRef = useRef(null);
     const recAbortRef  = useRef(null);
 
-    const showToast = (type, title, message = '') => {
-        setToast({ open: true, type, title, message });
-    };
+    const showToast = (type, title, message = '') => setToast({ open: true, type, title, message });
 
     useEffect(() => {
         Promise.all([
@@ -386,7 +332,8 @@ const EditPrescriptionPage = () => {
                     ? prescription.medications
                     : [{ medicationName: '', quantity: '', timesPerDay: '', duration: '' }]
                 );
-                setSchedule(prescription.schedule || []);
+                // ← конвертуємо intake_at (UTC) в локальний time для відображення
+                setSchedule(normalizeSchedule(prescription.schedule));
                 setScheduleLoaded(true);
             })
             .catch(console.error)
@@ -409,7 +356,6 @@ const EditPrescriptionPage = () => {
         age: patient?.dob ? String(new Date().getFullYear() - new Date(patient.dob).getFullYear()) : '',
     });
 
-    // Контекст для чату
     const chatContext = patient
         ? `Пацієнт: ${patient.name}, вік: ${patientPayload().age} р.\nСкарги: ${complaints || 'не вказано'}\nАнамнез: ${anamnesis || 'не вказано'}\nОб'єктивний стан: ${objectiveStatus || 'не вказано'}\nДіагноз: ${diagnosis || 'не вказано'}\nПрепарати: ${medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') || 'не призначено'}`
         : '';
@@ -454,13 +400,9 @@ const EditPrescriptionPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!diagnosis || !wardId) {
-            showToast('error', t('prescription_form.error_required'));
-            return;
-        }
+        if (!diagnosis || !wardId) { showToast('error', t('prescription_form.error_required')); return; }
         if (medications.some(m => !m.medicationName || !m.quantity || !m.timesPerDay || !m.duration)) {
-            showToast('error', t('prescription_form.error_medications'));
-            return;
+            showToast('error', t('prescription_form.error_medications')); return;
         }
         setSaving(true);
         try {
@@ -474,6 +416,7 @@ const EditPrescriptionPage = () => {
             fd.append('recommendations', recommendations);
             fd.append('notes', notes);
             fd.append('medications', JSON.stringify(medications));
+            // schedule вже містить локальний time "HH:mm" — бек конвертує через localToUtc
             fd.append('schedule', JSON.stringify(schedule));
             newFiles.forEach(f => { fd.append('files', f.file); fd.append('fileTypes', f.fileType); });
             await updatePrescription(prescriptionId, fd);
@@ -481,8 +424,7 @@ const EditPrescriptionPage = () => {
             setTimeout(() => navigate(`/main/patients/${id}`), 1000);
         } catch (err) {
             console.error(err);
-            const serverMsg = err?.response?.data?.message || '';
-            showToast('error', t('prescription_form.error_save'), serverMsg);
+            showToast('error', t('prescription_form.error_save'), err?.response?.data?.message || '');
         } finally {
             setSaving(false);
         }
@@ -496,7 +438,6 @@ const EditPrescriptionPage = () => {
     return (
         <div className={styles.pageWrapper}>
 
-            {/* Header */}
             <div className={styles.pageHeader}>
                 <div>
                     <div className={styles.breadcrumb}>
@@ -547,8 +488,6 @@ const EditPrescriptionPage = () => {
                         </div>
                         <textarea className={styles.textarea} rows={2} placeholder={t('prescription_form.diagnosis_placeholder')} value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
                     </div>
-
-                    {/* МКХ-10 */}
                     <div className={styles.fieldGroup} style={{ marginTop: 16 }}>
                         <div className={styles.labelRow}>
                             <label className={styles.label}>
@@ -558,20 +497,16 @@ const EditPrescriptionPage = () => {
                                 </span>
                             </label>
                         </div>
-                        <ICDSearch
-                            value={icdCode}
-                            onChange={setIcdCode}
-                            placeholder={t('prescription_form.icd_placeholder')}
-                            searchingText={t('prescription_form.icd_searching')}
-                            notFoundText={t('prescription_form.icd_not_found')}
-                        />
+                        <ICDSearch value={icdCode} onChange={setIcdCode}
+                                   placeholder={t('prescription_form.icd_placeholder')}
+                                   searchingText={t('prescription_form.icd_searching')}
+                                   notFoundText={t('prescription_form.icd_not_found')} />
                     </div>
                 </div>
 
                 {/* БЛОК 2: Файли */}
                 <div className={styles.formSection}>
                     <SectionHeader icon={FaFileMedical} title={t('prescription_form.files_title')} color="#0288d1" />
-
                     {existingFiles.length > 0 && (
                         <div style={{ marginBottom: 16 }}>
                             <p className={styles.existingFilesLabel}>
@@ -582,35 +517,22 @@ const EditPrescriptionPage = () => {
                             </div>
                         </div>
                     )}
-
                     <div className={styles.fileUploadArea}>
-                        <button
-                            type="button"
-                            className={styles.fileUploadBtn}
-                            onClick={() => document.getElementById('editFileInput').click()}
-                        >
+                        <button type="button" className={styles.fileUploadBtn}
+                                onClick={() => document.getElementById('editFileInput').click()}>
                             <FaUpload size={14} /><span>{t('prescription_form.upload_file')}</span>
                         </button>
-                        <input
-                            id="editFileInput"
-                            type="file"
-                            multiple
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                            onChange={handleFileAdd}
-                            style={{ display: 'none' }}
-                        />
+                        <input id="editFileInput" type="file" multiple
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                               onChange={handleFileAdd} style={{ display: 'none' }} />
                         <span className={styles.fileHint}>{t('prescription_form.file_hint')}</span>
                     </div>
                     {newFiles.length > 0 && (
                         <div className={styles.fileList}>
                             {newFiles.map(f => (
-                                <FileItem
-                                    key={f.id}
-                                    file={f}
-                                    index={f.id}
-                                    onRemove={(fid) => setNewFiles(p => p.filter(item => item.id !== fid))}
-                                    onTypeChange={(fid, type) => setNewFiles(p => p.map(item => item.id === fid ? { ...item, fileType: type } : item))}
-                                />
+                                <FileItem key={f.id} file={f} index={f.id}
+                                          onRemove={(fid) => setNewFiles(p => p.filter(item => item.id !== fid))}
+                                          onTypeChange={(fid, type) => setNewFiles(p => p.map(item => item.id === fid ? { ...item, fileType: type } : item))} />
                             ))}
                         </div>
                     )}
@@ -638,7 +560,6 @@ const EditPrescriptionPage = () => {
                         <textarea className={styles.textarea} rows={3} placeholder={t('prescription_form.recommendations_placeholder')} value={recommendations} onChange={e => setRecommendations(e.target.value)} />
                     </div>
 
-                    {/* Препарати */}
                     <div style={{ marginTop: 24 }}>
                         <div className={styles.labelRow}>
                             <label className={styles.label}>{t('prescription_form.medications')}</label>
@@ -646,15 +567,14 @@ const EditPrescriptionPage = () => {
                                 <FaRobot size={12} /> {t('prescription_form.ai_hint')}
                             </button>
                         </div>
-
                         {medications.map((med, i) => (
                             <div key={i} className={styles.medRow}>
                                 <div className={styles.medFields}>
                                     <div className={styles.medIndex}>{i + 1}</div>
                                     <input type="text"   className={styles.medInput} style={{ flex: 2.5 }} placeholder={t('prescription_form.med_name_placeholder')} value={med.medicationName} onChange={e => handleMedChange(i, 'medicationName', e.target.value)} />
-                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_quantity')}    value={med.quantity}    onChange={e => handleMedChange(i, 'quantity',    e.target.value)} />
-                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_times')} value={med.timesPerDay} onChange={e => handleMedChange(i, 'timesPerDay', e.target.value)} />
-                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_duration')}    value={med.duration}    onChange={e => handleMedChange(i, 'duration',    e.target.value)} />
+                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_quantity')}  value={med.quantity}    onChange={e => handleMedChange(i, 'quantity',    e.target.value)} />
+                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_times')}     value={med.timesPerDay} onChange={e => handleMedChange(i, 'timesPerDay', e.target.value)} />
+                                    <input type="number" className={styles.medInput} placeholder={t('prescription_form.med_duration')}  value={med.duration}    onChange={e => handleMedChange(i, 'duration',    e.target.value)} />
                                     <button className={styles.medRemoveBtn} onClick={() => handleRemoveMed(i)}><FaTrash size={12} /></button>
                                 </div>
                             </div>
@@ -664,12 +584,7 @@ const EditPrescriptionPage = () => {
                         </button>
                     </div>
 
-                    <SchedulePreview
-                        schedule={schedule}
-                        onScheduleChange={setSchedule}
-                        onRebuild={handleRebuild}
-                        lang={lang}
-                    />
+                    <SchedulePreview schedule={schedule} onScheduleChange={setSchedule} onRebuild={handleRebuild} lang={lang} />
 
                     <div className={styles.fieldGroup} style={{ marginTop: 20 }}>
                         <label className={styles.label}>{t('prescription_form.notes')}</label>
@@ -684,22 +599,16 @@ const EditPrescriptionPage = () => {
                     <button className={styles.submitBtn} onClick={handleSubmit} disabled={saving}>
                         {saving
                             ? <><FaSpinner className={styles.spinner} /> {t('prescription_form.saving')}</>
-                            : <>{t('prescription_form.edit_save')}</>
+                            : t('prescription_form.edit_save')
                         }
                     </button>
                 </div>
             </div>
 
-            {/* ── Плаваючий AI чат ── */}
             <AiFloatingChat ref={chatRef} context={chatContext} lang={lang} />
 
-            <Toast
-                open={toast.open}
-                type={toast.type}
-                title={toast.title}
-                message={toast.message}
-                onClose={() => setToast(prev => ({ ...prev, open: false }))}
-            />
+            <Toast open={toast.open} type={toast.type} title={toast.title} message={toast.message}
+                   onClose={() => setToast(prev => ({ ...prev, open: false }))} />
         </div>
     );
 };

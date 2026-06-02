@@ -24,7 +24,8 @@ router.get('/doctors', authenticateToken, authorizeRoles(4), async (req, res, ne
 // intake week stats ok
 router.get('/intake-week', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
-        res.json(await statsService.getIntakeWeekStats());
+        const weekOffset = Number(req.query.weekOffset) || 0;
+        res.json(await statsService.getIntakeWeekStats(weekOffset));
     } catch (err) { next(err); }
 });
 

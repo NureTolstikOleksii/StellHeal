@@ -11,9 +11,9 @@ import {
     FiDownload, FiRefreshCw, FiTrash2,
     FiAlertTriangle, FiDatabase, FiCheckCircle,
 } from 'react-icons/fi';
-import { FaDatabase } from 'react-icons/fa';
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay';
 import Toast from '../../components/Toast/Toast';
+import { formatDateTimeLong } from '../../utils/dateTime';
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 const ConfirmModal = ({ title, message, danger, onConfirm, onClose }) => (
@@ -57,6 +57,8 @@ const BackupPage = () => {
     const [confirm, setConfirm]     = useState(null); // { type, backup }
     const [actionLoading, setActionLoading] = useState(false);
     const [toast, setToast] = useState({ open: false, type: 'success', title: '', message: '' });
+
+    const lang = i18n.language || 'uk';
 
     const showToast = (type, title, message = '') =>
         setToast({ open: true, type, title, message });
@@ -127,14 +129,6 @@ const BackupPage = () => {
         }
     };
 
-    const formatDate = (isoDate) => {
-        if (!isoDate) return '—';
-        return new Date(isoDate).toLocaleString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-        );
-    };
-
     if (loading) return <LoaderOverlay />;
 
     const latestBackup = backups[0];
@@ -168,7 +162,7 @@ const BackupPage = () => {
                         </div>
                         {latestBackup && (
                             <div className={styles.statusDate}>
-                                {formatDate(latestBackup.lastModified)} · {formatSize(latestBackup.size)}
+                                {formatDateTimeLong(latestBackup.lastModified, lang)} · {formatSize(latestBackup.size)}
                             </div>
                         )}
                     </div>
@@ -207,7 +201,7 @@ const BackupPage = () => {
                                 <div className={styles.backupInfo}>
                                     <div className={styles.backupName}>{b.name}</div>
                                     <div className={styles.backupMeta}>
-                                        {formatDate(b.lastModified)} · {formatSize(b.size)}
+                                        {formatDateTimeLong(b.lastModified, lang)} · {formatSize(b.size)}
                                     </div>
                                 </div>
                                 {i === 0 && (

@@ -5,6 +5,10 @@ export const loginUser = async (email, password) => {
         email,
         password,
         platform: 'web'
+    }, {
+        headers: {
+            'x-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
     });
     return res.data;
 };

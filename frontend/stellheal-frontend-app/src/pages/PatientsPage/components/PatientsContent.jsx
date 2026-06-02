@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 import LoaderOverlay from '../../../components/LoaderOverlay/LoaderOverlay.jsx';
 import { FaSearch, FaSortAmountDown } from 'react-icons/fa';
+import {formatDate} from "../../../utils/dateTime.js";
+import i18n from "i18next";
 
 const PatientsContent = () => {
     const { t } = useTranslation();
@@ -97,7 +99,7 @@ const PatientsContent = () => {
                                 </td>
                                 <td>{patient.phone}</td>
                                 <td>{patient.email}</td>
-                                <td>{patient.dob}</td>
+                                <td>{formatDate(patient.dob, i18n.language)}</td>
                                 <td>{patient.address}</td>
                             </tr>
                         ))

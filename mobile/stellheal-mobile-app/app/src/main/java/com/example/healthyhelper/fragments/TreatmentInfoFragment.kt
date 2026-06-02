@@ -15,10 +15,12 @@ import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.calendar.PrescriptionDetailsRequest
 import com.example.healthyhelper.network.calendar.PrescriptionDetailsResponse
+import com.example.healthyhelper.utils.utcToLocalDate
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.healthyhelper.utils.utcToLocalTime
 
 class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
 
@@ -53,6 +55,7 @@ class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
         RetrofitClient.calendarApi
             .getPrescriptionDetails(PrescriptionDetailsRequest(prescriptionId))
             .enqueue(object : Callback<PrescriptionDetailsResponse> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<PrescriptionDetailsResponse>,
                     response: Response<PrescriptionDetailsResponse>
@@ -69,7 +72,7 @@ class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
                     val data = response.body() ?: return
 
                     textDiagnosis.text = data.diagnosis
-                    textDate.text = "Дата: ${data.date}"
+                    textDate.text = "Дата: ${utcToLocalDate(data.date)}"
                     textDoctor.text = "Лікар: ${data.doctor}"
                     textTotal.text = "Прийнято: ${data.total_taken}"
 
@@ -85,8 +88,7 @@ class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
                         item.findViewById<TextView>(R.id.medName).text = "${index + 1}. ${med.name}"
                         item.findViewById<TextView>(R.id.medDosage).text = med.frequency
                         item.findViewById<TextView>(R.id.medDuration).text = "${med.duration} днів"
-                        item.findViewById<TextView>(R.id.medTimes).text =
-                            med.intake_times.joinToString("\n") { "${it.time} - ${it.quantity} табл." }
+                        med.intake_times.joinToString("\n") { "${utcToLocalTime(it.intake_at)} - ${it.quantity} табл." }
 
                         medicationContainer.addView(item)
                     }

@@ -15,10 +15,10 @@ const toLocalYYYYMMDD = (date) => {
     return `${y}-${m}-${d}`;
 };
 
-const parseDDMMYYYY = (dateStr) => {
+const parseDate = (dateStr) => {
     if (!dateStr) return null;
-    const [day, month, year] = dateStr.split('.').map(Number);
-    return new Date(year, month - 1, day);
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
 };
 
 const EditPatientModal = ({ onClose, patient, setPatient }) => {
@@ -32,7 +32,7 @@ const EditPatientModal = ({ onClose, patient, setPatient }) => {
         email:        patient.login       || patient.email || '',
         phone:        patient.phone       || '',
         contact_info: patient.address     || '',
-        birth_date:   parseDDMMYYYY(patient.dob),
+        birth_date: parseDate(patient.dob),
     });
     const [errors, setErrors]       = useState({});
     const [formError, setFormError] = useState('');

@@ -1,14 +1,17 @@
 package com.example.healthyhelper.fragments
 
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.container.ContainerWithDetails
+import com.example.healthyhelper.utils.utcToLocalTime
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -32,11 +35,11 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
 
         RetrofitClient.containerApi.getAllContainerDetails()
             .enqueue(object : Callback<List<ContainerWithDetails>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<ContainerWithDetails>>,
                     response: Response<List<ContainerWithDetails>>
                 ) {
-                    // Ховаємо лоадер, показуємо список
                     progressBar.visibility = View.GONE
                     scrollView.visibility = View.VISIBLE
 
@@ -66,12 +69,25 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         )
 
                         val compLayout = card.findViewById<LinearLayout>(R.id.compartmentsInfo)
-                        container.compartments.forEach { line ->
+                        compLayout.removeAllViews()
+
+                        container.compartments.forEach { comp ->
                             val text = TextView(requireContext())
-                            text.text = line
-                            text.setTextColor(
-                                ContextCompat.getColor(requireContext(), R.color.black)
-                            )
+                            val displayText = java.lang.StringBuilder().apply {
+                                append("Комірка ${comp.compartment_number}: ")
+                                if (comp.is_filled && comp.medication_name != null) {
+                                    append("${comp.medication_name} (${comp.quantity} шт.)")
+                                    if (comp.intake_at != null) {
+                                        val localTime = utcToLocalTime(comp.intake_at)
+                                        append(" - Прийом: $localTime")
+                                    }
+                                } else {
+                                    append("Порожньо")
+                                }
+                            }.toString()
+
+                            text.text = displayText
+                            text.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
                             compLayout.addView(text)
                         }
 

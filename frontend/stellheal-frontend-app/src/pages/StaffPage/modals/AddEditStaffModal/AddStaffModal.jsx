@@ -16,6 +16,23 @@ function toLocalYYYYMMDD(date) {
 
 const ROLE_MAP = { doctor: 1, nurse: 2 };
 
+// ✅ 1. ВИНОСИМО КОМПОНЕНТ "F" НАВЕРХ І ПЕРЕДАЄМО НЕОБХІДНІ ДАНІ ЧЕРЕЗ ПРОПСИ
+const F = ({ name, label, placeholder, type = 'text', formData, errors, handleChange }) => (
+    <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>{label}</label>
+        <input
+            type={type}
+            name={name}
+            value={formData[name]}
+            onChange={handleChange}
+            placeholder={placeholder || label}
+            className={`${styles.input} ${errors[name] ? styles.inputError : ''}`}
+            autoComplete="off"
+        />
+        {errors[name] && <span className={styles.fieldError}>{errors[name]}</span>}
+    </div>
+);
+
 const AddStaffModal = ({ onClose, onSave }) => {
     const { t, i18n } = useTranslation();
     const phonePlaceholder = i18n.language === 'uk' ? '+38 (0...)...' : '+1 (___) ___-____';
@@ -73,20 +90,17 @@ const AddStaffModal = ({ onClose, onSave }) => {
         }
     };
 
-    const F = ({ name, label, placeholder, type = 'text' }) => (
-        <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>{label}</label>
-            <input
-                type={type}
-                name={name}
-                value={formData[name]}
-                onChange={handleChange}
-                placeholder={placeholder || label}
-                className={`${styles.input} ${errors[name] ? styles.inputError : ''}`}
-                autoComplete="off"
-            />
-            {errors[name] && <span className={styles.fieldError}>{errors[name]}</span>}
-        </div>
+    // ✅ 2. СТВОРЮЄМО ЗРУЧНИЙ ХЕЛПЕР ДЛЯ СКОРОЧЕННЯ ЗАПИСУ (не створює новий компонент)
+    const renderField = (name, label, placeholder, type) => (
+        <F
+            name={name}
+            label={label}
+            placeholder={placeholder}
+            type={type}
+            formData={formData}
+            errors={errors}
+            handleChange={handleChange}
+        />
     );
 
     return (
@@ -106,9 +120,9 @@ const AddStaffModal = ({ onClose, onSave }) => {
                     {/* ПІБ */}
                     <p className={styles.sectionLabel}>Особисті дані</p>
                     <div className={styles.row}>
-                        <F name="last_name"  label={t('staff.last_name')}  />
-                        <F name="first_name" label={t('staff.first_name')} />
-                        <F name="patronymic" label={t('staff.patronymic')} />
+                        {renderField("last_name", t('staff.last_name'))}
+                        {renderField("first_name", t('staff.first_name'))}
+                        {renderField("patronymic", t('staff.patronymic'))}
                     </div>
 
                     {/* Дата, телефон, email */}
@@ -122,8 +136,8 @@ const AddStaffModal = ({ onClose, onSave }) => {
                             />
                             {errors.date_of_birth && <span className={styles.fieldError}>{errors.date_of_birth}</span>}
                         </div>
-                        <F name="phone" label={t('staff.phone')} placeholder={phonePlaceholder} />
-                        <F name="login" label={t('staff.email')} placeholder="example@email.com" />
+                        {renderField("phone", t('staff.phone'), phonePlaceholder)}
+                        {renderField("login", t('staff.email'), "example@email.com")}
                     </div>
 
                     {/* Адреса */}
@@ -151,7 +165,7 @@ const AddStaffModal = ({ onClose, onSave }) => {
                             </select>
                             {errors.role && <span className={styles.fieldError}>{errors.role}</span>}
                         </div>
-                        <F name="specialization" label={t('staff.specialization')} />
+                        {renderField("specialization", t('staff.specialization'))}
                         <div className={styles.fieldGroup}>
                             <label className={styles.fieldLabel}>{t('staff.shift')}</label>
                             <select name="shift" value={formData.shift} onChange={handleChange} className={`${styles.select} ${errors.shift ? styles.inputError : ''}`}>

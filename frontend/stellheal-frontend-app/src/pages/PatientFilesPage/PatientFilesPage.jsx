@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import styles from './PatientFilesPage.module.css';
 import { getPatientById, getAllPatientFiles } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
+import {formatDate} from "../../utils/dateTime.js";
+import i18n from "i18next";
 
 const FILE_TYPE_COLORS = {
     analysis: '#e3f2fd',
@@ -22,7 +24,7 @@ const FILE_TYPE_COLORS = {
 const PatientFilesPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const [patient, setPatient]   = useState(null);
     const [files, setFiles]       = useState([]);
@@ -60,8 +62,6 @@ const PatientFilesPage = () => {
         acc[f.file_type] = (acc[f.file_type] || 0) + 1;
         return acc;
     }, {});
-
-    const currentLang = i18n.language === 'uk' ? 'uk-UA' : 'en-US';
 
     if (loading) return <LoaderOverlay />
 
@@ -151,7 +151,7 @@ const PatientFilesPage = () => {
                                 <div className={styles.fileCardName}>{f.file_name}</div>
                                 <div className={styles.fileCardMeta}>
                                     <span>{f.diagnosis}</span>
-                                    <span>{new Date(f.uploaded_at).toLocaleDateString(currentLang)}</span>
+                                    <span>{formatDate(f.uploaded_at, i18n.language)}</span>
                                 </div>
                                 <div className={styles.fileCardOpen}>
                                     <FaExternalLinkAlt size={11} /> {t('patient_files.open')}

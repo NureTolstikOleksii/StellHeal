@@ -1,11 +1,18 @@
 package com.example.healthyhelper.network.calendar
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.healthyhelper.R
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 class CalendarAdapter(
     private val items: List<PrescriptionHistoryItem>,
@@ -23,13 +30,16 @@ class CalendarAdapter(
         return ViewHolder(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.diagnosisText.text = item.diagnosis
-        holder.dateText.text = item.date
-
-        holder.itemView.setOnClickListener {
-            onItemClick(item)
+        holder.dateText.text = try {
+            LocalDate.parse(item.date)
+                .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                    .withLocale(Locale.getDefault()))
+        } catch (e: Exception) {
+            item.date
         }
     }
 

@@ -7,6 +7,8 @@ import EditPatientModal from '../../PatientsPage/modals/AddEditPatientModal/Edit
 import { useTranslation } from 'react-i18next';
 import { FaUserEdit, FaTrash, FaPlus, FaFileDownload, FaChartBar, FaPaperclip } from 'react-icons/fa';
 import {MdEditDocument} from "react-icons/md";
+import {formatDate} from "../../../utils/dateTime.js";
+import i18n from "i18next";
 
 const PatientInfo = ({ patient, setPatient, onAdd, onDownloadReport, role }) => {
     const navigate = useNavigate();
@@ -33,7 +35,7 @@ const PatientInfo = ({ patient, setPatient, onAdd, onDownloadReport, role }) => 
                 {patient.dob && (
                     <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>{t('patient_info.dob')}</span>
-                        <span className={styles.infoValue}>{patient.dob}</span>
+                        <span className={styles.infoValue}>{formatDate(patient.dob, i18n.language)}</span>
                     </div>
                 )}
                 {patient.email && (

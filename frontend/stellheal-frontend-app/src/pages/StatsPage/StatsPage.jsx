@@ -6,7 +6,7 @@ import {
 } from '../../services/statsService';
 import { useTranslation } from 'react-i18next';
 import {
-    FaChartBar, FaUserMd, FaUserInjured,
+    FaUserMd, FaUserInjured,
     FaPills, FaExclamationTriangle, FaMicrochip,
     FaShieldAlt, FaChevronLeft, FaChevronRight,
 } from 'react-icons/fa';
@@ -17,6 +17,7 @@ import {
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay';
 import Toast from '../../components/Toast/Toast';
 import defaultAvatar from '../../assets/icons/default_avatar.svg';
+import { formatDateTime } from '../../utils/dateTime';
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, value, label, color = '#1976d2' }) => (
@@ -69,10 +70,14 @@ const ActionBadge = ({ action }) => {
 // ── Main ──────────────────────────────────────────────────────────────────────
 const StatsPage = () => {
     const { t, i18n } = useTranslation();
+    const lang = i18n.language || 'uk';
 
     const [clinicStats, setClinicStats]   = useState(null);
     const [doctorStats, setDoctorStats]   = useState([]);
     const [intakeStats, setIntakeStats]   = useState([]);
+    const [weekOffset, setWeekOffset]     = useState(0);
+    const [weekLabel, setWeekLabel]       = useState('');
+    const [weekLoading, setWeekLoading]   = useState(false);
     const [auditLog, setAuditLog]         = useState({ logs: [], total: 0, pages: 1 });
     const [auditActions, setAuditActions] = useState([]);
     const [auditFilter, setAuditFilter]   = useState('');
@@ -84,19 +89,18 @@ const StatsPage = () => {
     const showToast = (type, title, message = '') =>
         setToast({ open: true, type, title, message });
 
+    // ── Початкове завантаження (все крім intake і audit) ──────────────────────
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
-                const [clinic, doctors, intake, actions] = await Promise.all([
+                const [clinic, doctors, actions] = await Promise.all([
                     fetchClinicStats(),
                     fetchDoctorStats(),
-                    fetchIntakeStats(),
                     fetchAuditActions(),
                 ]);
                 setClinicStats(clinic.data);
                 setDoctorStats(doctors.data);
-                setIntakeStats(intake.data);
                 setAuditActions(actions.data || []);
             } catch {
                 showToast('error', t('stats.load_error') || 'Помилка завантаження');
@@ -107,7 +111,37 @@ const StatsPage = () => {
         load();
     }, []);
 
-    // Завантаження audit log при зміні фільтру або сторінки
+    // ── Завантаження intake при зміні weekOffset ──────────────────────────────
+    useEffect(() => {
+        const loadIntake = async () => {
+            setWeekLoading(true);
+            try {
+                const res = await fetchIntakeStats(weekOffset);
+                const days = res.data.days || res.data;
+                setIntakeStats(days);
+
+                // Формуємо підзаголовок "Пн 26 трав — Нд 1 черв"
+                if (days.length === 7) {
+                    const from = new Date(days[0].date).toLocaleDateString(
+                        lang === 'uk' ? 'uk-UA' : 'en-US',
+                        { day: '2-digit', month: 'short' }
+                    );
+                    const to = new Date(days[6].date).toLocaleDateString(
+                        lang === 'uk' ? 'uk-UA' : 'en-US',
+                        { day: '2-digit', month: 'short', year: 'numeric' }
+                    );
+                    setWeekLabel(`${from} — ${to}`);
+                }
+            } catch {
+                showToast('error', t('stats.load_error') || 'Помилка завантаження');
+            } finally {
+                setWeekLoading(false);
+            }
+        };
+        loadIntake();
+    }, [weekOffset, lang]);
+
+    // ── Завантаження audit log ────────────────────────────────────────────────
     useEffect(() => {
         const loadAudit = async () => {
             setAuditLoading(true);
@@ -123,23 +157,16 @@ const StatsPage = () => {
         loadAudit();
     }, [auditPage, auditFilter]);
 
+    // ── Локалізація днів (Пн-Нд порядок з беку) ──────────────────────────────
     const localizeDay = (day) => {
         const days = {
             uk: { Mon: 'Пн', Tue: 'Вт', Wed: 'Ср', Thu: 'Чт', Fri: 'Пт', Sat: 'Сб', Sun: 'Нд' },
             en: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' },
         };
-        return days[i18n.language]?.[day] || day;
+        return days[lang]?.[day] || day;
     };
 
     const chartData = intakeStats.map(d => ({ ...d, day: localizeDay(d.day) }));
-
-    const formatDateTime = (iso) => {
-        if (!iso) return '—';
-        return new Date(iso).toLocaleString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }
-        );
-    };
 
     if (loading) return <LoaderOverlay />;
 
@@ -149,7 +176,6 @@ const StatsPage = () => {
             {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
-                    {/*<FaChartBar className={styles.pageTitleIcon} />*/}
                     <h2 className={styles.pageTitle}>{t('stats.clinic_title')}</h2>
                 </div>
             </div>
@@ -157,19 +183,56 @@ const StatsPage = () => {
             {/* ── Stat cards ── */}
             {clinicStats && (
                 <div className={styles.statsGrid}>
-                    <StatCard icon={FaUserInjured}      value={clinicStats.activePatients}    label={t('stats.active_patients')}    color="#1976d2" />
-                    <StatCard icon={FaUserMd}            value={clinicStats.medicalStaff}       label={t('stats.medical_staff')}       color="#7c3aed" />
-                    <StatCard icon={FaPills}             value={clinicStats.treatmentPlans}     label={t('stats.treatment_plans')}     color="#16a34a" />
-                    <StatCard icon={FaMicrochip}         value={clinicStats.deviceTriggers}     label={t('stats.device_triggers')}     color="#0891b2" />
-                    <StatCard icon={FaExclamationTriangle} value={clinicStats.missedAppointments} label={t('stats.missed_appointments')} color="#ef4444" />
+                    <StatCard icon={FaUserInjured}        value={clinicStats.activePatients}     label={t('stats.active_patients')}    color="#1976d2" />
+                    <StatCard icon={FaUserMd}              value={clinicStats.medicalStaff}        label={t('stats.medical_staff')}       color="#7c3aed" />
+                    <StatCard icon={FaPills}               value={clinicStats.treatmentPlans}      label={t('stats.treatment_plans')}     color="#16a34a" />
+                    <StatCard icon={FaMicrochip}           value={clinicStats.deviceTriggers}      label={t('stats.device_triggers')}     color="#0891b2" />
+                    <StatCard icon={FaExclamationTriangle} value={clinicStats.missedAppointments}  label={t('stats.missed_appointments')} color="#ef4444" />
                 </div>
             )}
 
             {/* ── Intake chart ── */}
-            {chartData.length > 0 && (
-                <div className={styles.section}>
-                    <h3 className={styles.sectionTitle}>{t('stats.intake_chart') || 'Прийом ліків за тиждень'}</h3>
-                    <p className={styles.sectionSubtitle}>{t('stats.intake_chart_hint') || 'Кількість виконаних та пропущених прийомів по днях'}</p>
+            <div className={styles.section}>
+                <div className={styles.chartTopRow}>
+                    <div>
+                        <h3 className={styles.sectionTitle}>
+                            {t('stats.intake_chart') || 'Прийом ліків за тиждень'}
+                        </h3>
+                        <p className={styles.sectionSubtitle}>{weekLabel}</p>
+                    </div>
+                    {/* ← навігація по тижнях */}
+                    <div className={styles.weekNav}>
+                        <button
+                            className={styles.weekNavBtn}
+                            onClick={() => setWeekOffset(w => w - 1)}
+                            title={t('stats.prev_week') || 'Попередній тиждень'}
+                        >
+                            <FaChevronLeft size={12} />
+                        </button>
+                        <span className={styles.weekNavLabel}>
+                            {weekOffset === 0
+                                ? (t('stats.current_week') || 'Цей тиждень')
+                                : weekOffset === -1
+                                    ? (t('stats.last_week') || 'Минулий тиждень')
+                                    : `${Math.abs(weekOffset)} ${t('stats.weeks_ago') || 'тижні тому'}`
+                            }
+                        </span>
+                        <button
+                            className={styles.weekNavBtn}
+                            onClick={() => setWeekOffset(w => w + 1)}
+                            disabled={weekOffset >= 0}
+                            title={t('stats.next_week') || 'Наступний тиждень'}
+                        >
+                            <FaChevronRight size={12} />
+                        </button>
+                    </div>
+                </div>
+
+                {weekLoading ? (
+                    <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <LoaderOverlay inline />
+                    </div>
+                ) : (
                     <div className={styles.chartWrap}>
                         <ResponsiveContainer width="100%" height={260}>
                             <BarChart data={chartData} barSize={28} barGap={4}>
@@ -190,8 +253,8 @@ const StatsPage = () => {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* ── Doctor stats ── */}
             <div className={styles.section}>
@@ -254,8 +317,6 @@ const StatsPage = () => {
                         <h3 className={styles.sectionTitle}>{t('stats.audit_log') || 'Журнал дій'}</h3>
                         <span className={styles.auditTotal}>{auditLog.total}</span>
                     </div>
-
-                    {/* Фільтр по типу дії */}
                     <select
                         className={styles.auditFilter}
                         value={auditFilter}
@@ -269,9 +330,7 @@ const StatsPage = () => {
                 </div>
 
                 {auditLoading ? (
-                    <div className={styles.auditLoading}>
-                        <LoaderOverlay inline />
-                    </div>
+                    <div className={styles.auditLoading}><LoaderOverlay inline /></div>
                 ) : auditLog.logs.length === 0 ? (
                     <div className={styles.empty}>{t('stats.no_data') || 'Немає записів'}</div>
                 ) : (
@@ -280,12 +339,12 @@ const StatsPage = () => {
                             <table className={styles.table}>
                                 <thead>
                                 <tr>
-                                    <th>{t('stats.audit_user') || 'Користувач'}</th>
-                                    <th>{t('stats.audit_action') || 'Дія'}</th>
-                                    <th>{t('stats.audit_entity') || 'Об\'єкт'}</th>
+                                    <th>{t('stats.audit_user')     || 'Користувач'}</th>
+                                    <th>{t('stats.audit_action')   || 'Дія'}</th>
+                                    <th>{t('stats.audit_entity')   || "Об'єкт"}</th>
                                     <th>{t('stats.audit_description') || 'Опис'}</th>
-                                    <th>{t('stats.audit_ip') || 'IP'}</th>
-                                    <th>{t('stats.audit_time') || 'Час'}</th>
+                                    <th>{t('stats.audit_ip')       || 'IP'}</th>
+                                    <th>{t('stats.audit_time')     || 'Час'}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -311,14 +370,14 @@ const StatsPage = () => {
                                         </td>
                                         <td className={styles.auditDesc}>{log.description || '—'}</td>
                                         <td className={styles.auditIp}>{log.ip_address || '—'}</td>
-                                        <td className={styles.auditTime}>{formatDateTime(log.created_at)}</td>
+                                        {/* ← UTC ISO → локальний час через утиліту */}
+                                        <td className={styles.auditTime}>{formatDateTime(log.created_at, lang)}</td>
                                     </tr>
                                 ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        {/* Пагінація */}
                         {auditLog.pages > 1 && (
                             <div className={styles.pagination}>
                                 <button
@@ -328,9 +387,7 @@ const StatsPage = () => {
                                 >
                                     <FaChevronLeft size={10} />
                                 </button>
-                                <span className={styles.pageInfo}>
-                                    {auditPage} / {auditLog.pages}
-                                </span>
+                                <span className={styles.pageInfo}>{auditPage} / {auditLog.pages}</span>
                                 <button
                                     className={styles.pageBtn}
                                     onClick={() => setAuditPage(p => Math.min(auditLog.pages, p + 1))}

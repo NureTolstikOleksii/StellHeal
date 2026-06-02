@@ -3,44 +3,35 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     FaCheckCircle, FaTimesCircle, FaClock,
     FaChevronLeft, FaChevronRight, FaPills,
-    FaSpinner, FaChartBar,
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import styles from './PatientIntakePage.module.css';
 import { getPatientById, getIntakeStats } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
+import { formatDateLong, formatTime } from '../../utils/dateTime';
+import i18n from "i18next";
 
-// ── helpers (адаптовані під i18n мову) ────────────────────────────────────────
-const fmt = (iso, lang) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString(lang === 'uk' ? 'uk-UA' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' });
-};
-
+// ── helpers ──────────────────────────────────────────────────────────────────
 const addDays = (iso, n) => {
     const d = new Date(iso);
     d.setDate(d.getDate() + n);
     return d.toISOString().substring(0, 10);
 };
 
-const today = () => {
-    return new Intl.DateTimeFormat('en-CA', {
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    }).format(new Date());
-};
+const today = () => new Intl.DateTimeFormat('en-CA', {
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+}).format(new Date());
 
 // ── week strip ────────────────────────────────────────────────────────────────
 const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
     const { t } = useTranslation();
     const [weekStart, setWeekStart] = useState(() => {
         const d = new Date(startDate);
-        d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // пн цього тижня
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
         return d.toISOString().substring(0, 10);
     });
 
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-    // Масив назв днів береться з JSON конфігу
     const DAY_NAMES = [
         t('week.mon'), t('week.tue'), t('week.wed'),
         t('week.thu'), t('week.fri'), t('week.sat'), t('week.sun')
@@ -51,11 +42,7 @@ const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
 
     return (
         <div className={styles.weekStrip}>
-            <button
-                className={styles.weekNav}
-                onClick={() => setWeekStart(addDays(weekStart, -7))}
-                disabled={!canGoPrev}
-            >
+            <button className={styles.weekNav} onClick={() => setWeekStart(addDays(weekStart, -7))} disabled={!canGoPrev}>
                 <FaChevronLeft size={13} />
             </button>
             <div className={styles.weekDays}>
@@ -63,7 +50,6 @@ const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
                     const isToday    = day === today();
                     const isSelected = day === selected;
                     const inRange    = day >= startDate && day <= endDate;
-
                     return (
                         <button
                             key={day}
@@ -77,11 +63,7 @@ const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
                     );
                 })}
             </div>
-            <button
-                className={styles.weekNav}
-                onClick={() => setWeekStart(addDays(weekStart, 7))}
-                disabled={!canGoNext}
-            >
+            <button className={styles.weekNav} onClick={() => setWeekStart(addDays(weekStart, 7))} disabled={!canGoNext}>
                 <FaChevronRight size={13} />
             </button>
         </div>
@@ -90,23 +72,21 @@ const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
 
 // ── ring chart ────────────────────────────────────────────────────────────────
 const RingChart = ({ taken, total }) => {
-    const pct   = total > 0 ? taken / total : 0;
-    const r     = 54;
-    const circ  = 2 * Math.PI * r;
-    const dash  = circ * pct;
+    const pct  = total > 0 ? taken / total : 0;
+    const r    = 54;
+    const circ = 2 * Math.PI * r;
+    const dash = circ * pct;
 
     return (
         <div className={styles.ring}>
             <svg width="140" height="140" viewBox="0 0 140 140">
                 <circle cx="70" cy="70" r={r} fill="none" stroke="#e5e7eb" strokeWidth="12" />
-                <circle
-                    cx="70" cy="70" r={r} fill="none"
-                    stroke={pct >= 0.8 ? '#22c55e' : pct >= 0.5 ? '#f59e0b' : '#ef4444'}
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    strokeDasharray={`${dash} ${circ}`}
-                    strokeDashoffset={circ * 0.25}
-                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                <circle cx="70" cy="70" r={r} fill="none"
+                        stroke={pct >= 0.8 ? '#22c55e' : pct >= 0.5 ? '#f59e0b' : '#ef4444'}
+                        strokeWidth="12" strokeLinecap="round"
+                        strokeDasharray={`${dash} ${circ}`}
+                        strokeDashoffset={circ * 0.25}
+                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
                 />
             </svg>
             <div className={styles.ringInner}>
@@ -121,17 +101,20 @@ const RingChart = ({ taken, total }) => {
 const IntakeRow = ({ item }) => {
     const { t } = useTranslation();
 
-    // Переміщено всередину, щоб підхоплювати зміни мови динамічно
     const STATUS = {
-        taken:   { label: t('intake_statuses.taken'),   Icon: FaCheckCircle,  cls: 'taken'   },
-        missed:  { label: t('intake_statuses.missed'),  Icon: FaTimesCircle,  cls: 'missed'  },
-        pending: { label: t('intake_statuses.pending'), Icon: FaClock,        cls: 'pending' },
+        taken:   { label: t('intake_statuses.taken'),   Icon: FaCheckCircle, cls: 'taken'   },
+        missed:  { label: t('intake_statuses.missed'),  Icon: FaTimesCircle, cls: 'missed'  },
+        pending: { label: t('intake_statuses.pending'), Icon: FaClock,       cls: 'pending' },
     };
 
     const { label, Icon, cls } = STATUS[item.status] || STATUS.pending;
+
     return (
         <div className={`${styles.intakeRow} ${styles[`row_${cls}`]}`}>
-            <div className={styles.intakeTime}>{item.time || '—'}</div>
+            {/* ← конвертуємо UTC ISO в локальний час браузера */}
+            <div className={styles.intakeTime}>
+                {item.intake_at ? formatTime(item.intake_at) : '—'}
+            </div>
             <div className={styles.intakeDot} />
             <div className={styles.intakeInfo}>
                 <span className={styles.intakeName}>{item.name}</span>
@@ -149,19 +132,19 @@ const IntakeRow = ({ item }) => {
 // ── main ──────────────────────────────────────────────────────────────────────
 const PatientIntakePage = () => {
     const { id, prescriptionId } = useParams();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { t, i18n } = useTranslation();
+    const navigate  = useNavigate();
+    const location  = useLocation();
+    const { t }     = useTranslation();
 
     const startDate = location.state?.startDate || today();
     const endDate   = location.state?.endDate   || today();
 
     const [patient, setPatient] = useState(null);
-    const [date, setDate] = useState(() => {
+    const [date, setDate]       = useState(() => {
         const tToday = today();
         return (tToday >= startDate && tToday <= endDate) ? tToday : startDate;
     });
-    const [stats, setStats]   = useState(null);
+    const [stats, setStats]     = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -178,12 +161,12 @@ const PatientIntakePage = () => {
 
     const calcAge = (dob) => dob ? String(new Date().getFullYear() - new Date(dob).getFullYear()) : '?';
     const pct = stats ? Math.round((stats.summary.taken / (stats.summary.total || 1)) * 100) : 0;
+
     if (!patient) return <LoaderOverlay />;
 
     return (
         <div className={styles.page}>
 
-            {/* header */}
             <div className={styles.header}>
                 <div>
                     <div className={styles.breadcrumb}>
@@ -214,14 +197,12 @@ const PatientIntakePage = () => {
                 )}
             </div>
 
-            {/* week strip */}
             <WeekStrip selected={date} onChange={setDate} startDate={startDate} endDate={endDate} />
 
             {loading ? (
                 <LoaderOverlay inline />
             ) : stats && (
                 <>
-                    {/* summary cards */}
                     <div className={styles.summaryRow}>
                         <div className={styles.ringCard}>
                             <RingChart taken={stats.summary.taken} total={stats.summary.total} />
@@ -232,7 +213,6 @@ const PatientIntakePage = () => {
                                 <span className={styles.ringDesc}>{t('patient_intake.daily_performance')}</span>
                             </div>
                         </div>
-
                         <div className={styles.statsGrid}>
                             <div className={`${styles.statCard} ${styles.statTaken}`}>
                                 <FaCheckCircle className={styles.statIcon} />
@@ -257,13 +237,12 @@ const PatientIntakePage = () => {
                         </div>
                     </div>
 
-                    {/* schedule */}
                     <div className={styles.scheduleCard}>
                         <div className={styles.scheduleTitle}>
                             <FaClock size={14} />
-                            <span>{t('patient_intake.schedule_for')} {fmt(date, i18n.language)}</span>
+                            {/* ← автоматична локаль для заголовку */}
+                            <span>{t('patient_intake.schedule_for')} {formatDateLong(date, i18n.language)}</span>
                         </div>
-
                         {stats.schedule.length === 0 ? (
                             <div className={styles.empty}>
                                 <FaPills size={32} className={styles.emptyIcon} />

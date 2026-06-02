@@ -213,7 +213,12 @@
     "audit_ip": "IP Address",
     "audit_time": "Time",
     "audit_all": "All actions",
-    "audit_load_error": "Failed to load activity log"
+    "audit_load_error": "Failed to load activity log",
+    "prev_week": "Previous week",
+    "next_week": "Next week",
+    "current_week": "This week",
+    "last_week": "Last week",
+    "weeks_ago": "weeks ago"
   },
   "backup": {
     "title": "Backup & Restore",

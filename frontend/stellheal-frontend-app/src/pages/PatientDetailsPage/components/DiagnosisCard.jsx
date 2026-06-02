@@ -9,10 +9,12 @@ import { useTranslation } from 'react-i18next';
 import { getPrescriptionFiles } from '../../../services/patientService';
 import { useNavigate } from 'react-router-dom';
 import LoaderOverlay from "../../../components/LoaderOverlay/LoaderOverlay.jsx";
+import { formatDate } from '../../../utils/dateTime';
+import i18n from "i18next";
 
 // ── FilesModal ────────────────────────────────────────────────────────────────
 const FilesModal = ({ prescriptionId, patientId, onClose }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [files, setFiles]   = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError]   = useState(null);
@@ -54,7 +56,7 @@ const FilesModal = ({ prescriptionId, patientId, onClose }) => {
                         <span className={styles.fileRowType}>{getFileTypeLabel(f.file_type)}</span>
                         <span className={styles.fileRowName}>{f.file_name}</span>
                         <span className={styles.fileRowDate}>
-                            {new Date(f.uploaded_at).toLocaleDateString(i18n.language === 'uk' ? 'uk-UA' : 'en-US')}
+                            <span className={styles.fileRowDate}>{formatDate(f.uploaded_at, i18n.language)}</span>
                         </span>
                     </a>
                 ))}
@@ -77,7 +79,7 @@ const DetailRow = ({ label, value }) => {
 // ── DiagnosisCard ─────────────────────────────────────────────────────────────
 const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
     const navigate = useNavigate();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [showFiles, setShowFiles]     = useState(false);
     const [showDetails, setShowDetails] = useState(false);
 
@@ -94,9 +96,8 @@ const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
         }
     };
 
-    const currentLang = i18n.language === 'uk' ? 'uk-UA' : 'en-US';
-    const formattedDate    = new Date(diagnosis.date).toLocaleDateString(currentLang);
-    const formattedDateEnd = new Date(diagnosis.endDate).toLocaleDateString(currentLang);
+    const formattedDate    = formatDate(diagnosis.date, i18n.language);
+    const formattedDateEnd = formatDate(diagnosis.endDate, i18n.language);
 
     return (
         <>

@@ -1,6 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -9,10 +8,10 @@ datasource db {
 
 model compartment_medications {
   compartment_med_id       Int                       @id @default(autoincrement())
-  fill_time                DateTime?                 @db.Timestamp(6)
+  fill_time                DateTime?                 @db.Timestamptz(6)
   filled_by                Int?
   compartment_id           Int?
-  open_time                DateTime?                 @db.Timestamp(6)
+  open_time                DateTime?                 @db.Timestamptz(6)
   prescription_med_id      Int?
   compartments             compartments?             @relation(fields: [compartment_id], references: [compartment_id], onDelete: Cascade)
   users                    users?                    @relation(fields: [filled_by], references: [user_id])
@@ -28,7 +27,7 @@ model compartments {
   compartment_medications compartment_medications[]
   containers              containers?               @relation(fields: [container_id], references: [container_id], onDelete: Cascade)
   is_filled               Boolean?                  @default(false)
-  last_filled_at          DateTime?
+  last_filled_at          DateTime?                 @db.Timestamptz(6)
 }
 
 model containers {
@@ -39,7 +38,7 @@ model containers {
   device_uid         String?           @unique
   device_secret      String?
   device_token       String?
-  last_seen          DateTime?
+  last_seen          DateTime?         @db.Timestamptz(6)
   is_online          Boolean?          @default(false)
   firmware_version   String?
   compartments       compartments[]
@@ -55,7 +54,7 @@ model medical_staff {
   staff_id       Int       @id
   specialization String?   @db.VarChar(100)
   shift          String?   @db.VarChar(50)
-  admission_date DateTime? @db.Date
+  admission_date DateTime? @db.Timestamptz(6)
   users          users     @relation(fields: [staff_id], references: [user_id], onDelete: Cascade)
 }
 
@@ -83,8 +82,8 @@ model notifications {
   notification_id         Int                       @id @default(autoincrement())
   notification_type       String                    @db.VarChar(100)
   message                 String?
-  sent_time               DateTime?                 @db.Time(6)
-  sent_date               DateTime?                 @db.Date
+  // ← замінено два поля на одне
+  sent_at                 DateTime?                 @db.Timestamptz(6)
   container_id            Int?
   notification_recipients notification_recipients[]
   containers              containers?               @relation(fields: [container_id], references: [container_id])
@@ -93,8 +92,8 @@ model notifications {
 model prescription_medications {
   prescription_med_id     Int                       @id @default(autoincrement())
   quantity                Int?
-  intake_date             DateTime?                 @db.Date
-  intake_time             DateTime?                 @db.Time(6)
+  // ← замінено intake_date + intake_time на одне поле
+  intake_at               DateTime?                 @db.Timestamptz(6)
   frequency               String?                   @db.VarChar(100)
   prescription_id         Int?
   medication_id           Int?
@@ -107,14 +106,15 @@ model prescription_medications {
 
 model prescriptions {
   prescription_id  Int       @id @default(autoincrement())
-  date_issued      DateTime? @db.Date
+  // ← замінено @db.Date на Timestamptz
+  date_issued      DateTime? @db.Timestamptz(6)
   duration         Int?
   patient_id       Int?
   doctor_id        Int?
   diagnosis        String?   @db.VarChar(255)
   icd_code         String?   @db.VarChar(255)
   ward_id          Int?
-  end_date         DateTime? @db.Date
+  end_date         DateTime? @db.Timestamptz(6)
   complaints       String?
   anamnesis        String?
   objective_status String?
@@ -134,7 +134,7 @@ model prescription_files {
   file_name       String?        @db.VarChar(255)
   file_url        String?        @db.VarChar(500)
   file_type       String?        @db.VarChar(100)
-  uploaded_at     DateTime?      @default(now())
+  uploaded_at     DateTime?      @default(now()) @db.Timestamptz(6)
   prescriptions   prescriptions? @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade)
 }
 
@@ -157,6 +157,8 @@ model users {
   patronymic                                    String?                   @db.VarChar(100)
   phone                                         String?                   @db.VarChar(50)
   firebase_token                                String?
+  // ← нове поле таймзони
+  timezone                                      String                    @default("Europe/Kyiv") @db.VarChar(100)
   compartment_medications                       compartment_medications[]
   containers                                    containers[]
   medical_staff                                 medical_staff?
@@ -168,7 +170,7 @@ model users {
   auditLogs                                     audit_logs[]
   refreshTokens                                 refresh_tokens[]
   failed_login_attempts                         Int                       @default(0)
-  lock_until                                    DateTime?
+  lock_until                                    DateTime?                 @db.Timestamptz(6)
   fillSessions                                  fill_sessions[]
 }
 
@@ -184,8 +186,8 @@ model password_reset_tokens {
   id         Int       @id @default(autoincrement())
   user_id    Int?
   token      String    @unique
-  expires_at DateTime  @db.Timestamp(6)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
   users      users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -198,7 +200,7 @@ model audit_logs {
   description String?
   metadata    Json?
   ip_address  String?  @db.VarChar(50)
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
   users       users?   @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
 }
 
@@ -209,8 +211,8 @@ model refresh_tokens {
   device     String?
   ip_address String?
   is_revoked Boolean  @default(false)
-  expires_at DateTime
-  created_at DateTime @default(now())
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
   users      users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 }
 
@@ -221,8 +223,8 @@ model fill_sessions {
   started_by             Int
   users                  users                     @relation(fields: [started_by], references: [user_id])
   status                 String
-  started_at             DateTime                  @default(now())
-  finished_at            DateTime?
+  started_at             DateTime                  @default(now()) @db.Timestamptz(6)
+  finished_at            DateTime?                 @db.Timestamptz(6)
   compartmentMedications compartment_medications[]
 }
 
@@ -233,8 +235,8 @@ model device_commands {
   command      String
   payload      Json?
   status       String     @default("pending")
-  created_at   DateTime   @default(now())
-  executed_at  DateTime?
+  created_at   DateTime   @default(now()) @db.Timestamptz(6)
+  executed_at  DateTime?  @db.Timestamptz(6)
 }
 
 model device_events {
@@ -244,5 +246,5 @@ model device_events {
   type         String
   code         String?
   message      String?
-  created_at   DateTime   @default(now())
+  created_at   DateTime   @default(now()) @db.Timestamptz(6)
 }

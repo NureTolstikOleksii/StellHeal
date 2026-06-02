@@ -22,6 +22,6 @@ data class MedicationDetail(
 )
 
 data class IntakeTime(
-    val time: String,
+    val intake_at: String,  // UTC ISO — конвертувати при відображенні
     val quantity: Int
 )

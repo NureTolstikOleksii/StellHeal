@@ -215,7 +215,7 @@ export class WardsService {
             prescription_id:    p.prescription_id,
             diagnosis:          p.diagnosis,
             icd_code:           p.icd_code,
-            end_date:           p.end_date,
+            end_date:           p.end_date?.toISOString() ?? null,
             patient_first_name: p.users_prescriptions_patient_idTousers?.first_name,
             patient_last_name:  p.users_prescriptions_patient_idTousers?.last_name,
             patient_patronymic: p.users_prescriptions_patient_idTousers?.patronymic,

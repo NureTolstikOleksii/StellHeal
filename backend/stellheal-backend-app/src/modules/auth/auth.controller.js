@@ -29,8 +29,8 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
     try {
         const { email, password, platform } = req.body;
-
-        const user = await authService.loginUser(email, password, platform, req);
+        const timezone = req.headers['x-timezone'] || 'Europe/Kyiv';
+        const user = await authService.loginUser(email, password, platform, timezone, req);
 
         const accessToken = jwt.sign(
             { userId: user.user_id, roleId: user.role_id, platform },

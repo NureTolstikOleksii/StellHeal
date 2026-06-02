@@ -18,7 +18,11 @@ import com.example.healthyhelper.network.treatment.TreatmentResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.util.Locale
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.formatLocalDate
+import com.example.healthyhelper.utils.utcToLocalDate
+import com.example.healthyhelper.utils.utcToLocalTime
 
 class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
@@ -79,6 +83,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
         // 1. Завантаження пацієнта
         RetrofitClient.getPatientsApi().getAllPatients()
             .enqueue(object : Callback<List<PatientResponse>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<PatientResponse>>,
                     response: Response<List<PatientResponse>>
@@ -90,7 +95,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                             error(R.drawable.ic_default_avatar)
                             transformations(CircleCropTransformation())
                         }
-                        fullName.text = "${patient.name} (${formatDate(patient.dob)})"
+                        fullName.text = "${patient.name} (${formatLocalDate(patient.dob)})"
                         email.text = patient.email
                         phone.text = patient.phone
                         address.text = patient.address ?: "—"
@@ -106,6 +111,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
         // 2. Завантаження лікування
         RetrofitClient.treatmentApi.getCurrentTreatment(patientId)
             .enqueue(object : Callback<List<TreatmentResponse>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<TreatmentResponse>>,
                     response: Response<List<TreatmentResponse>>
@@ -114,7 +120,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                         val treatment = response.body()?.firstOrNull()
                         if (treatment != null) {
                             diagnosis.text = treatment.name
-                            dateRange.text = "Application date: ${formatDatePretty(treatment.date)}\nDuration: ${treatment.duration} days"
+                            dateRange.text = "Application date: ${utcToLocalDate(treatment.date)}\nDuration: ${treatment.duration} days"
                             textDoctor.text = "Doctor: ${treatment.doctor}"
                             textWard.text = "Ward: ${treatment.ward}"
                             medsContainer.removeAllViews()
@@ -245,11 +251,24 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                             else
                                 android.graphics.Color.parseColor("#F44336")
                         )
-
                         compartmentsInfo.removeAllViews()
-                        data.compartments.forEach { info ->
+
+                        data.compartments.forEach { comp ->
                             val textView = TextView(requireContext())
-                            textView.text = info
+                            val displayText = java.lang.StringBuilder().apply {
+                                append("Комірка ${comp.compartment_number}: ")
+                                if (comp.is_filled && comp.medication_name != null) {
+                                    append("${comp.medication_name} (${comp.quantity} шт.)")
+                                    if (comp.intake_at != null) {
+                                        val localTime = utcToLocalTime(comp.intake_at)
+                                        append(" - Прийом: $localTime")
+                                    }
+                                } else {
+                                    append("Порожньо")
+                                }
+                            }.toString()
+
+                            textView.text = displayText
                             textView.setTextColor(resources.getColor(R.color.black, null))
                             textView.setPadding(0, 4, 0, 4)
                             compartmentsInfo.addView(textView)
@@ -260,20 +279,5 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                     Toast.makeText(requireContext(), "Помилка при завантаженні контейнера", Toast.LENGTH_SHORT).show()
                 }
             })
-    }
-
-    private fun formatDate(input: String?): String {
-        return input?.split("T")?.get(0) ?: "—"
-    }
-
-    private fun formatDatePretty(input: String?): String {
-        return try {
-            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            val date = parser.parse(input ?: "") ?: return "—"
-            val formatter = java.text.SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            formatter.format(date)
-        } catch (e: Exception) {
-            input?.substringBefore("T") ?: "—"
-        }
     }
 }

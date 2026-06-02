@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -33,7 +34,8 @@ import java.util.Date
 import java.util.Locale
 import android.widget.ProgressBar
 import android.widget.ScrollView
-
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalTime
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var calendarContainer: LinearLayout
@@ -197,6 +199,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         RetrofitClient.containerApi
             .getIntakeStatistics(patientId, formatted)
             .enqueue(object : Callback<List<PrescriptionOption>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
@@ -220,6 +223,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             })
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun renderIntakeList(meds: List<PrescriptionOption>) {
         intakeList.removeAllViews()
 
@@ -237,12 +241,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         meds.forEach { med ->
             val item = layoutInflater.inflate(R.layout.item_intake, intakeList, false)
 
-            item.findViewById<TextView>(R.id.medName).text = med.medication_name
+            item.findViewById<TextView>(R.id.medName).text = med.medication
             item.findViewById<TextView>(R.id.medQuantity).text =
                 "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
 
-            val time = med.intake_time.substringAfter("T", "").take(5)
-            item.findViewById<TextView>(R.id.timeText).text = time
+            item.findViewById<TextView>(R.id.timeText).text = utcToLocalTime(med.intake_at)
 
             val statusIcon = when (med.isTaken) {
                 true -> R.drawable.ic_check_circle

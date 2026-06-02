@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay';
 import Toast from '../../components/Toast/Toast';
 import ContainerModal from './modals/ContainerModal/ContainerModal.jsx';
+import { formatDateTime, formatTime } from '../../utils/dateTime';
 
 // ── RegisterModal ─────────────────────────────────────────────────────────────
 const RegisterModal = ({ onClose, onSuccess }) => {
@@ -177,14 +178,6 @@ const DevicesPage = () => {
         }
     };
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleString(
-            i18n.language === 'uk' ? 'uk-UA' : 'en-US',
-            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }
-        );
-    };
-
     if (loading) return <LoaderOverlay />;
 
     return (
@@ -194,7 +187,6 @@ const DevicesPage = () => {
             <div className={styles.pageHeader}>
                 <div className={styles.titleBlock}>
                     <div className={styles.pageTitleRow}>
-                        {/*<FaMicrochip className={styles.pageTitleIcon} />*/}
                         <h2 className={styles.pageTitle}>{t('devices.title')}</h2>
                     </div>
                     <div className={styles.counts}>
@@ -266,7 +258,10 @@ const DevicesPage = () => {
                                             <span className={styles.noPatient}>{t('devices.no_patient')}</span>
                                         )}
                                     </td>
-                                    <td className={styles.dateCell}>{formatDate(c.last_seen)}</td>
+                                    {/* Використовуємо універсальну функцію з dateTime.js */}
+                                    <td className={styles.dateCell}>
+                                        {formatDateTime(c.last_seen, i18n.language)}
+                                    </td>
                                     <td>
                                         {c.firmware_version
                                             ? <span className={styles.firmware}>{c.firmware_version}</span>
@@ -310,7 +305,7 @@ const DevicesPage = () => {
                                         {t('devices.compartment')} <strong>№{item.compartment_number}</strong>
                                     </span>
                                     <span className={styles.fillMeta}>
-                                        {item.filled_by} · {item.time}
+                                        {item.filled_by} · {formatTime(item.fill_time)}
                                     </span>
                                 </div>
                             </div>

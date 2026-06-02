@@ -2,839 +2,853 @@
 #include <WiFiManager.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <ThreeWire.h>  
+#include <ThreeWire.h>
 #include <RtcDS1302.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
+#include <Wire.h>
 #include <MFRC522.h>
 #include <ESP32Servo.h>
 #include <Stepper.h>
 #include <HX711.h>
 #include "time.h"
 
-// Піни
-#define BUTTON_PIN 0
-#define BUZZER_LED 15
-#define RST_PIN 4
-#define SS_PIN 5
+// ── Піни ─────────────────────────────────────────────────────────────────────
+#define BUTTON_PIN      0
+#define BUZZER_LED      15
+#define RST_PIN         4
+#define SS_PIN          5
 #define HALL_SENSOR_PIN 34
-#define LOADCELL_DT 32
-#define LOADCELL_SCK 33
+#define LOADCELL_DT     32
+#define LOADCELL_SCK    33
 
+// ── Ноти ──────────────────────────────────────────────────────────────────────
+#define NOTE_C4  262
+#define NOTE_E4  330
+#define NOTE_GS4 415
+#define NOTE_A4  440
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_D5  587
+#define NOTE_DS5 622
+#define NOTE_E5  659
+const int BUZZER_PIN = BUZZER_LED;
 
+// ── Пристрої ──────────────────────────────────────────────────────────────────
 Stepper drum(2048, 13, 12, 14, 27);
-ThreeWire myWire(16, 17, 2);  
+ThreeWire myWire(16, 17, 2);
 RtcDS1302<ThreeWire> Rtc(myWire);
-Adafruit_SSD1306 display(128, 64, &Wire, -1);
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 MFRC522 rfid(SS_PIN, RST_PIN);
 Servo loadServo;
 Servo unloadServo;
 HX711 scale;
-float calibration_factor = -7050.0; 
+float calibration_factor = -7050.0;
 
-
+// ── Позиції відсіків ──────────────────────────────────────────────────────────
 const int COMPARTMENT_STEPS[9] = {
-    0,    // [0] — не використовується
-    0,    // [1] — відсік 1, позиція датчика Холла
-    256,  // [2] — підберіть вручну
-    512,  // [3]
-    768,  // [4]
-    1024, // [5]
-    1280, // [6]
-    1536, // [7]
-    1792  // [8]
+    0, 0, 256, 512, 768, 1024, 1280, 1536, 1792
 };
 
-const char* API_BASE = "http://192.168.0.100:4200/api/device";
-const char* API_BASE_NOTIFIC = "http://192.168.0.100:4200/api/notification";
-const char* DEVICE_UID = "esp32_container_1";
-const char* DEVICE_SECRET = "s3cr3t_container_1_2026";
-int lastPrescriptionMedId = -1;
+// ── API ───────────────────────────────────────────────────────────────────────
+const char* API_BASE         = "http://192.168.0.103:4200/api/device";
+const char* API_BASE_NOTIFIC = "http://192.168.0.103:4200/api/notification";
+const char* DEVICE_UID       = "esp32_container_1";
+const char* DEVICE_SECRET    = "s3cr3t_container_1_2026";
 
+// ── Глобальні змінні ──────────────────────────────────────────────────────────
+String deviceToken           = "";
+int    containerId           = 0;
+int    currentCompartment    = 1;
+int    lastOpenedCompartment = -1;
+int    lastPrescriptionMedId = -1;
 
-String deviceToken = "";
-int containerId = 0;
-int currentCompartment = 1; // де ми зараз (0–7)
-const int STEPS_PER_COMPARTMENT = 256;
-int lastOpenedCompartment = -1;
+// Наступний прийом
+String nextIntakeTimeUtc   = "";  // UTC "HH:mm" — для логів
+String nextIntakeTimeLocal = "";  // Київ "HH:mm" — для відображення і порівняння
+String nextIntakeMed       = "";
+int    nextIntakeComp      = 0;
 
-String nextIntakeTime = "";
-String nextIntakeMed = ""; // поки немає назви в відповіді
-int nextIntakeComp = 0;
-
+// Кнопка
 unsigned long buttonPressStart = 0;
 bool rfidAuthenticated = false;
-bool isLidOpen = false;
+bool isLidOpen         = false;
 
-// Змінні для керування інтервалом синхронізації
-unsigned long lastSyncMillis = 0;
-const unsigned long SYNC_INTERVAL = 7UL * 24 * 60 * 60 * 1000; // 1 тиждень
+// Синхронізація часу
+unsigned long lastSyncMillis       = 0;
+const unsigned long SYNC_INTERVAL  = 7UL * 24 * 60 * 60 * 1000;
 
-bool weightMonitoring = false;      // чи відстежуємо зараз
-unsigned long weightMonitorStart = 0; // коли почали
-float weightAtStart = 0.0;          // вага на початку
-const unsigned long WEIGHT_MONITOR_DURATION = 1  * 60 * 1000; // 5 хвилин
-const float WEIGHT_THRESHOLD = 1.0; // мінімальна зміна ваги (грами)
-bool alertSent = false;  
+// Моніторинг ваги
+bool          weightMonitoring          = false;
+unsigned long weightMonitorStart        = 0;
+float         weightAtStart             = 0.0;
+const unsigned long WEIGHT_MONITOR_DURATION = 1 * 60 * 1000; // 1 хвилина
+const float   WEIGHT_THRESHOLD          = 1.0;               // грами
+bool          alertSent                 = false;
 
+// ── Оголошення функцій ────────────────────────────────────────────────────────
+void   showMsg(String l1, String l2);
+void   showMsg(String l1, String l2, String l3);
+void   syncRtcWithNtp();
+void   displayClock();
+void   checkRFID();
+void   handleButtonLogic();
+void   toggleLoadingMode();
+void   triggerBuzzer();
+void   shutdownDevice();
+void   authenticateDevice();
+void   sendHeartbeat();
+bool   checkNextIntake();
+void   confirmIntake(int prescriptionMedId);
+void   rotateToCompartment(int target);
+void   completeCommand(int id);
+void   handleCommands();
+void   sendRfidStatus(bool authenticated);
+void   sendWeightAlert(int prescriptionMedId);
+void   logDeviceEvent(String type, String code, String message);
+void   sendIntakeReminder(int prescriptionMedId);
+void   playBeethovenMelody();
+String utcToLocalTime(int utcHour, int utcMin);
 
+// ── UTC → локальний час Київ (DST через TZ змінну ESP32) ─────────────────────
+String utcToLocalTime(int utcHour, int utcMin) {
+    time_t now_epoch;
+    time(&now_epoch);
+    struct tm utcInfo, localInfo;
+    gmtime_r(&now_epoch, &utcInfo);
+    localtime_r(&now_epoch, &localInfo);
 
-// Оголошення функцій
-void showMsg(String l1, String l2);
-void showMsg(String l1, String l2, String l3);
-void syncRtcWithNtp();
-void displayClock();
-void checkRFID();
-void handleButtonLogic();
-void toggleLoadingMode();
-void triggerBuzzer();
-void shutdownDevice();
+    int offsetHours = localInfo.tm_hour - utcInfo.tm_hour;
+    if (offsetHours < -12) offsetHours += 24;
+    if (offsetHours >  12) offsetHours -= 24;
 
-// ДОДАЙ ЦЕ
-void authenticateDevice();
-void sendHeartbeat();
-bool checkNextIntake();
-void confirmIntake(int prescriptionMedId);
-void rotateToCompartment(int target);
-void completeCommand(int id);
-void handleCommands();
-void sendRfidStatus(bool authenticated);
-void sendWeightAlert(int prescriptionMedId);
-void logDeviceEvent(String type, String code, String message);
-void playIntakeMelody();
-void sendIntakeReminder(int prescriptionMedId);
+    int localHour = (utcHour + offsetHours + 24) % 24;
+    char buf[6];
+    sprintf(buf, "%02d:%02d", localHour, utcMin);
+    return String(buf);
+}
 
+// ── Setup ─────────────────────────────────────────────────────────────────────
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(BUZZER_LED, OUTPUT);
-  pinMode(HALL_SENSOR_PIN, INPUT);
-  
-  loadServo.attach(25);
-  loadServo.write(90);
-  unloadServo.attach(26);
-  unloadServo.write(83);
-  
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  
-  drum.setSpeed(8); // повільніше для калібрування
-  showMsg("STELLHEAL", "Calibration...");
+    pinMode(BUTTON_PIN,      INPUT_PULLUP);
+    pinMode(BUZZER_LED,      OUTPUT);
+    pinMode(HALL_SENSOR_PIN, INPUT);
 
-  drum.step(50); // відступаємо від датчика
-  delay(100);
+    loadServo.attach(25);   loadServo.write(90);
+    unloadServo.attach(26); unloadServo.write(83);
 
-  int hallStableCount = 0;
-  while (hallStableCount < 5) {
-      drum.step(1);
-      delay(3);
-      if (digitalRead(HALL_SENSOR_PIN) == LOW) {
-          hallStableCount++;
-      } else {
-          hallStableCount = 0;
-      }
-  }
+    u8g2.begin();
+    u8g2.enableUTF8Print();
 
-  drum.setSpeed(10);
-  currentCompartment = 1;
-  Serial.println("HOME POSITION SET");
+    drum.setSpeed(8);
+    showMsg("STELLHEAL", "Калібрування...");
 
-  scale.begin(LOADCELL_DT, LOADCELL_SCK);
-  scale.set_scale(calibration_factor);
-  scale.tare();
-  Serial.println("Scale ready");
+    // Калібрування барабана по датчику Холла
+    drum.step(50);
+    delay(100);
 
-  WiFiManager wm;
-  showMsg("WIFI CONNECTING", "Connect to", "StellHeal_Setup");
-  if(!wm.autoConnect("StellHeal_Setup")) {
-    ESP.restart();
-  }
-  
-  // Початкова синхронізація
-  syncRtcWithNtp();
-  lastSyncMillis = millis();
+    int hallStableCount = 0;
+    while (hallStableCount < 5) {
+        drum.step(1);
+        delay(3);
+        if (digitalRead(HALL_SENSOR_PIN) == LOW) hallStableCount++;
+        else                                      hallStableCount = 0;
+    }
 
-  SPI.begin();
-  rfid.PCD_Init();
-  Rtc.Begin();
-  showMsg("AUTHENTIFICATION", "Device Authentication...");
-  authenticateDevice();
+    drum.setSpeed(10);
+    currentCompartment = 1;
+    Serial.println("HOME POSITION SET");
 
-  showMsg("SYSTEM READY", "Setup finished");
-  delay(2000);
+    scale.begin(LOADCELL_DT, LOADCELL_SCK);
+    scale.set_scale(calibration_factor);
+    scale.tare();
+    Serial.println("Scale ready");
 
-}
+    WiFiManager wm;
+    showMsg("WiFi", "StellHeal_Setup");
+    if (!wm.autoConnect("StellHeal_Setup")) ESP.restart();
 
-void loop() {
-  
-  static unsigned long lastAuthTry = 0;
+    // TZ для України: UTC+2 зима / UTC+3 літо (DST автоматично)
+    syncRtcWithNtp();
+    lastSyncMillis = millis();
 
-  if (deviceToken == "" && millis() - lastAuthTry > 5000) {
-    Serial.println("Retry auth...");
+    SPI.begin();
+    rfid.PCD_Init();
+    Rtc.Begin();
+
+    showMsg("Авторизація", "Підключення...");
     authenticateDevice();
-    lastAuthTry = millis();
-  }
 
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi lost → reconnecting...");
-    WiFi.reconnect();
-  }
-  static unsigned long lastHeartbeat = 0;
-  if (millis() - lastHeartbeat > 60000) {
-    sendHeartbeat();
-    lastHeartbeat = millis();
-  }
-
-  static unsigned long lastCheck = 0;
-  if (millis() - lastCheck > 10000) {
-    checkNextIntake();
-    lastCheck = millis();
-  }
-
-  static unsigned long lastCommands = 0;
-  if (millis() - lastCommands > 3000) { // кожні 3 секунди
-      handleCommands();
-      lastCommands = millis();
-  }
-  // Перевірка часу для щотижневої синхронізації
-  if (millis() - lastSyncMillis > SYNC_INTERVAL) {
-    if (WiFi.status() == WL_CONNECTED) {
-       syncRtcWithNtp();
-       lastSyncMillis = millis();
-    }
-  }
-
-  // Моніторинг ваги після вивантаження
-  if (weightMonitoring) {
-      float currentWeight = scale.get_units(3);
-      float weightDiff = weightAtStart - currentWeight;
-      
-      Serial.printf("Weight: %.2f g, diff: %.2f g\n", currentWeight, weightDiff);
-
-      if (weightDiff >= WEIGHT_THRESHOLD) {
-          // Вага зменшилась — пацієнт забрав таблетки
-          Serial.println("Pills taken ✅");
-          weightMonitoring = false;
-          alertSent = false;
-          showMsg("GOOD!", "Pills taken");
-          delay(1000);
-
-      } else if (millis() - weightMonitorStart > WEIGHT_MONITOR_DURATION && !alertSent) {
-          Serial.println("Pills NOT taken! Sending alert...");
-          sendWeightAlert(lastPrescriptionMedId); // ← правильний id
-          alertSent = true;
-          weightMonitoring = false;
-      }
-  }
-
-  if (!rfidAuthenticated) {
-    displayClock();
-    checkRFID();        
-  } else {
-    handleButtonLogic(); 
-  }
+    showMsg("ГОТОВО", "Система готова");
+    delay(2000);
 }
 
+// ── Loop ──────────────────────────────────────────────────────────────────────
+void loop() {
+    // Повторна авторизація якщо токен відсутній
+    static unsigned long lastAuthTry = 0;
+    if (deviceToken == "" && millis() - lastAuthTry > 5000) {
+        authenticateDevice();
+        lastAuthTry = millis();
+    }
+
+    // Перепідключення WiFi
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("WiFi втрачено, перепідключення...");
+        WiFi.reconnect();
+    }
+
+    // Heartbeat кожну хвилину
+    static unsigned long lastHeartbeat = 0;
+    if (millis() - lastHeartbeat > 60000) {
+        sendHeartbeat();
+        lastHeartbeat = millis();
+    }
+
+    // Перевірка наступного прийому кожні 10 секунд
+    static unsigned long lastCheck = 0;
+    if (millis() - lastCheck > 10000) {
+        checkNextIntake();
+        lastCheck = millis();
+    }
+
+    // Команди від веб-інтерфейсу кожні 3 секунди
+    static unsigned long lastCommands = 0;
+    if (millis() - lastCommands > 3000) {
+        handleCommands();
+        lastCommands = millis();
+    }
+
+    // Щотижнева синхронізація NTP
+    if (millis() - lastSyncMillis > SYNC_INTERVAL && WiFi.status() == WL_CONNECTED) {
+        syncRtcWithNtp();
+        lastSyncMillis = millis();
+    }
+
+    // ── Моніторинг ваги після видачі ─────────────────────────────────────────
+    // confirmIntake викликається ТІЛЬКИ тут — після підтвердження вагою
+    if (weightMonitoring) {
+        float currentWeight = scale.get_units(3);
+        float weightDiff    = weightAtStart - currentWeight;
+        Serial.printf("Вага: %.2f г, різниця: %.2f г\n", currentWeight, weightDiff);
+
+        if (weightDiff >= WEIGHT_THRESHOLD) {
+            // ← Пацієнт забрав таблетки — підтверджуємо прийом
+            Serial.println("Таблетки взято — підтверджуємо прийом");
+            confirmIntake(lastPrescriptionMedId);
+            weightMonitoring = false;
+            alertSent        = false;
+            showMsg("ДОБРЕ!", "Таблетки взято");
+            delay(1000);
+
+        } else if (millis() - weightMonitorStart > WEIGHT_MONITOR_DURATION && !alertSent) {
+            // ← Час вийшов — пацієнт НЕ взяв таблетки
+            // intake_status залишається null (пропущено)
+            Serial.println("Таблетки НЕ взято — надсилаємо алерт");
+            sendWeightAlert(lastPrescriptionMedId);
+            alertSent        = true;
+            weightMonitoring = false;
+        }
+    }
+
+    if (!rfidAuthenticated) {
+        displayClock();
+        checkRFID();
+    } else {
+        handleButtonLogic();
+    }
+}
+
+// ── Синхронізація RTC з NTP ───────────────────────────────────────────────────
 void syncRtcWithNtp() {
-  showMsg("Syncing", "Time...");
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-  setenv("TZ", "EET-2EEST,M3.5.0/3,M10.5.0/4", 1);
-  tzset();
+    showMsg("Синхронізація", "Часу...");
 
-  struct tm timeinfo;
-  int retry = 0;
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+    // TZ Україна: EET (UTC+2 зима) / EEST (UTC+3 літо)
+    // M3.5.0/3 = остання неділя березня о 3:00 → літній час
+    // M10.5.0/4 = остання неділя жовтня о 4:00 → зимовий час
+    setenv("TZ", "EET-2EEST,M3.5.0/3,M10.5.0/4", 1);
+    tzset();
 
-  while (!getLocalTime(&timeinfo) && retry < 15) {
-    delay(500);
-    retry++;
-  }
+    struct tm timeinfo;
+    int retry = 0;
+    while (!getLocalTime(&timeinfo) && retry < 15) {
+        delay(500);
+        retry++;
+    }
 
-  if (retry < 15) {
-    Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");
-
-    Rtc.SetDateTime(RtcDateTime(
-      timeinfo.tm_year + 1900,
-      timeinfo.tm_mon + 1,
-      timeinfo.tm_mday,
-      timeinfo.tm_hour,
-      timeinfo.tm_min,
-      timeinfo.tm_sec
-    ));
-  } else {
-    showMsg("Time error", "NTP failed");
-  }
+    if (retry < 15) {
+        // RTC зберігає ЛОКАЛЬНИЙ київський час
+        Rtc.SetDateTime(RtcDateTime(
+            timeinfo.tm_year + 1900,
+            timeinfo.tm_mon + 1,
+            timeinfo.tm_mday,
+            timeinfo.tm_hour,
+            timeinfo.tm_min,
+            timeinfo.tm_sec
+        ));
+        Serial.printf("RTC (Київ): %02d:%02d:%02d\n",
+            timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    } else {
+        showMsg("Помилка", "NTP недоступний");
+    }
 }
 
+// ── Дисплей ───────────────────────────────────────────────────────────────────
 void displayClock() {
-  static unsigned long lastDisplayUpdate = 0;
-  if (millis() - lastDisplayUpdate < 1000) return;
-  lastDisplayUpdate = millis();
+    static unsigned long lastDisplayUpdate = 0;
+    if (millis() - lastDisplayUpdate < 1000) return;
+    lastDisplayUpdate = millis();
 
-  RtcDateTime now = Rtc.GetDateTime();
+    RtcDateTime now = Rtc.GetDateTime();
+    u8g2.clearBuffer();
 
-  display.clearDisplay();
-  display.setTextColor(WHITE);
+    if (nextIntakeTimeLocal != "") {
+        // Режим з наступним прийомом
+        u8g2.setFont(u8g2_font_logisoso16_tr);
+        char timeBuf[6];
+        sprintf(timeBuf, "%02d:%02d", now.Hour(), now.Minute());
+        u8g2.drawStr(34, 16, timeBuf);
 
-  if (nextIntakeTime != "") {
-    // Режим з наступним прийомом — все розміром 1
-    
-    // Поточний час — розмір 2
-    display.setTextSize(2);
-    display.setCursor(25, 0);
-    display.printf("%02d:%02d", now.Hour(), now.Minute());
+        u8g2.drawHLine(0, 19, 128);
 
-    // Назва препарату
-    display.setTextSize(1);
-    display.setCursor(0, 20);
-    display.print("Med: ");
-    display.print(nextIntakeMed.substring(0, 12));
+        u8g2.setFont(u8g2_font_unifont_t_cyrillic);
 
-    // Час прийому
-    display.setCursor(0, 32);
-    display.print("At:  ");
-    display.print(nextIntakeTime);
-    display.print(" comp.");
-    display.print(nextIntakeComp);
+        u8g2.setCursor(0, 32);
+        u8g2.print("Ліки: ");
+        u8g2.print(nextIntakeMed.substring(0, 10).c_str());
 
-    // Відлік
-    int nowMinutes = now.Hour() * 60 + now.Minute();
-    int intakeHour = nextIntakeTime.substring(0, 2).toInt();
-    int intakeMin = nextIntakeTime.substring(3, 5).toInt();
-    int intakeMinutes = intakeHour * 60 + intakeMin;
-    int diff = intakeMinutes - nowMinutes;
-    if (diff < 0) diff += 24 * 60;
-    int diffH = diff / 60;
-    int diffM = diff % 60;
+        u8g2.setCursor(0, 44);
+        u8g2.print("О: ");
+        u8g2.print(nextIntakeTimeLocal.c_str());
+        u8g2.print(" відс.");
+        u8g2.print(nextIntakeComp);
 
-    display.setCursor(0, 44);
-    display.print("In:  ");
-    if (diffH > 0) {
-      display.print(diffH);
-      display.print("h ");
+        // Відлік до прийому
+        int nowMinutes    = now.Hour() * 60 + now.Minute();
+        int intakeHour    = nextIntakeTimeLocal.substring(0, 2).toInt();
+        int intakeMin     = nextIntakeTimeLocal.substring(3, 5).toInt();
+        int intakeMinutes = intakeHour * 60 + intakeMin;
+        int diff          = intakeMinutes - nowMinutes;
+        if (diff < 0) diff += 24 * 60;
+
+        u8g2.setCursor(0, 56);
+        u8g2.print("Через: ");
+        if (diff / 60 > 0) { u8g2.print(diff / 60); u8g2.print("г "); }
+        u8g2.print(diff % 60);
+        u8g2.print(" хв");
+
+    } else {
+        // Великий годинник
+        u8g2.setFont(u8g2_font_logisoso32_tr);
+        char timeBuf[6];
+        sprintf(timeBuf, "%02d:%02d", now.Hour(), now.Minute());
+        u8g2.drawStr(14, 42, timeBuf);
+
+        u8g2.setFont(u8g2_font_unifont_t_cyrillic);
+        u8g2.setCursor(4, 60);
+        u8g2.print("Немає прийомів");
     }
-    display.print(diffM);
-    display.print(" min");
 
-    // Розділювач
-    display.drawLine(0, 17, 128, 17, WHITE);
-
-  } else {
-    // Немає прийомів — великий годинник
-    display.setTextSize(3);
-    display.setCursor(20, 20);
-    display.printf("%02d:%02d", now.Hour(), now.Minute());
-
-    display.setTextSize(1);
-    display.setCursor(20, 52);
-    display.print("No intakes today");
-  }
-
-  display.display();
+    u8g2.sendBuffer();
 }
 
+// ── showMsg ───────────────────────────────────────────────────────────────────
+void showMsg(String l1, String l2) { showMsg(l1, l2, ""); }
+
+void showMsg(String l1, String l2, String l3) {
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_unifont_t_cyrillic);
+    u8g2.setCursor(0, 14); u8g2.print(l1.c_str());
+    u8g2.setCursor(0, 36); u8g2.print(l2.c_str());
+    if (l3 != "") { u8g2.setCursor(0, 56); u8g2.print(l3.c_str()); }
+    u8g2.sendBuffer();
+}
+
+// ── RFID ──────────────────────────────────────────────────────────────────────
 void checkRFID() {
-  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    rfidAuthenticated = true;
-    triggerBuzzer();
-    showMsg("AUTH OK", "Button Active");
-    sendRfidStatus(true);
-    logDeviceEvent("info", "RFID_AUTH", "Nurse authenticated via RFID"); // ← додайте
-    delay(1000);
-  }
+    if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+        rfidAuthenticated = true;
+        triggerBuzzer();
+        showMsg("Авторизовано", "Кнопка активна");
+        sendRfidStatus(true);
+        logDeviceEvent("info", "RFID_AUTH", "Медсестра авторизувалась через RFID");
+        delay(1000);
+    }
 }
 
+// ── Кнопка ────────────────────────────────────────────────────────────────────
 void handleButtonLogic() {
-  static bool buzzerTriggered = false;
-  if (digitalRead(BUTTON_PIN) == LOW) {
-    if (buttonPressStart == 0) buttonPressStart = millis();
-    unsigned long duration = millis() - buttonPressStart;
-    
-    if (duration >= 10000) {
-      if (!buzzerTriggered) { triggerBuzzer(); buzzerTriggered = true; }
-      showMsg("ACTION:", "RELEASE TO OFF");
+    static bool buzzerTriggered = false;
+    if (digitalRead(BUTTON_PIN) == LOW) {
+        if (buttonPressStart == 0) buttonPressStart = millis();
+        unsigned long duration = millis() - buttonPressStart;
+        if (duration >= 10000) {
+            if (!buzzerTriggered) { triggerBuzzer(); buzzerTriggered = true; }
+            showMsg("ДІЯ:", "Відпустіть → вимкн.");
+        } else if (duration >= 5000) {
+            if (!buzzerTriggered) { triggerBuzzer(); buzzerTriggered = true; }
+            showMsg("ДІЯ:", "Скинути WiFi");
+        }
+    } else {
+        if (buttonPressStart > 0) {
+            unsigned long d = millis() - buttonPressStart;
+            buttonPressStart = 0; buzzerTriggered = false;
+            if      (d >= 10000)           shutdownDevice();
+            else if (d >= 5000) {
+                showMsg("СКИДАННЯ", "WiFi...");
+                WiFiManager wm; wm.resetSettings(); ESP.restart();
+            } else if (d > 50 && d < 3000) toggleLoadingMode();
+        }
     }
-    else if (duration >= 5000) {
-      if (!buzzerTriggered) { triggerBuzzer(); buzzerTriggered = true; }
-      showMsg("ACTION:", "RESET WIFI");
-    }
-  } else {
-    if (buttonPressStart > 0) {
-      unsigned long finalDuration = millis() - buttonPressStart;
-      buttonPressStart = 0;
-      buzzerTriggered = false;
-      
-      if (finalDuration >= 10000) {
-        shutdownDevice();
-      } else if (finalDuration >= 5000) {
-        showMsg("RESET", "WiFi...");
-        WiFiManager wm; wm.resetSettings(); ESP.restart();
-      } else if (finalDuration > 50 && finalDuration < 3000) {
-        toggleLoadingMode();
-      }
-    }
-  }
 }
 
 void toggleLoadingMode() {
-  if (!isLidOpen) {
-    showMsg("FILLING", "Fill compartment");
-    loadServo.write(0);
-    isLidOpen = true;
-  } else {
-    showMsg("EXIT", "Closing...");
-    loadServo.write(90);
-    isLidOpen = false;
-    delay(1000);
-    rfidAuthenticated = false;
-  }
+    if (!isLidOpen) {
+        showMsg("ЗАПОВНЕННЯ", "Відкрито");
+        loadServo.write(0);
+        isLidOpen = true;
+    } else {
+        showMsg("ВИХІД", "Закриваємо...");
+        loadServo.write(90);
+        isLidOpen = false;
+        delay(1000);
+        rfidAuthenticated = false;
+    }
 }
 
+// ── Утиліти ───────────────────────────────────────────────────────────────────
 void triggerBuzzer() {
-  digitalWrite(BUZZER_LED, HIGH);
-  delay(200);
-  digitalWrite(BUZZER_LED, LOW);
-}
-
-void showMsg(String l1, String l2) {
-  showMsg(l1, l2, "");
-}
-
-void showMsg(String l1, String l2, String l3) {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.println(l1);
-  
-  display.setCursor(0, 20);
-  display.setTextSize(2);
-  display.println(l2);
-  
-  if (l3 != "") {
-    display.setCursor(0, 50);
-    display.setTextSize(1);
-    display.println(l3);
-  }
-  display.display();
+    digitalWrite(BUZZER_LED, HIGH); delay(200); digitalWrite(BUZZER_LED, LOW);
 }
 
 void shutdownDevice() {
-  showMsg("SHUTDOWN", "Sleeping...");
-  delay(800);
-
-  // 1. Вимкнути дисплей
-  display.clearDisplay();
-  display.display();
-  display.ssd1306_command(SSD1306_DISPLAYOFF);
-
-  // 2. Вимкнути бузер
-  digitalWrite(BUZZER_LED, LOW);
-
-  // 3. Перевести піни в безпечний стан (мінімум споживання)
-  pinMode(BUZZER_LED, INPUT);
-  pinMode(BUTTON_PIN, INPUT);
-
-
-  // 4. Невелика затримка перед сном
-  delay(200);
-
-  // 5. Налаштування пробудження (по кнопці)
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
-
-  // 6. Сон
-  esp_deep_sleep_start();
+    showMsg("ВИМКНЕННЯ", "Сплячий режим...");
+    delay(800);
+    u8g2.clearBuffer(); u8g2.sendBuffer();
+    u8g2.setPowerSave(1);
+    digitalWrite(BUZZER_LED, LOW);
+    pinMode(BUZZER_LED, INPUT);
+    pinMode(BUTTON_PIN,  INPUT);
+    delay(200);
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
+    esp_deep_sleep_start();
 }
 
-
-// авторизація пристрою 
+// ── Автентифікація ────────────────────────────────────────────────────────────
 void authenticateDevice() {
-  if (WiFi.status() != WL_CONNECTED) return;
+    if (WiFi.status() != WL_CONNECTED) return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/auth");
+    http.addHeader("Content-Type", "application/json");
 
-  WiFiClient client;
-  
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/auth");
-  http.addHeader("Content-Type", "application/json");
+    StaticJsonDocument<200> doc;
+    doc["device_uid"] = DEVICE_UID;
+    doc["secret"]     = DEVICE_SECRET;
+    String body; serializeJson(doc, body);
 
-  StaticJsonDocument<200> doc;
-  doc["device_uid"] = DEVICE_UID;
-  doc["secret"] = DEVICE_SECRET;
-
-  String body;
-  serializeJson(doc, body);
-
-  int code = http.POST(body);
-
-  Serial.printf("AUTH CODE: %d\n", code);
-
-  if (code > 0) {
-    String response = http.getString();
-    Serial.println(response);
+    int code = http.POST(body);
+    Serial.printf("AUTH: %d\n", code);
 
     if (code == 200) {
-      StaticJsonDocument<300> res;
-      deserializeJson(res, response);
-
-      deviceToken = res["token"].as<String>();
-      containerId = res["containerId"];
-
-      Serial.println("Device authenticated");
+        String response = http.getString();
+        StaticJsonDocument<300> res;
+        deserializeJson(res, response);
+        deviceToken = res["token"].as<String>();
+        containerId = res["container_id"];
+        Serial.printf("Авторизовано, container_id=%d\n", containerId);
+    } else {
+        Serial.println("Авторизація не вдалась");
     }
-  } else {
-    Serial.println("HTTP ERROR");
-  }
-
-  http.end();
+    http.end();
 }
 
-// ввімкнення пристрою
+// ── Heartbeat ─────────────────────────────────────────────────────────────────
 void sendHeartbeat() {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
-
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/heartbeat");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
-
-  int code = http.POST("");
-  Serial.printf("HEARTBEAT CODE: %d\n", code);
-
-  http.end();
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/heartbeat");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
+    int code = http.POST("");
+    Serial.printf("HEARTBEAT: %d\n", code);
+    http.end();
 }
 
-// отриманння наступного прийому
+// ── Наступний прийом ──────────────────────────────────────────────────────────
+// Бекенд повертає ліки що вже в контейнері (compartment_medications: { some: {} })
+// і ще не прийняті (intake_status: null), відсортовані по intake_at
 bool checkNextIntake() {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return false;
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return false;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/next-intake");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
 
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/next-intake");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
+    int code = http.GET();
+    Serial.printf("NEXT INTAKE: %d\n", code);
+    if (code != 200) { http.end(); return false; }
 
-  int code = http.GET();
-  Serial.printf("NEXT INTAKE CODE: %d\n", code);
-
-  if (code == 200) {
     String response = http.getString();
     Serial.println(response);
 
     StaticJsonDocument<400> doc;
-    DeserializationError error = deserializeJson(doc, response);
-    if (error) {
-      Serial.println("JSON parse error");
-      http.end();
-      return false;
-    }
-
-    if (doc.containsKey("message")) {
-        Serial.println("No pending intakes");
-        nextIntakeTime = "";
-        nextIntakeComp = 0;
-        nextIntakeMed = ""; // ← просто очищаємо
+    if (deserializeJson(doc, response)) {
+        Serial.println("JSON parse error");
         http.end();
         return false;
     }
-    
-    if (doc.containsKey("medication_name")) {
-        nextIntakeMed = doc["medication_name"].as<String>();
-    } else {
-        nextIntakeMed = "Unknown";
+
+    // Немає прийомів в контейнері
+    if (doc.containsKey("message")) {
+        nextIntakeTimeUtc   = "";
+        nextIntakeTimeLocal = "";
+        nextIntakeComp      = 0;
+        nextIntakeMed       = "";
+        http.end();
+        return false;
     }
 
-    if (!doc.containsKey("intake_time") || !doc.containsKey("compartment_number")) {
-      Serial.println("Invalid response fields");
-      http.end();
-      return false;
+    if (!doc.containsKey("intake_at") || !doc.containsKey("compartment_number")) {
+        Serial.println("Невірні поля відповіді");
+        http.end();
+        return false;
     }
 
     int prescriptionMedId = doc["prescription_med_id"];
-    nextIntakeComp = doc["compartment_number"];
+    nextIntakeComp        = doc["compartment_number"];
+    nextIntakeMed         = doc["medication_name"] | "Невідомо";
 
-    String intakeTimeFull = doc["intake_time"].as<String>();
-    nextIntakeTime = intakeTimeFull.substring(11, 16); // "23:30"
+    // intake_at — UTC ISO: "2026-06-02T21:00:00.000Z"
+    String intakeTimeFull = doc["intake_at"].as<String>();
+    int utcHour = intakeTimeFull.substring(11, 13).toInt();
+    int utcMin  = intakeTimeFull.substring(14, 16).toInt();
 
-    Serial.printf("Next intake: %s, comp: %d\n", nextIntakeTime.c_str(), nextIntakeComp);
+    nextIntakeTimeUtc   = intakeTimeFull.substring(11, 16); // UTC для логів
+    nextIntakeTimeLocal = utcToLocalTime(utcHour, utcMin);  // Київ для відображення і порівняння
 
+    Serial.printf("UTC: %s | Київ: %s | відсік: %d | ліки: %s\n",
+        nextIntakeTimeUtc.c_str(), nextIntakeTimeLocal.c_str(),
+        nextIntakeComp, nextIntakeMed.c_str());
+
+    // Порівнюємо ЛОКАЛЬНИЙ час прийому з ЛОКАЛЬНИМ часом RTC
     RtcDateTime now = Rtc.GetDateTime();
     char currentTime[6];
     sprintf(currentTime, "%02d:%02d", now.Hour(), now.Minute());
+    Serial.printf("RTC (Київ): %s\n", currentTime);
 
-    Serial.printf("Current time: %s\n", currentTime);
+    if (nextIntakeTimeLocal == String(currentTime)) {
+        if (nextIntakeComp != lastOpenedCompartment) {
+            Serial.println("ЧАС СПІВПАВ - ВІДКРИВАЄМО ВІДСІК");
+            logDeviceEvent("info", "INTAKE_TRIGGERED",
+                "Відкриття відсіку " + String(nextIntakeComp) +
+                " о " + nextIntakeTimeLocal);
 
-    if (nextIntakeTime == String(currentTime)) {
-      if (nextIntakeComp != lastOpenedCompartment) {
-        Serial.println("TIME MATCH → OPENING COMPARTMENT");
+            lastPrescriptionMedId = prescriptionMedId;
 
-        lastPrescriptionMedId = prescriptionMedId;
-        rotateToCompartment(nextIntakeComp);
+            // 1. Повертаємо барабан
+            rotateToCompartment(nextIntakeComp);
 
-        unloadServo.write(20);
-        delay(3000);
-        unloadServo.write(83);
+            // 2. Відкриваємо відсік видачі
+            unloadServo.write(20);
+            delay(3000);
+            // 3. Закриваємо відсік видачі
+            unloadServo.write(83);
 
-        playIntakeMelody(); // ← замість triggerBuzzer()
-        lastOpenedCompartment = nextIntakeComp;
-        confirmIntake(prescriptionMedId);
-        sendIntakeReminder(prescriptionMedId);
-        
-        weightAtStart = scale.get_units(5);
-        weightMonitorStart = millis();
-        weightMonitoring = true;
-        alertSent = false;
-        Serial.printf("Weight monitoring started, initial: %.2f g\n", weightAtStart);
-      }
+            // 4. Грати мелодію (серво від'єднані всередині)
+            playBeethovenMelody();
+
+            lastOpenedCompartment = nextIntakeComp;
+
+            // 5. Надсилаємо нагадування (НЕ confirmIntake — чекаємо на вагу)
+            sendIntakeReminder(prescriptionMedId);
+
+            // 6. Починаємо моніторинг ваги
+            weightAtStart        = scale.get_units(5);
+            weightMonitorStart   = millis();
+            weightMonitoring     = true;
+            alertSent            = false;
+            Serial.printf("Моніторинг ваги розпочато, початкова: %.2f г\n", weightAtStart);
+        }
     }
 
     http.end();
     return true;
-  }
-
-  http.end();
-  return false;
 }
 
-// підтвердження прийому
+// ── Підтвердження прийому (викликається ТІЛЬКИ після підтвердження вагою) ────
 void confirmIntake(int prescriptionMedId) {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/intake");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
 
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/intake");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
+    StaticJsonDocument<200> doc;
+    doc["prescription_med_id"] = prescriptionMedId;
+    String body; serializeJson(doc, body);
 
-  StaticJsonDocument<200> doc;
-  doc["prescription_med_id"] = prescriptionMedId; // ← було compartmentId
+    int code = http.POST(body);
+    Serial.printf("CONFIRM INTAKE: %d\n", code);
 
-  String body;
-  serializeJson(doc, body);
-
-  int code = http.POST(body);
-  Serial.printf("CONFIRM INTAKE CODE: %d\n", code);
-
-  if (code == 200) {
-    Serial.println("Intake confirmed");
-  }
-
-  http.end();
-}
-
-void rotateToCompartment(int target) {
-  if (target < 1 || target > 8) return;
-  if (target == currentCompartment) return;
-
-  Serial.println("Returning to HOME...");
-  
-  drum.step(20);
-  delay(50);
-  
-  int hallStableCount = 0;
-  int steps = 0;
-  while (hallStableCount < 5 && steps < 2500) {
-    drum.step(1);
-    delay(2);
-    steps++;
-    if (digitalRead(HALL_SENSOR_PIN) == LOW) {
-        hallStableCount++;
-    } else {
-        hallStableCount = 0;
+    if (code == 200) {
+        Serial.println("Прийом підтверджено на сервері");
+        logDeviceEvent("info", "INTAKE_CONFIRMED",
+            "Прийом підтверджено вагою, med_id=" + String(prescriptionMedId));
     }
-  }
-
-  // ← Логуємо помилку якщо датчик не знайдено
-  if (steps >= 2500) {
-    Serial.println("Hall sensor not found!");
-    logDeviceEvent("error", "MOTOR_ERROR", "Hall sensor not found during calibration");
-    return; // ← виходимо щоб не крутити далі з неправильної позиції
-  }
-  
-  currentCompartment = 1;
-
-  if (target == 1) return;
-
-  int stepsToMove = COMPARTMENT_STEPS[target];
-  Serial.printf("Moving to compartment %d (%d steps)\n", target, stepsToMove);
-
-  drum.step(stepsToMove);
-  currentCompartment = target;
-
-  // ← Логуємо успішну прокрутку
-  logDeviceEvent("info", "MOTOR_OK", "Rotated to compartment " + String(target));
+    http.end();
 }
 
-// отримання та обробка команд
+// ── Ротація барабана ──────────────────────────────────────────────────────────
+void rotateToCompartment(int target) {
+    if (target < 1 || target > 8 || target == currentCompartment) return;
+
+    Serial.println("Повернення на HOME...");
+    drum.step(20);
+    delay(50);
+
+    int hallStableCount = 0, steps = 0;
+    while (hallStableCount < 5 && steps < 2500) {
+        drum.step(1); delay(2); steps++;
+        if (digitalRead(HALL_SENSOR_PIN) == LOW) hallStableCount++;
+        else                                      hallStableCount = 0;
+    }
+
+    if (steps >= 2500) {
+        Serial.println("Датчик Холла не знайдено!");
+        logDeviceEvent("error", "MOTOR_ERROR", "Датчик Холла не знайдено під час калібрування");
+        return;
+    }
+
+    currentCompartment = 1;
+    if (target == 1) return;
+
+    int stepsToMove = COMPARTMENT_STEPS[target];
+    Serial.printf("Переміщення до відсіку %d (%d кроків)\n", target, stepsToMove);
+    drum.step(stepsToMove);
+    currentCompartment = target;
+
+    logDeviceEvent("info", "MOTOR_OK", "Обертання до відсіку " + String(target));
+}
+
+// ── Команди від веб-інтерфейсу ───────────────────────────────────────────────
 void handleCommands() {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
-  if (!rfidAuthenticated) return;
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "" || !rfidAuthenticated) return;
 
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/commands");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/commands");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
 
-  int code = http.GET();
+    int code = http.GET();
+    if (code != 200) { http.end(); return; }
 
-  if (code == 200) {
     String response = http.getString();
-
     StaticJsonDocument<512> doc;
     deserializeJson(doc, response);
 
     bool executed = false;
-
     for (JsonObject cmd : doc.as<JsonArray>()) {
-      if (executed) break;
+        if (executed) break;
+        int    id      = cmd["id"];
+        String command = cmd["command"];
 
-      int id = cmd["id"];
-      String command = cmd["command"];
+        if (command == "rotate_to") {
+            int comp = cmd["payload"]["compartment"];
+            rotateToCompartment(comp);
+            completeCommand(id);
+            executed = true;
 
-      if (command == "rotate_to") {
-        int comp = cmd["payload"]["compartment"];
+        } else if (command == "open_lid") {
+            if (rfidAuthenticated) {
+                showMsg("ЗАПОВНЕННЯ", "Відкрито");
+                loadServo.write(0);
+                isLidOpen = true;
+            }
+            completeCommand(id);
+            executed = true;
 
-        // ← ПРИБРАТИ рекалібрування звідси, воно вже в rotateToCompartment
-        rotateToCompartment(comp);
-        completeCommand(id);
-        executed = true;
-
-      } else if (command == "open_lid") {
-        if (rfidAuthenticated) {
-          showMsg("FILLING", "Fill compartment");
-          loadServo.write(0);
-          isLidOpen = true;
+        } else if (command == "close_lid") {
+            showMsg("ГОТОВО", "Заповнення завершено");
+            loadServo.write(90);
+            isLidOpen         = false;
+            rfidAuthenticated = false;
+            sendRfidStatus(false);
+            triggerBuzzer(); delay(200); triggerBuzzer();
+            delay(2000);
+            completeCommand(id);
+            executed = true;
         }
-        completeCommand(id);
-        executed = true;
-
-      } else if (command == "close_lid") {
-        showMsg("DONE", "Filling complete!");
-        loadServo.write(90);
-        isLidOpen = false;
-        rfidAuthenticated = false;
-        sendRfidStatus(false);
-        triggerBuzzer();
-        delay(200);
-        triggerBuzzer();
-        delay(2000);
-        completeCommand(id);
-        executed = true;
-      }
     }
-  }
-
-  http.end();
+    http.end();
 }
 
-// завершення заповнення
 void completeCommand(int id) {
-  WiFiClient client;
-  HTTPClient http;
-
-  http.begin(client, String(API_BASE) + "/commands/" + String(id) + "/done");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
-
-  http.POST("");
-  http.end();
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/commands/" + String(id) + "/done");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
+    http.POST(""); http.end();
 }
 
-// розблокування для заповнення
+// ── RFID статус ───────────────────────────────────────────────────────────────
 void sendRfidStatus(bool authenticated) {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/rfid-status");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
 
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/rfid-status");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
-
-  StaticJsonDocument<100> doc;
-  doc["authenticated"] = authenticated;
-
-  String body;
-  serializeJson(doc, body);
-  http.POST(body);
-  http.end();
+    StaticJsonDocument<100> doc;
+    doc["authenticated"] = authenticated;
+    String body; serializeJson(doc, body);
+    http.POST(body); http.end();
 }
 
-// відправленння сповіщення про пропуск
+// ── Алерт про пропущений прийом ───────────────────────────────────────────────
 void sendWeightAlert(int prescriptionMedId) {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE_NOTIFIC) + "/weight-alert");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
 
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE_NOTIFIC) + "/weight-alert");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
+    StaticJsonDocument<200> doc;
+    doc["prescription_med_id"] = prescriptionMedId;
+    doc["message"]             = "Пацієнт не забрав таблетки протягом відведеного часу";
+    String body; serializeJson(doc, body);
 
-  StaticJsonDocument<200> doc;
-  doc["prescription_med_id"] = prescriptionMedId;
-  doc["message"] = "Пацієнт не забрав таблетки протягом 5 хвилин";
+    int code = http.POST(body);
+    Serial.printf("WEIGHT ALERT: %d\n", code);
 
-  String body;
-  serializeJson(doc, body);
-
-  int code = http.POST(body);
-  Serial.printf("WEIGHT ALERT CODE: %d\n", code);
-
-  if (code == 200) {
-      Serial.println("Weight alert sent!");
-      logDeviceEvent("warning", "PILL_NOT_TAKEN", "Patient did not take pills");
-      showMsg("ALERT!", "Take pills!");
-      delay(2000);
-  }
-
-  http.end();
-}
-
-void logDeviceEvent(String type, String code, String message) {
-  if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
-
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, String(API_BASE) + "/event");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Bearer " + deviceToken);
-
-  StaticJsonDocument<300> doc;
-  doc["type"] = type;
-  doc["code"] = code;
-  doc["message"] = message;
-
-  String body;
-  serializeJson(doc, body);
-  http.POST(body);
-  http.end();
-}
-
-void playIntakeMelody() {
-    // Три зростаючих сигнали
-    for (int i = 0; i < 3; i++) {
-        digitalWrite(BUZZER_LED, HIGH);
-        delay(100 + i * 100); // 100, 200, 300 мс
-        digitalWrite(BUZZER_LED, LOW);
-        delay(100);
+    if (code == 200) {
+        logDeviceEvent("warning", "PILL_NOT_TAKEN",
+            "Пацієнт не взяв таблетки, med_id=" + String(prescriptionMedId));
+        showMsg("УВАГА!", "Таблетки не взято!");
+        delay(2000);
     }
-    // Довгий фінальний сигнал
-    digitalWrite(BUZZER_LED, HIGH);
-    delay(600);
-    digitalWrite(BUZZER_LED, LOW);
+    http.end();
 }
 
+// ── Нагадування про прийом ────────────────────────────────────────────────────
 void sendIntakeReminder(int prescriptionMedId) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
-
-    WiFiClient client;
-    HTTPClient http;
+    WiFiClient client; HTTPClient http;
     http.begin(client, String(API_BASE_NOTIFIC) + "/intake-reminder");
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", "Bearer " + deviceToken);
 
     StaticJsonDocument<200> doc;
     doc["prescription_med_id"] = prescriptionMedId;
-
-    String body;
-    serializeJson(doc, body);
+    String body; serializeJson(doc, body);
 
     int code = http.POST(body);
-    Serial.printf("INTAKE REMINDER CODE: %d\n", code);
-
+    Serial.printf("INTAKE REMINDER: %d\n", code);
     http.end();
+}
+
+// ── Логування подій пристрою ──────────────────────────────────────────────────
+void logDeviceEvent(String type, String code, String message) {
+    if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
+    WiFiClient client; HTTPClient http;
+    http.begin(client, String(API_BASE) + "/event");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Authorization", "Bearer " + deviceToken);
+
+    StaticJsonDocument<300> doc;
+    doc["type"]    = type;
+    doc["code"]    = code;
+    doc["message"] = message;
+    String body; serializeJson(doc, body);
+    http.POST(body); http.end();
+}
+
+// ── Мелодія Бетховена "До Елізи" ─────────────────────────────────────────────
+// detach/attach серво щоб tone() не конфліктував з PWM
+void playBeethovenMelody() {
+    // Від'єднуємо серво перед tone()
+    loadServo.detach();
+    unloadServo.detach();
+
+    int melody[] = {
+        // ── Головна тема ──────────────────────────────────────────────────────
+        NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_B4, NOTE_D5, NOTE_C5, NOTE_A4,
+        0,
+        // ── Відповідь A ───────────────────────────────────────────────────────
+        NOTE_C4, NOTE_E4, NOTE_A4, NOTE_B4,
+        0,
+        NOTE_E4, NOTE_GS4, NOTE_B4, NOTE_C5,
+        0,
+        // ── Повтор головної теми ──────────────────────────────────────────────
+        NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_B4, NOTE_D5, NOTE_C5, NOTE_A4,
+        0,
+        NOTE_C4, NOTE_E4, NOTE_A4, NOTE_B4,
+        0,
+        NOTE_E4, NOTE_C5, NOTE_B4, NOTE_A4,
+        0,
+        // ── Розвиток ──────────────────────────────────────────────────────────
+        NOTE_B4, NOTE_C5, NOTE_D5,
+        NOTE_E5,
+        NOTE_C5, NOTE_D5, NOTE_E5,
+        NOTE_B4,
+        NOTE_C5, NOTE_D5, NOTE_E5, NOTE_C5,
+        NOTE_A4,
+        0,
+        // ── Заключна тема ─────────────────────────────────────────────────────
+        NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_B4, NOTE_D5, NOTE_C5, NOTE_A4,
+        0,
+        NOTE_C4, NOTE_E4, NOTE_A4, NOTE_B4,
+        0,
+        NOTE_E4, NOTE_C5, NOTE_B4, NOTE_A4,
+    };
+
+    int noteDurations[] = {
+        // Головна тема
+        150, 150, 150, 150, 150, 150, 150, 150, 400,
+        100,
+        // Відповідь A
+        150, 150, 150, 400,
+        100,
+        150, 150, 150, 400,
+        100,
+        // Повтор головної теми
+        150, 150, 150, 150, 150, 150, 150, 150, 400,
+        100,
+        150, 150, 150, 400,
+        100,
+        150, 150, 150, 600,
+        150,
+        // Розвиток
+        150, 150, 150,
+        300,
+        150, 150, 150,
+        300,
+        150, 150, 150, 150,
+        400,
+        200,
+        // Заключна тема
+        150, 150, 150, 150, 150, 150, 150, 150, 400,
+        100,
+        150, 150, 150, 400,
+        100,
+        150, 150, 150, 700,
+    };
+
+    int numNotes = sizeof(melody) / sizeof(melody[0]);
+
+    for (int i = 0; i < numNotes; i++) {
+        if (melody[i] == 0) {
+            noTone(BUZZER_PIN);
+            delay(noteDurations[i]);
+        } else {
+            tone(BUZZER_PIN, melody[i], noteDurations[i]);
+            delay((int)(noteDurations[i] * 1.25));
+            noTone(BUZZER_PIN);
+        }
+    }
+
+    noTone(BUZZER_PIN);
+
+    // Підключаємо серво назад в закриті позиції
+    loadServo.attach(25);
+    loadServo.write(90);
+    unloadServo.attach(26);
+    unloadServo.write(83);
 }

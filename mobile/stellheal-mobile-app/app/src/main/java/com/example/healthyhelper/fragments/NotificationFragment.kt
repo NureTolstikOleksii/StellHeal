@@ -16,8 +16,9 @@ import com.example.healthyhelper.network.notification.NotificationResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.*
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalTime
+import com.example.healthyhelper.utils.utcToLocalDate
 
 class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
@@ -52,6 +53,7 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         RetrofitClient.notificationApi.getUserNotifications()
             .enqueue(object : Callback<List<NotificationResponse>> {
 
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<NotificationResponse>>,
                     response: Response<List<NotificationResponse>>
@@ -104,42 +106,26 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
             })
     }
 
-    // решта методів без змін
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun addNotificationItem(notification: NotificationResponse) {
         val item = layoutInflater.inflate(R.layout.item_notification, notificationList, false)
 
-        val icon = item.findViewById<ImageView>(R.id.icon)
+        val icon    = item.findViewById<ImageView>(R.id.icon)
         val message = item.findViewById<TextView>(R.id.message)
-        val time = item.findViewById<TextView>(R.id.timeText)
-        val date = item.findViewById<TextView>(R.id.dateText)
-
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-
-        val parsedDate = try { inputFormat.parse(notification.date) } catch (e: Exception) { null }
-        val formattedDate = parsedDate?.let { outputFormat.format(it) } ?: notification.date
+        val time    = item.findViewById<TextView>(R.id.timeText)
+        val date    = item.findViewById<TextView>(R.id.dateText)
 
         message.text = notification.message
-        time.text = notification.time.substring(11, 16)
-        date.text = formattedDate
+        // ← конвертуємо UTC ISO в локальний час і дату
+        time.text = utcToLocalTime(notification.sent_at)
+        date.text = utcToLocalDate(notification.sent_at)
 
         when (notification.type) {
-            "warning" -> {
-                item.setBackgroundResource(R.drawable.bg_orange_gradient)
-                icon.setImageResource(R.drawable.ic_warning_notific)
-            }
-            "error" -> {
-                item.setBackgroundResource(R.drawable.bg_red_gradient)
-                icon.setImageResource(R.drawable.ic_error_notific)
-            }
-            "success" -> {
-                item.setBackgroundResource(R.drawable.bg_green_gradient)
-                icon.setImageResource(R.drawable.ic_success_notific)
-            }
-            "PILL_NOT_TAKEN" -> {
-                item.setBackgroundResource(R.drawable.bg_red_gradient)
-                icon.setImageResource(R.drawable.ic_warning_notific)
-            }
+            "warning"       -> { item.setBackgroundResource(R.drawable.bg_orange_gradient); icon.setImageResource(R.drawable.ic_warning_notific) }
+            "error"         -> { item.setBackgroundResource(R.drawable.bg_red_gradient);    icon.setImageResource(R.drawable.ic_error_notific)   }
+            "success"       -> { item.setBackgroundResource(R.drawable.bg_green_gradient);  icon.setImageResource(R.drawable.ic_success_notific) }
+            "PILL_NOT_TAKEN"-> { item.setBackgroundResource(R.drawable.bg_red_gradient);    icon.setImageResource(R.drawable.ic_warning_notific) }
+            "INTAKE_REMINDER" -> { item.setBackgroundResource(R.drawable.bg_green_gradient); icon.setImageResource(R.drawable.ic_success_notific) }
         }
 
         item.alpha = if (!notification.is_read) 1.0f else 0.5f

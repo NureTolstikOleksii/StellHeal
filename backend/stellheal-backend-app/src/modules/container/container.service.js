@@ -1,97 +1,65 @@
 import prisma from '../../config/prisma.js';
 import { logAction } from '../../shared/logger/auditLogger.js';
 import { ACTIONS } from '../../shared/constants/actions.js';
-import {ERROR_CODES} from "../../shared/constants/errorCodes.js";
-import {AppError} from "../../shared/errors/AppError.js";
-import {generateContainerExcel} from "../../integrations/reports/containerExcel.service.js";
-
+import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+import { AppError } from '../../shared/errors/AppError.js';
+import { generateContainerExcel } from '../../integrations/reports/containerExcel.service.js';
 
 export class ContainerService {
 
-
     // ====== Common (WEB and MOBILE) =============================================
+
     async getAllContainers() {
         return prisma.containers.findMany({
             include: {
                 users: {
-                    select: {
-                        user_id:    true,
-                        first_name: true,
-                        last_name:  true,
-                    }
+                    select: { user_id: true, first_name: true, last_name: true }
                 }
             },
             orderBy: { container_number: 'asc' }
         });
     }
 
-
     // ====== Admin (WEB) =============================================
 
-
-    // container statistics
     async getContainerStats() {
         const activeCount = await prisma.containers.count({
             where: { status: 'active' }
         });
-
         const inactiveCount = await prisma.containers.count({
             where: { status: { not: 'active' } }
         });
-
         return { activeCount, inactiveCount };
     }
 
-    // last fills
+    // last fills — повертаємо UTC ISO, фронт конвертує
     async getLatestFillings() {
-
         const fillings = await prisma.compartment_medications.findMany({
-            where: { fill_time: { not: null } },
+            where:   { fill_time: { not: null } },
             orderBy: { fill_time: 'desc' },
-            take: 50,
+            take:    50,
             include: {
                 users: true,
-                compartments: {
-                    include: {
-                        containers: true
-                    }
-                }
+                compartments: { include: { containers: true } }
             }
         });
 
-        return fillings.map(f => {
-
-            const containerNumber = f.compartments?.containers?.container_number || '???';
-            const compartmentNumber = f.compartments?.compartment_number || '-';
-
-            const fullName = f.users
+        return fillings.map(f => ({
+            device_code:        f.compartments?.containers?.container_number || '???',
+            compartment_number: f.compartments?.compartment_number || '-',
+            filled_by: f.users
                 ? `${f.users.last_name} ${f.users.first_name} ${f.users.patronymic || ''}`.trim()
-                : 'Невідомо';
-
-            const time = f.fill_time
-                ? new Date(f.fill_time).toLocaleTimeString('uk-UA', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-                : '??:??';
-
-            return {
-                device_code: containerNumber,
-                compartment_number: compartmentNumber,
-                filled_by: fullName,
-                time
-            };
-        });
+                : 'Невідомо',
+            // ← UTC ISO рядок — фронт конвертує в локальний час
+            fill_time: f.fill_time?.toISOString() ?? null,
+        }));
     }
 
-    // count of containers
     async getTotalContainers() {
         return prisma.containers.count();
     }
 
-    // report from containers
     async exportContainersToExcel(req) {
-
         const containers = await prisma.containers.findMany({
             orderBy: { container_number: 'asc' },
             include: {
@@ -116,9 +84,9 @@ export class ContainerService {
         const buffer = await generateContainerExcel(containers);
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.EXPORT_CONTAINERS,
-            entity: 'CONTAINER',
+            userId:      req.user.userId,
+            action:      ACTIONS.EXPORT_CONTAINERS,
+            entity:      'CONTAINER',
             description: 'Container report exported',
             req
         });
@@ -126,26 +94,18 @@ export class ContainerService {
         return buffer;
     }
 
-    // container registration
     async registerContainer(deviceUid, req) {
-
         const existing = await prisma.containers.findUnique({
             where: { device_uid: deviceUid }
         });
 
         if (existing) {
-            throw new AppError(
-                ERROR_CODES.CONFLICT,
-                'Контейнер з таким UID вже зареєстровано',
-                409
-            );
+            throw new AppError(ERROR_CODES.CONFLICT, 'Контейнер з таким UID вже зареєстровано', 409);
         }
 
-        // Генеруємо секрет для IoT автентифікації
         const { nanoid } = await import('nanoid');
         const deviceSecret = nanoid(32);
 
-        // Визначаємо наступний порядковий номер
         const lastContainer = await prisma.containers.findFirst({
             orderBy: { container_number: 'desc' }
         });
@@ -153,11 +113,11 @@ export class ContainerService {
 
         const container = await prisma.containers.create({
             data: {
-                device_uid:      deviceUid,
-                device_secret:   deviceSecret,
+                device_uid:       deviceUid,
+                device_secret:    deviceSecret,
                 container_number: nextNumber,
-                status:          'inactive',
-                is_online:       false,
+                status:           'inactive',
+                is_online:        false,
             }
         });
 
@@ -173,19 +133,14 @@ export class ContainerService {
         return container;
     }
 
-    // delete container
     async deleteContainer(containerId, req) {
         const container = await prisma.containers.findUnique({
-            where: { container_id: containerId },
+            where:   { container_id: containerId },
             include: { users: { select: { first_name: true, last_name: true } } }
         });
 
         if (!container) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Контейнер не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Контейнер не знайдено', 404);
         }
 
         if (container.is_online) {
@@ -196,9 +151,7 @@ export class ContainerService {
             );
         }
 
-        await prisma.containers.delete({
-            where: { container_id: containerId }
-        });
+        await prisma.containers.delete({ where: { container_id: containerId } });
 
         await logAction({
             userId:      req.user.userId,
@@ -212,36 +165,41 @@ export class ContainerService {
         });
     }
 
-    // device log information
     async getContainerEvents(containerId) {
-        return prisma.device_events.findMany({
+        const events = await prisma.device_events.findMany({
             where:   { container_id: containerId },
             orderBy: { created_at: 'desc' },
             take:    50,
         });
+
+        // ← UTC ISO рядки — фронт конвертує
+        return events.map(e => ({
+            ...e,
+            created_at: e.created_at?.toISOString() ?? null,
+        }));
     }
 
-    // information about filling sessions
     async getContainerSessions(containerId) {
-        return prisma.fill_sessions.findMany({
+        const sessions = await prisma.fill_sessions.findMany({
             where:   { container_id: containerId },
             orderBy: { started_at: 'desc' },
             take:    20,
             include: {
-                users: {
-                    select: {
-                        first_name: true,
-                        last_name:  true,
-                    }
-                }
+                users: { select: { first_name: true, last_name: true } }
             }
         });
+
+        // ← UTC ISO рядки — фронт конвертує
+        return sessions.map(s => ({
+            ...s,
+            started_at:  s.started_at?.toISOString()  ?? null,
+            finished_at: s.finished_at?.toISOString() ?? null,
+        }));
     }
 
-    // information by compartments
     async getAdminCompartments(containerId) {
         const compartments = await prisma.compartments.findMany({
-            where: { container_id: containerId },
+            where:   { container_id: containerId },
             orderBy: { compartment_number: 'asc' },
             include: {
                 compartment_medications: {
@@ -250,7 +208,7 @@ export class ContainerService {
                             select: {
                                 medication_name: true,
                                 quantity:        true,
-                                intake_time:     true,
+                                intake_at:       true,  // ← UTC Timestamptz
                             }
                         }
                     },
@@ -265,50 +223,38 @@ export class ContainerService {
         );
     }
 
-
     // ====== MOBILE =============================================
 
-    // free containers
     async getFreeContainers() {
         return prisma.containers.findMany({
-            where: { patient_id: null },
+            where:   { patient_id: null },
             orderBy: { container_number: 'asc' }
         });
     }
 
-    // assign
     async assignPatientToContainer(containerId, patientId, req) {
-
         const container = await prisma.containers.findUnique({
             where: { container_id: containerId }
         });
 
         if (!container) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                `Контейнер не знайдено`,
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Контейнер не знайдено', 404);
         }
 
         if (container.patient_id !== null) {
-            throw new AppError(
-                ERROR_CODES.VALIDATION_ERROR,
-                'Контейнер вже зайнятий',
-                400
-            );
+            throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Контейнер вже зайнятий', 400);
         }
 
         const updated = await prisma.containers.update({
             where: { container_id: containerId },
-            data: { patient_id: patientId }
+            data:  { patient_id: patientId }
         });
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.UPDATE,
-            entity: 'CONTAINER',
-            entityId: containerId,
+            userId:      req.user.userId,
+            action:      ACTIONS.UPDATE,
+            entity:      'CONTAINER',
+            entityId:    containerId,
             description: `Container assigned to patient ${patientId}`,
             req
         });
@@ -316,19 +262,13 @@ export class ContainerService {
         return updated;
     }
 
-    // unassign
     async unassignContainer(containerId, patientId, req) {
-
         const container = await prisma.containers.findUnique({
             where: { container_id: containerId }
         });
 
         if (!container) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'Контейнер не знайдено',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Контейнер не знайдено', 404);
         }
 
         if (container.patient_id !== patientId) {
@@ -341,14 +281,14 @@ export class ContainerService {
 
         const updated = await prisma.containers.update({
             where: { container_id: containerId },
-            data: { patient_id: null }
+            data:  { patient_id: null }
         });
 
         await logAction({
-            userId: req.user.userId,
-            action: ACTIONS.UPDATE,
-            entity: 'CONTAINER',
-            entityId: containerId,
+            userId:      req.user.userId,
+            action:      ACTIONS.UPDATE,
+            entity:      'CONTAINER',
+            entityId:    containerId,
             description: `Container unassigned from patient ${patientId}`,
             req
         });
@@ -356,7 +296,6 @@ export class ContainerService {
         return updated;
     }
 
-    // all containers
     async getAllContainerDetails() {
         const containers = await prisma.containers.findMany({
             include: {
@@ -365,10 +304,8 @@ export class ContainerService {
                     include: {
                         compartment_medications: {
                             orderBy: { fill_time: 'desc' },
-                            take: 1,
-                            include: {
-                                prescription_medications: true
-                            }
+                            take:    1,
+                            include: { prescription_medications: true }
                         }
                     }
                 }
@@ -377,48 +314,46 @@ export class ContainerService {
         });
 
         return containers.map(container => {
-            const now = new Date();
+            const now      = new Date();
             const isOnline = container.last_seen
                 ? (now - new Date(container.last_seen)) < 2 * 60 * 1000
                 : false;
 
-            const compartmentDescriptions = container.compartments.map(comp => {
+            const compartmentsData = container.compartments.map(comp => {
                 const medEntry = comp.compartment_medications[0];
-                const pm = medEntry?.prescription_medications;
+                const pm       = medEntry?.prescription_medications;
 
-                return formatCompartment(
-                    comp.compartment_number,
-                    comp.is_filled ? pm?.medication_name : null,
-                    pm?.quantity,
-                    pm?.intake_time
-                );
+                return {
+                    compartment_number: comp.compartment_number,
+                    is_filled:          comp.is_filled,
+                    medication_name:    comp.is_filled ? (pm?.medication_name || null) : null,
+                    quantity:           comp.is_filled ? (pm?.quantity || null) : null,
+                    intake_at:          comp.is_filled ? (pm?.intake_at?.toISOString() || null) : null
+                };
             });
 
             return {
-                container_id: container.container_id,
+                container_id:     container.container_id,
                 container_number: container.container_number,
-                status: container.status || 'Unknown',
-                is_online: isOnline,
-                patient_id: container.patient_id,
-                compartments: compartmentDescriptions
+                status:           container.status || 'Unknown',
+                is_online:        isOnline,
+                patient_id:       container.patient_id,
+                compartments:     compartmentsData
             };
         });
     }
 
-    // container details
     async getContainerDetails(containerId) {
         const container = await prisma.containers.findUnique({
-            where: { container_id: containerId },
+            where:   { container_id: containerId },
             include: {
                 compartments: {
                     orderBy: { compartment_number: 'asc' },
                     include: {
                         compartment_medications: {
                             orderBy: { fill_time: 'desc' },
-                            take: 1,
-                            include: {
-                                prescription_medications: true
-                            }
+                            take:    1,
+                            include: { prescription_medications: true }
                         }
                     }
                 }
@@ -429,84 +364,72 @@ export class ContainerService {
             throw new AppError(ERROR_CODES.NOT_FOUND, 'Container not found', 404);
         }
 
-        const compartmentsInfo = container.compartments.map(comp => {
-            const med = comp.compartment_medications[0]?.prescription_medications;
+        const compartmentsData = container.compartments.map(comp => {
+            const medEntry = comp.compartment_medications[0];
+            const pm       = medEntry?.prescription_medications;
 
-            if (!comp.is_filled || !med) {
-                return `Comp. ${comp.compartment_number} - Вільний`;
-            }
-
-            const medName = med.medication_name || '?'; // ← виправлено
-            const quantity = med.quantity || '?';
-            const intakeTime = med.intake_time
-                ? new Date(med.intake_time).toISOString().substring(11, 16)
-                : '??:??';
-
-            return `Comp. ${comp.compartment_number} - ${medName} - ${quantity} табл. - ${intakeTime}`;
+            return {
+                compartment_number: comp.compartment_number,
+                is_filled:          comp.is_filled,
+                medication_name:    comp.is_filled ? (pm?.medication_name || null) : null,
+                quantity:           comp.is_filled ? (pm?.quantity || null) : null,
+                intake_at:          comp.is_filled ? (pm?.intake_at?.toISOString() || null) : null
+            };
         });
 
-        const now = new Date();
+        const now      = new Date();
         const isOnline = container.last_seen
             ? (now - new Date(container.last_seen)) < 2 * 60 * 1000
             : false;
 
         return {
+            container_id:     container.container_id,
             container_number: container.container_number,
-            status: container.status || 'inactive',
-            is_online: isOnline,
-            last_seen: container.last_seen,
-            patient_id: container.patient_id || null,
-            compartments: compartmentsInfo
+            status:           container.status || 'inactive',
+            is_online:        isOnline,
+            last_seen:        container.last_seen?.toISOString() ?? null,
+            patient_id:       container.patient_id || null,
+            compartments:     compartmentsData
         };
     }
 
-    // today's appointment
-    async getTodayPrescriptions(patientId) {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+    // today's prescriptions
+    async getTodayPrescriptions(patientId, dateStr) {
+        const todayStart = new Date(`${dateStr}T00:00:00.000Z`);
+        const todayEnd = new Date(`${dateStr}T23:59:59.999Z`);
 
         return prisma.prescription_medications.findMany({
             where: {
                 prescriptions: {
-                    patient_id: patientId,
-                    date_issued: { lte: end },
-                    end_date: { gte: start }
+                    patient_id:  patientId,
+                    date_issued: { lte: todayEnd },
+                    end_date:    { gte: todayStart }
                 },
-                intake_date: {
-                    gte: start,
-                    lte: end
-                },
+
+                intake_at: { gte: todayStart, lte: todayEnd },
                 NOT: {
-                    compartment_medications: {
-                        some: {}
-                    }
+                    compartment_medications: { some: {} }
                 }
             },
             orderBy: [
                 { medication_name: 'asc' },
-                { intake_time: 'asc' }
+                { intake_at:       'asc' }
             ]
         });
     }
 
-    // treatment date range
     async getPrescriptionDateRange(patientId) {
-
         const result = await prisma.prescriptions.aggregate({
-            where: { patient_id: patientId },
+            where: {
+                patient_id: patientId,
+                end_date:   { gte: new Date() }  // ← тільки активні
+            },
             _min: { date_issued: true },
-            _max: { end_date: true }
+            _max: { end_date:    true }
         });
 
         if (!result._min.date_issued || !result._max.end_date) {
-            throw new AppError(
-                ERROR_CODES.NOT_FOUND,
-                'No prescriptions found',
-                404
-            );
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'No prescriptions found', 404);
         }
 
         return {
@@ -515,55 +438,44 @@ export class ContainerService {
         };
     }
 
-    // admission statistics by date
+    // admission statistics — фільтруємо по UTC добі
     async getIntakeStatistics(patientId, dateStr) {
+        // dateStr = "yyyy-MM-dd" від мобайлу
+        const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
+        const dayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
 
-        const start = new Date(dateStr);
-        start.setHours(0,0,0,0);
-
-        const end = new Date(dateStr);
-        end.setHours(23,59,59,999);
-
-        const prescriptions = await prisma.prescription_medications.findMany({
+        const medications = await prisma.prescription_medications.findMany({
             where: {
                 prescriptions: {
-                    patient_id: patientId,
-                    date_issued: { lte: end },
-                    end_date: { gte: start },
+                    patient_id:  patientId,
+                    date_issued: { lte: dayEnd },
+                    end_date:    { gte: dayStart },
                 },
-                intake_date: {
-                    gte: start,
-                    lte: end
-                }
+                intake_at: { gte: dayStart, lte: dayEnd }  // ← intake_at
             },
-            include: { medications: true },
-            orderBy: { intake_time: 'asc' }
+            include:  { medications: true },
+            orderBy:  { intake_at: 'asc' }  // ← intake_at
         });
 
-        return prescriptions.map(p => ({
+        return medications.map(p => ({
             prescription_med_id: p.prescription_med_id,
-            medication: p.medications?.name || 'Unknown',
-            quantity: p.quantity,
-            intake_time: combineDateAndTime(p.intake_date, p.intake_time),
-            isTaken: p.intake_status
+            medication:          p.medications?.name || p.medication_name || 'Unknown',
+            quantity:            p.quantity,
+            // UTC ISO — мобайл конвертує через ZonedDateTime
+            intake_at:           p.intake_at?.toISOString() ?? null,
+            isTaken:             p.intake_status
         }));
     }
 }
 
-function combineDateAndTime(date, time) {
-    if (!date || !time) return null;
-    const datePart = date.toISOString().split('T')[0];
-    const timePart = time.toISOString().split('T')[1];
-    return `${datePart}T${timePart}`;
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatCompartment(comp, med, quantity, time) {
-    if (med && quantity && time) {
-        const hour = time instanceof Date
-            ? time.toISOString().substring(11, 16)
-            : String(time).substring(11, 16);
+function formatCompartment(comp, med, quantity, intakeAt) {
+    if (med && quantity && intakeAt) {
+        const hour = intakeAt instanceof Date
+            ? intakeAt.toISOString().substring(11, 16)
+            : String(intakeAt).substring(11, 16);
         return `Comp. ${comp} - ${med} - ${quantity} табл. - ${hour}`;
-    } else {
-        return `Comp. ${comp} - Вільний`;
     }
+    return `Comp. ${comp} - Вільний`;
 }

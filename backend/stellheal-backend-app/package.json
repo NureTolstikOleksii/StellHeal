@@ -13,8 +13,9 @@
   "description": "",
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
+    "@date-fns/tz": "^1.5.0",
     "@google/generative-ai": "^0.24.1",
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/config": "^7.8.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.6.0",
@@ -22,6 +23,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "docx": "^9.0.3",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
@@ -47,8 +49,9 @@
     "streamifier": "^0.1.1"
   },
   "devDependencies": {
+    "@prisma/client": "^7.8.0",
     "nodemon": "^3.1.7",
-    "prisma": "^5.22.0",
+    "prisma": "^7.8.0",
     "tsx": "^4.22.3"
   }
 }

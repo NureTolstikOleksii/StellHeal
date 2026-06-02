@@ -388,4 +388,46 @@
 
 @media (max-width: 480px) {
     .statsGrid { grid-template-columns: 1fr 1fr; }
+}/* ── Chart top row (заголовок + навігація по тижнях) ── */
+.chartTopRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    gap: 12px;
+}
+
+/* ── Week navigation ── */
+.weekNav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.weekNavBtn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s;
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
+}
+.weekNavBtn:hover:not(:disabled) { background: #eff6ff; color: #1976d2; border-color: #1976d2; }
+.weekNavBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.weekNavLabel {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+    min-width: 110px;
+    text-align: center;
 }

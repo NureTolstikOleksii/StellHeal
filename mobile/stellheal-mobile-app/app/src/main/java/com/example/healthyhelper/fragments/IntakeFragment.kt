@@ -18,6 +18,9 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalTime
 
 class IntakeFragment : Fragment() {
 
@@ -125,6 +128,7 @@ class IntakeFragment : Fragment() {
         RetrofitClient.containerApi
             .getIntakeStatistics(patientId, formatted)
             .enqueue(object : Callback<List<PrescriptionOption>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
@@ -148,6 +152,7 @@ class IntakeFragment : Fragment() {
             })
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun renderIntakeList(meds: List<PrescriptionOption>) {
         intakeList.removeAllViews()
 
@@ -165,12 +170,11 @@ class IntakeFragment : Fragment() {
         meds.forEach { med ->
             val item = layoutInflater.inflate(R.layout.item_intake, intakeList, false)
 
-            item.findViewById<TextView>(R.id.medName).text = med.medication_name
+            item.findViewById<TextView>(R.id.medName).text = med.medication
             item.findViewById<TextView>(R.id.medQuantity).text =
                 "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
 
-            item.findViewById<TextView>(R.id.timeText).text =
-                med.intake_time.substringAfter("T").substring(0, 5)
+            item.findViewById<TextView>(R.id.timeText).text = utcToLocalTime(med.intake_at)
 
             val statusIcon = when (med.isTaken) {
                 true -> R.drawable.ic_check_circle

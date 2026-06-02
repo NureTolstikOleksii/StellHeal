@@ -2,7 +2,7 @@ import prisma from '../../config/prisma.js';
 
 export class StatsService {
 
-    // clinic statistics ok
+    // ─── clinic statistics ────────────────────────────────────────────────────
     async getClinicStats() {
         const now     = new Date();
         const weekAgo = new Date(now);
@@ -17,19 +17,19 @@ export class StatsService {
         ] = await Promise.all([
             prisma.users.count({ where: { role_id: 3 } }),
             prisma.users.count({ where: { role_id: 2 } }),
-            prisma.prescriptions.count({ where: { end_date: { lt: new Date() } } }),
+            prisma.prescriptions.count({ where: { end_date: { lt: now } } }),
             prisma.prescription_medications.count({
-                where: { intake_status: true, intake_date: { gte: weekAgo } }
+                where: { intake_status: true, intake_at: { gte: weekAgo } }
             }),
             prisma.prescription_medications.count({
-                where: { intake_status: false, intake_date: { gte: weekAgo } }
+                where: { intake_status: false, intake_at: { gte: weekAgo } }
             }),
         ]);
 
         return { activePatients, medicalStaff, treatmentPlans, deviceTriggers, missedAppointments };
     }
 
-    // doctor statistics ok
+    // ─── doctor statistics ────────────────────────────────────────────────────
     async getDoctorStats() {
         const doctors = await prisma.users.findMany({
             where: { role_id: 1 },
@@ -38,21 +38,21 @@ export class StatsService {
                 prescriptions_prescriptions_doctor_idTousers: {
                     include: {
                         prescription_medications: {
-                            select: { intake_status: true, intake_date: true }
+                            select: { intake_status: true, intake_at: true }
                         }
                     }
                 }
             }
         });
 
+        const now = new Date();
+
         return doctors.map(doc => {
             const prescriptions = doc.prescriptions_prescriptions_doctor_idTousers;
             const allMeds       = prescriptions.flatMap(p => p.prescription_medications);
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
             const activeMeds = allMeds.filter(
-                m => !m.intake_date || new Date(m.intake_date) >= today
+                m => !m.intake_at || new Date(m.intake_at) >= now
             );
 
             const withStatus = allMeds.filter(m => m.intake_status !== null);
@@ -72,48 +72,60 @@ export class StatsService {
         });
     }
 
-    // intake week stats ok
-    async getIntakeWeekStats() {
+    // ─── intake week stats (з підтримкою weekOffset, починаємо з понеділка) ──
+    async getIntakeWeekStats(weekOffset = 0) {
         const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+        // Знаходимо поточний понеділок в UTC
+        const now        = new Date();
+        const currentDay = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        // Кількість днів до попереднього понеділка (0=Mon якщо сьогодні пн)
+        const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+        const monday = new Date(now);
+        monday.setUTCDate(now.getUTCDate() + diffToMonday + weekOffset * 7);
+        monday.setUTCHours(0, 0, 0, 0);
+
+        // 7 днів Пн-Нд
         const days = Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            d.setHours(0, 0, 0, 0);
+            const d = new Date(monday);
+            d.setUTCDate(monday.getUTCDate() + i);
             return d;
         });
 
         const startDate = days[0];
-        const endDate   = new Date();
-        endDate.setHours(23, 59, 59, 999);
+        const endDate   = new Date(days[6]);
+        endDate.setUTCHours(23, 59, 59, 999);
 
         const meds = await prisma.prescription_medications.findMany({
             where: {
-                intake_date:   { gte: startDate, lte: endDate },
+                intake_at:     { gte: startDate, lte: endDate },
                 intake_status: { not: null },
             },
-            select: { intake_date: true, intake_status: true }
+            select: { intake_at: true, intake_status: true }
         });
 
-        return days.map(day => {
-            const dayStr  = day.toISOString().substring(0, 10);
-            const dayMeds = meds.filter(m =>
-                m.intake_date &&
-                new Date(m.intake_date).toISOString().substring(0, 10) === dayStr
-            );
-            return {
-                day:    DAY_NAMES[day.getDay()],
-                date:   dayStr,
-                taken:  dayMeds.filter(m => m.intake_status === true).length,
-                missed: dayMeds.filter(m => m.intake_status === false).length,
-            };
-        });
+        return {
+            weekOffset,
+            days: days.map(day => {
+                const dayStr  = day.toISOString().substring(0, 10);
+                const dayMeds = meds.filter(m =>
+                    m.intake_at &&
+                    m.intake_at.toISOString().substring(0, 10) === dayStr
+                );
+                return {
+                    day:    DAY_NAMES[day.getUTCDay()],
+                    date:   dayStr,
+                    taken:  dayMeds.filter(m => m.intake_status === true).length,
+                    missed: dayMeds.filter(m => m.intake_status === false).length,
+                };
+            })
+        };
     }
 
-    // ── Audit log — останні N дій в системі ──────────────────────────────────
+    // ─── audit log ────────────────────────────────────────────────────────────
     async getAuditLog({ limit = 50, action = null, page = 1 } = {}) {
-        const skip = (page - 1) * limit;
-
+        const skip  = (page - 1) * limit;
         const where = action ? { action } : {};
 
         const [logs, total] = await Promise.all([
@@ -144,14 +156,12 @@ export class StatsService {
                 entity_id:   log.entity_id,
                 description: log.description,
                 ip_address:  log.ip_address,
-                created_at:  log.created_at,
-                user: log.users
-                    ? {
-                        name:   `${log.users.last_name} ${log.users.first_name}`,
-                        avatar: log.users.avatar || null,
-                        role:   log.users.roles?.role_name || null,
-                    }
-                    : null,
+                created_at:  log.created_at?.toISOString() ?? null,
+                user: log.users ? {
+                    name:   `${log.users.last_name} ${log.users.first_name}`,
+                    avatar: log.users.avatar || null,
+                    role:   log.users.roles?.role_name || null,
+                } : null,
             })),
             total,
             page,
@@ -159,7 +169,7 @@ export class StatsService {
         };
     }
 
-    // ── Унікальні типи дій для фільтру ───────────────────────────────────────
+    // ─── унікальні типи дій для фільтру ──────────────────────────────────────
     async getAuditActions() {
         const actions = await prisma.audit_logs.findMany({
             select:   { action: true },

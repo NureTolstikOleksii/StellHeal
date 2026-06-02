@@ -15,7 +15,6 @@ import coil.load
 import coil.transform.CircleCropTransformation
 import com.example.healthyhelper.R
 import com.example.healthyhelper.auth.AuthEvents
-import com.example.healthyhelper.auth.AuthManager
 import com.example.healthyhelper.network.RetrofitClient
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -23,25 +22,11 @@ import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.*
-import androidx.navigation.fragment.findNavController
-import com.example.healthyhelper.MyApp
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalDate
 
 class ProfileFragment : Fragment() {
-
-    private fun formatDate(dateString: String?): String {
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = inputFormat.parse(dateString ?: return "")
-
-            val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            outputFormat.format(date!!)
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
     private val avatarLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -121,6 +106,7 @@ class ProfileFragment : Fragment() {
 
         RetrofitClient.profileApi.getProfile()
             .enqueue(object : Callback<UserProfileResponse> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<UserProfileResponse>,
                     response: Response<UserProfileResponse>
@@ -143,14 +129,14 @@ class ProfileFragment : Fragment() {
                             textFullName.text = fullName.trim()
                             textEmail.text = it.login
                             textPhone.text = it.phone.orEmpty()
-                            textBirthDate.text = formatDate(it.date_of_birth)
+                            textBirthDate.text = utcToLocalDate(it.date_of_birth)
 
                             if (it.roles.role_name == "staff") {
                                 staffSection.visibility = View.VISIBLE
                                 patientSection.visibility = View.GONE
                                 textSpecialization.text = it.medical_staff?.specialization.orEmpty()
                                 textShift.text = it.medical_staff?.shift.orEmpty()
-                                textAdmissionDate.text = formatDate(it.medical_staff?.admission_date)
+                                textAdmissionDate.text = utcToLocalDate(it.medical_staff?.admission_date)
                             } else if (it.roles.role_name == "patient") {
                                 staffSection.visibility = View.GONE
                                 patientSection.visibility = View.VISIBLE

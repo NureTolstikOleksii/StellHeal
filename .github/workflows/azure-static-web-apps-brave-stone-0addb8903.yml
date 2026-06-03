@@ -15,46 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      # 1. Забираем код
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
-
-      # 2. Настраиваем Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          # Указываем, где искать package-lock.json для кэша, так как у нас подпапка
-          cache-dependency-path: './frontend/stellheal-frontend-app/package-lock.json'
-
-      # 3. Собираем проект вручную
-      - name: Install dependencies and Build
-        run: |
-          cd ./frontend/stellheal-frontend-app
-          npm ci
-          npm run build
-          
-          ###### ДОБАВЬ ЭТИ ДВЕ СТРОКИ ДЛЯ ПРОВЕРКИ ######
-          echo "--- ПРОВЕРКА СОДЕРЖИМОГО DIST ---"
-          ls -la dist
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-
-      # 4. Просто отдаем готовую папку в Azure
-      - name: Deploy to Azure
+      - name: Build And Deploy
+        id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_STONE_0ADDB8903 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-
-          ###### МЕНЯЕМ ПУТИ ЗДЕСЬ ######
-          app_location: "./frontend/stellheal-frontend-app/dist" # Указываем прямо на папку билда
-          output_location: ""                                    # Оставляем пустым, так как корень теперь и есть dist
-          skip_app_build: true                                   # Azure просто заберет файлы из dist
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "./frontend/stellheal-frontend-app" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "dist" # Built app content directory - optional
+          ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

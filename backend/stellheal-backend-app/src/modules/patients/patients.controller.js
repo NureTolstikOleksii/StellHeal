@@ -377,4 +377,11 @@ router.post(
     }
 );
 
+router.get("/:id/mobile-treatment", authenticateToken, async (req, res, next) => {
+    try {
+        const result = await patientsService.getMobileTreatment(Number(req.params.id));
+        res.json(result);
+    } catch (err) { next(err); }
+});
+
 export const mainRouter = router;

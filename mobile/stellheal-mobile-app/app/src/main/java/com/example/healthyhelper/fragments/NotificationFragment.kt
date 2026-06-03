@@ -66,7 +66,9 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                         return
                     }
 
-                    val notifications = response.body() ?: emptyList()
+                    val notifications = (response.body() ?: emptyList())
+                        .sortedByDescending { it.sent_at ?: "" }
+
                     val emptyText = view.findViewById<TextView>(R.id.emptyText)
 
                     if (notifications.isEmpty()) {
@@ -79,7 +81,7 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                     scrollView.visibility = View.VISIBLE
 
                     val unread = notifications.filter { !it.is_read }
-                    val read = notifications.filter { it.is_read }
+                    val read   = notifications.filter { it.is_read }
 
                     if (unread.isNotEmpty()) {
                         addSectionHeader("New")

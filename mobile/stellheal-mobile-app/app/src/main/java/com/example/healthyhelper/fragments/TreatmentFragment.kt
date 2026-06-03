@@ -126,7 +126,9 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                             medsContainer.removeAllViews()
                             treatment.medications.forEachIndexed { index, med ->
                                 val medView = layoutInflater.inflate(R.layout.item_medication, medsContainer, false)
-                                medView.findViewById<TextView>(R.id.medName).text = "${index + 1}. $med"
+                                medView.findViewById<TextView>(R.id.medName).text     = "${index + 1}. ${med.name}"
+                                medView.findViewById<TextView>(R.id.medDosage).text   = med.frequency
+                                medView.findViewById<TextView>(R.id.medDuration).text = "${med.duration} днів"
                                 medsContainer.addView(medView)
                             }
                         }

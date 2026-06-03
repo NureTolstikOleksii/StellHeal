@@ -5,6 +5,6 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface TreatmentApi {
-    @GET("patients/{id}/current")
+    @GET("patients/{id}/mobile-treatment")
     fun getCurrentTreatment(@Path("id") patientId: Int): Call<List<TreatmentResponse>>
 }

@@ -977,4 +977,62 @@ export class PatientsService {
             }))
         };
     }
+
+    async getMobileTreatment(patientId) {
+        const prescriptions = await prisma.prescriptions.findMany({
+            where: {
+                patient_id: patientId,
+                end_date:   { gte: new Date() }
+            },
+            include: {
+                users_prescriptions_doctor_idTousers: true,
+                prescription_medications:             true,
+                prescription_files:                   true,
+                wards:                                true,
+            }
+        });
+
+        if (!prescriptions.length) return [];
+
+        return prescriptions.map(p => {
+            // ── Унікальні препарати з деталями ───────────────────────────────────
+            const medsMap = new Map();
+
+            for (const pm of p.prescription_medications) {
+                const name = pm.medication_name;
+                if (!name) continue;
+
+                if (!medsMap.has(name)) {
+                    medsMap.set(name, {
+                        name,
+                        frequency:    pm.frequency || '—',
+                        duration:     0,
+                        quantity:     pm.quantity  || 1,
+                        _dates:       new Set(),
+                    });
+                }
+
+                if (pm.intake_at) {
+                    const dateStr = pm.intake_at.toISOString().substring(0, 10);
+                    medsMap.get(name)._dates.add(dateStr);
+                }
+            }
+
+            const medications = Array.from(medsMap.values()).map(({ _dates, ...med }) => ({
+                ...med,
+                duration: _dates.size,
+            }));
+
+            return {
+                prescriptionId:  p.prescription_id,
+                name:            p.diagnosis        || '—',
+                date:            p.date_issued?.toISOString() ?? null,
+                endDate:         p.end_date?.toISOString()    ?? null,
+                duration:        p.duration         || 0,
+                ward:            p.wards?.ward_number          || '—',
+                doctor:          `${p.users_prescriptions_doctor_idTousers?.first_name || ''} ${p.users_prescriptions_doctor_idTousers?.last_name || ''}`.trim(),
+                medications,
+            };
+        });
+    }
 }

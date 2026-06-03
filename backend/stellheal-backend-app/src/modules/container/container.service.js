@@ -396,7 +396,8 @@ export class ContainerService {
     // today's prescriptions
     async getTodayPrescriptions(patientId, dateStr) {
         const todayStart = new Date(`${dateStr}T00:00:00.000Z`);
-        const todayEnd = new Date(`${dateStr}T23:59:59.999Z`);
+        const todayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
+        const now        = new Date();
 
         return prisma.prescription_medications.findMany({
             where: {
@@ -405,8 +406,11 @@ export class ContainerService {
                     date_issued: { lte: todayEnd },
                     end_date:    { gte: todayStart }
                 },
-
-                intake_at: { gte: todayStart, lte: todayEnd },
+                intake_status: null,   // ← очікувані
+                intake_at: {
+                    gte: now,          // ← час ще не настав
+                    lte: todayEnd      // ← в межах сьогодні
+                },
                 NOT: {
                     compartment_medications: { some: {} }
                 }

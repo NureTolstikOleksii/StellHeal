@@ -2,7 +2,8 @@ import axios from "axios";
 import {refreshTokenRequest} from "../services/authService.js";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: import.meta.env.VITE_API_BASE_URL
+        || 'https://stellheal-backend-f9e5azcyamhmg8b6.northeurope-01.azurewebsites.net/api',
 });
 
 let isRefreshing = false;

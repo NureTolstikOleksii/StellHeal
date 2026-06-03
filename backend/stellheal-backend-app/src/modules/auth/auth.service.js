@@ -27,13 +27,18 @@ export class AuthService {
     async createRefreshToken(userId, req) {
         const token = crypto.randomBytes(40).toString('hex');
 
+        const platform = req.body?.platform || 'web';
+        const expiresIn = platform === 'mobile'
+            ? 30 * 24 * 60 * 60 * 1000
+            :  8 * 60 * 60 * 1000;
+
         await prisma.refresh_tokens.create({
             data: {
-                user_id: userId,
+                user_id:    userId,
                 token,
-                device: req.headers['user-agent'],
+                device:     req.headers['user-agent'],
                 ip_address: req.ip,
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                expires_at: new Date(Date.now() + expiresIn),
                 is_revoked: false
             }
         });

@@ -30,12 +30,16 @@ jobs:
           # Указываем, где искать package-lock.json для кэша, так как у нас подпапка
           cache-dependency-path: './frontend/stellheal-frontend-app/package-lock.json'
 
-      # 3. Собираем проект вручную (Переменная передается ПРЯМО в процесс сборки Vite!)
+      # 3. Собираем проект вручную
       - name: Install dependencies and Build
         run: |
           cd ./frontend/stellheal-frontend-app
           npm ci
           npm run build
+          
+          ###### ДОБАВЬ ЭТИ ДВЕ СТРОКИ ДЛЯ ПРОВЕРКИ ######
+          echo "--- ПРОВЕРКА СОДЕРЖИМОГО DIST ---"
+          ls -la dist
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 

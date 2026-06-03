@@ -47,10 +47,10 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
 
-          ###### ВАЖНО ДЛЯ МОНОРЕПОЗИТОРИЯ ######
-          app_location: "./frontend/stellheal-frontend-app" # Где лежал package.json
-          output_location: "dist"                           # Папка внутри app_location
-          skip_app_build: true                              # Запрещаем Azure пересобирать заново
+          ###### МЕНЯЕМ ПУТИ ЗДЕСЬ ######
+          app_location: "./frontend/stellheal-frontend-app/dist" # Указываем прямо на папку билда
+          output_location: ""                                    # Оставляем пустым, так как корень теперь и есть dist
+          skip_app_build: true                                   # Azure просто заберет файлы из dist
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

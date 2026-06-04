@@ -29,7 +29,6 @@ class TokenAuthenticator : Authenticator {
             return null
         }
 
-        // ← Перевіряємо чи токен вже оновився іншим потоком до lock
         val currentToken = AuthManager.getAccessToken()
         val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
         if (currentToken != null && currentToken != requestToken) {
@@ -39,10 +38,8 @@ class TokenAuthenticator : Authenticator {
                 .build()
         }
 
-        // ← synchronized гарантує що тільки один потік робить refresh
         return synchronized(lock) {
 
-            // ← Перевіряємо ще раз всередині lock
             val tokenAfterLock = AuthManager.getAccessToken()
             val requestTokenCheck = response.request.header("Authorization")?.removePrefix("Bearer ")
             if (tokenAfterLock != null && tokenAfterLock != requestTokenCheck) {

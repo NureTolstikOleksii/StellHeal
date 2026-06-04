@@ -2,7 +2,6 @@ package com.example.healthyhelper.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -46,7 +45,6 @@ class CalendarFragment : Fragment(R.layout.fragment_calendar) {
             return
         }
 
-        // 🔥 показ loader
         loader.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
         emptyText.visibility = View.GONE

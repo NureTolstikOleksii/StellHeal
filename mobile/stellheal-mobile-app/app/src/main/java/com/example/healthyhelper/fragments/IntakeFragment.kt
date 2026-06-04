@@ -51,7 +51,6 @@ class IntakeFragment : Fragment() {
         val btnBack = view.findViewById<ImageButton>(R.id.btnBack)
         btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        // Показуємо лоадер
         progressBar.visibility = View.VISIBLE
         scrollView.visibility = View.GONE
 
@@ -90,7 +89,7 @@ class IntakeFragment : Fragment() {
                 override fun onFailure(call: Call<PrescriptionDateRange>, t: Throwable) {
                     progressBar.visibility = View.GONE
                     scrollView.visibility = View.VISIBLE
-                    Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Помилка з'єднання", Toast.LENGTH_SHORT).show()
                 }
             })
     }
@@ -133,7 +132,6 @@ class IntakeFragment : Fragment() {
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
                 ) {
-                    // Ховаємо лоадер, показуємо контент
                     progressBar.visibility = View.GONE
                     scrollView.visibility = View.VISIBLE
 
@@ -147,7 +145,7 @@ class IntakeFragment : Fragment() {
                 override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
                     progressBar.visibility = View.GONE
                     scrollView.visibility = View.VISIBLE
-                    Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Помилка з'єднання", Toast.LENGTH_SHORT).show()
                 }
             })
     }
@@ -172,7 +170,7 @@ class IntakeFragment : Fragment() {
 
             item.findViewById<TextView>(R.id.medName).text = med.medication
             item.findViewById<TextView>(R.id.medQuantity).text =
-                "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
+                "${med.quantity} табл."
 
             item.findViewById<TextView>(R.id.timeText).text = utcToLocalTime(med.intake_at)
 

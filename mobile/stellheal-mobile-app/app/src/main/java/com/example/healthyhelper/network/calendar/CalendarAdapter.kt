@@ -31,8 +31,6 @@ class CalendarAdapter(
         val item = items[position]
         holder.diagnosisText.text = item.diagnosis
         holder.dateText.text = utcToLocalDate(item.date)
-
-        // ← додати клік:
         holder.itemView.setOnClickListener {
             onItemClick(item)
         }

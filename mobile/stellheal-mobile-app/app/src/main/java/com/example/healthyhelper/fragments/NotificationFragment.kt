@@ -4,27 +4,31 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import androidx.annotation.RequiresApi
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.notification.NotificationResponse
+import com.example.healthyhelper.utils.utcToLocalDate
+import com.example.healthyhelper.utils.utcToLocalTime
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.annotation.RequiresApi
-import com.example.healthyhelper.utils.utcToLocalTime
-import com.example.healthyhelper.utils.utcToLocalDate
 
 class NotificationFragment : Fragment(R.layout.fragment_notification) {
 
     private lateinit var notificationList: LinearLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var scrollView: ScrollView
+    private lateinit var emptyState: LinearLayout
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -37,18 +41,18 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         super.onViewCreated(view, savedInstanceState)
 
         notificationList = view.findViewById(R.id.notificationList)
-        progressBar = view.findViewById(R.id.progressBar)
-        scrollView = view.findViewById(R.id.scrollView)
+        progressBar      = view.findViewById(R.id.progressBar)
+        scrollView       = view.findViewById(R.id.scrollView)
+        emptyState       = view.findViewById(R.id.emptyState)
 
         loadNotifications(view)
     }
 
     private fun loadNotifications(view: View) {
         notificationList.removeAllViews()
-
-        // Показуємо лоадер, ховаємо список
         progressBar.visibility = View.VISIBLE
-        scrollView.visibility = View.GONE
+        scrollView.visibility  = View.GONE
+        emptyState.visibility  = View.GONE
 
         RetrofitClient.notificationApi.getUserNotifications()
             .enqueue(object : Callback<List<NotificationResponse>> {
@@ -58,7 +62,6 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                     call: Call<List<NotificationResponse>>,
                     response: Response<List<NotificationResponse>>
                 ) {
-                    // Ховаємо лоадер
                     progressBar.visibility = View.GONE
 
                     if (!response.isSuccessful) {
@@ -69,36 +72,28 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                     val notifications = (response.body() ?: emptyList())
                         .sortedByDescending { it.sent_at ?: "" }
 
-                    val emptyText = view.findViewById<TextView>(R.id.emptyText)
-
                     if (notifications.isEmpty()) {
-                        emptyText.visibility = View.VISIBLE
-                        scrollView.visibility = View.GONE
+                        emptyState.visibility = View.VISIBLE
                         return
                     }
 
-                    emptyText.visibility = View.GONE
                     scrollView.visibility = View.VISIBLE
 
                     val unread = notifications.filter { !it.is_read }
                     val read   = notifications.filter { it.is_read }
 
                     if (unread.isNotEmpty()) {
-                        addSectionHeader("New")
+                        addSectionHeader("Нові")
                         unread.forEach { addNotificationItem(it) }
-                        if (read.isNotEmpty()) {
-                            addSectionHeader("Earlier")
-                            read.forEach { addNotificationItem(it) }
-                        }
-                    } else {
+                    }
+                    if (read.isNotEmpty()) {
+                        addSectionHeader(if (unread.isNotEmpty()) "Раніше" else "Всі")
                         read.forEach { addNotificationItem(it) }
                     }
 
-                    RetrofitClient.notificationApi.markNotificationsRead()
-                        .enqueue(object : Callback<Void> {
-                            override fun onResponse(call: Call<Void>, response: Response<Void>) {}
-                            override fun onFailure(call: Call<Void>, t: Throwable) {}
-                        })
+                    if (unread.isNotEmpty()) {
+                        markAllReadThenClearBadge()
+                    }
                 }
 
                 override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {
@@ -108,29 +103,76 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
             })
     }
 
+    private fun markAllReadThenClearBadge() {
+        RetrofitClient.notificationApi.markNotificationsRead()
+            .enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    val nav = activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+                    nav?.removeBadge(R.id.notificationFragment)
+                }
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    val nav = activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+                    nav?.removeBadge(R.id.notificationFragment)
+                }
+            })
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun addNotificationItem(notification: NotificationResponse) {
         val item = layoutInflater.inflate(R.layout.item_notification, notificationList, false)
 
-        val icon    = item.findViewById<ImageView>(R.id.icon)
-        val message = item.findViewById<TextView>(R.id.message)
-        val time    = item.findViewById<TextView>(R.id.timeText)
-        val date    = item.findViewById<TextView>(R.id.dateText)
+        val stripe    = item.findViewById<View>(R.id.typeStripe)
+        val icon      = item.findViewById<ImageView>(R.id.icon)
+        val message   = item.findViewById<TextView>(R.id.message)
+        val time      = item.findViewById<TextView>(R.id.timeText)
+        val date      = item.findViewById<TextView>(R.id.dateText)
+        val unreadDot = item.findViewById<View>(R.id.unreadDot)
+        val card      = item as? CardView
 
         message.text = notification.message
-        // ← конвертуємо UTC ISO в локальний час і дату
-        time.text = utcToLocalTime(notification.sent_at)
-        date.text = utcToLocalDate(notification.sent_at)
+        time.text    = utcToLocalTime(notification.sent_at)
+        date.text    = utcToLocalDate(notification.sent_at)
 
-        when (notification.type) {
-            "warning"       -> { item.setBackgroundResource(R.drawable.bg_orange_gradient); icon.setImageResource(R.drawable.ic_warning_notific) }
-            "error"         -> { item.setBackgroundResource(R.drawable.bg_red_gradient);    icon.setImageResource(R.drawable.ic_error_notific)   }
-            "success"       -> { item.setBackgroundResource(R.drawable.bg_green_gradient);  icon.setImageResource(R.drawable.ic_success_notific) }
-            "PILL_NOT_TAKEN"-> { item.setBackgroundResource(R.drawable.bg_red_gradient);    icon.setImageResource(R.drawable.ic_warning_notific) }
-            "INTAKE_REMINDER" -> { item.setBackgroundResource(R.drawable.bg_green_gradient); icon.setImageResource(R.drawable.ic_success_notific) }
+        val (stripeColor, iconBgColor, iconRes) = when (notification.type) {
+            "warning"          -> Triple("#FF9800", "#FFF3E0", R.drawable.ic_warning_notific)
+            "error"            -> Triple("#E53935", "#FFEBEE", R.drawable.ic_error_notific)
+            "success"          -> Triple("#4CAF82", "#E8F5E9", R.drawable.ic_success_notific)
+            "PILL_NOT_TAKEN"   -> Triple("#E53935", "#FFEBEE", R.drawable.ic_warning_notific)
+            "INTAKE_REMINDER"  -> Triple("#4CAF82", "#E8F5E9", R.drawable.ic_success_notific)
+            "info"             -> Triple("#2196F3", "#E3F2FD", R.drawable.ic_notifications)
+            else               -> Triple("#AABAC8", "#F5F7FA", R.drawable.ic_notifications)
         }
 
-        item.alpha = if (!notification.is_read) 1.0f else 0.5f
+        stripe.setBackgroundColor(Color.parseColor(stripeColor))
+        icon.setImageResource(iconRes)
+        icon.background?.setTint(Color.parseColor(iconBgColor))
+            ?: icon.setBackgroundColor(Color.parseColor(iconBgColor))
+
+        if (!notification.is_read) {
+            unreadDot.visibility = View.VISIBLE
+
+            val bgColor = when (notification.type) {
+                "warning"                    -> "#FFE0B2"
+                "error", "PILL_NOT_TAKEN"    -> "#FFCDD2"
+                "success", "INTAKE_REMINDER" -> "#B9F0D4"
+                "info"                       -> "#BBDEFB"
+                else                         -> "#E0E0E0"
+            }
+            card?.setCardBackgroundColor(Color.parseColor(bgColor))
+
+            message.setTextColor(Color.parseColor("#1A1A2E"))
+            message.setTypeface(null, android.graphics.Typeface.BOLD)
+            time.setTextColor(Color.parseColor("#7A8FA6"))
+            date.setTextColor(Color.parseColor("#7A8FA6"))
+        } else {
+            unreadDot.visibility = View.GONE
+
+            card?.setCardBackgroundColor(Color.parseColor("#F2F4F7"))
+            message.setTextColor(Color.parseColor("#6B7280"))
+            time.setTextColor(Color.parseColor("#9CA3AF"))
+            date.setTextColor(Color.parseColor("#9CA3AF"))
+        }
+
         notificationList.addView(item)
     }
 

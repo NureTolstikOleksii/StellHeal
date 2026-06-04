@@ -4,6 +4,6 @@ data class NotificationResponse(
     val id:      Int,
     val message: String,
     val type:    String,
-    val sent_at: String?,  // ← nullable
+    val sent_at: String?,
     val is_read: Boolean
 )

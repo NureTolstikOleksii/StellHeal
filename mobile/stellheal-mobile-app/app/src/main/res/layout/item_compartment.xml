@@ -10,7 +10,6 @@
     android:backgroundTint="@color/light_blue"
     android:elevation="2dp">
 
-    <!-- Назва -->
     <TextView
         android:id="@+id/compartmentTitle"
         android:layout_width="wrap_content"
@@ -20,7 +19,6 @@
         android:textSize="16sp"
         android:textColor="@color/black"/>
 
-    <!-- Статус -->
     <TextView
         android:id="@+id/compartmentStatus"
         android:layout_width="wrap_content"
@@ -29,7 +27,6 @@
         android:textColor="@color/black"
         android:layout_marginBottom="8dp" />
 
-    <!-- Інфо про ліки -->
     <TextView
         android:id="@+id/medicationInfo"
         android:layout_width="wrap_content"
@@ -39,7 +36,6 @@
         android:layout_marginBottom="8dp"
         android:visibility="gone" />
 
-    <!-- Кнопка Додати -->
     <Button
         android:id="@+id/btnAddMed"
         android:layout_width="match_parent"
@@ -49,8 +45,6 @@
         android:textColor="@android:color/white"
         app:backgroundTint="@null" />
 
-
-    <!-- Кнопка Очистити -->
     <Button
         android:id="@+id/btnClearMed"
         android:layout_width="match_parent"

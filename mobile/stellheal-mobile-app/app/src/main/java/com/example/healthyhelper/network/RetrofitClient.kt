@@ -25,15 +25,10 @@ object RetrofitClient {
         .addInterceptor(logging)
         .addInterceptor { chain ->
             val token = AuthManager.getAccessToken()
-
-            // Автоматично визначаємо поточну таймзону девайсу (наприклад: "Europe/Kyiv")
             val systemTimezone = TimeZone.getDefault().id
-
             val requestBuilder = chain.request().newBuilder()
-                // Додаємо заголовок таймзони для всіх запитів додатку
                 .header("x-timezone", systemTimezone)
 
-            // Додаємо токен авторизації, якщо він існує
             if (token != null) {
                 requestBuilder.header("Authorization", "Bearer $token")
             }

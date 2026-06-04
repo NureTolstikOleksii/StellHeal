@@ -45,6 +45,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var notificationBadge: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var homeScrollView: ScrollView
+    private lateinit var emptyState: LinearLayout
 
     private var selectedDate: Date = Date()
     private var allDates: List<Date> = emptyList()
@@ -71,8 +72,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         notificationBadge = view.findViewById(R.id.notificationBadge)
         progressBar = view.findViewById(R.id.progressBar)
         homeScrollView = view.findViewById(R.id.homeScrollView)
-
-        // Показуємо лоадер при старті
+        emptyState = view.findViewById(R.id.emptyState)
         progressBar.visibility = View.VISIBLE
         homeScrollView.visibility = View.GONE
 
@@ -122,10 +122,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         badgeHandler.removeCallbacks(badgeRunnable)
         intakeHandler.removeCallbacks(intakeRunnable)
     }
-
-    // =========================
-    // ДАТИ
-    // =========================
 
     private fun loadDateRangeAndBuildCalendar() {
         val patientId = getPatientId()
@@ -188,10 +184,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    // =========================
-    // ІНТЕЙКИ
-    // =========================
-
     private fun loadDataForDate(date: Date) {
         val patientId = getPatientId()
         val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
@@ -204,7 +196,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     call: Call<List<PrescriptionOption>>,
                     response: Response<List<PrescriptionOption>>
                 ) {
-                    // Ховаємо лоадер, показуємо контент
                     progressBar.visibility = View.GONE
                     homeScrollView.visibility = View.VISIBLE
 
@@ -218,7 +209,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
                     progressBar.visibility = View.GONE
                     homeScrollView.visibility = View.VISIBLE
-                    Toast.makeText(requireContext(), "Connection error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Помилка з'єднання", Toast.LENGTH_SHORT).show()
                 }
             })
     }
@@ -229,6 +220,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         val taken = meds.count { it.isTaken == true }
         val total = meds.size
+
+        if (total == 0) {
+            homeScrollView.visibility = View.GONE
+            emptyState.visibility = View.VISIBLE
+        } else {
+            homeScrollView.visibility = View.VISIBLE
+            emptyState.visibility = View.GONE
+        }
 
         progressText.text = "$taken/$total"
 
@@ -243,7 +242,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
             item.findViewById<TextView>(R.id.medName).text = med.medication
             item.findViewById<TextView>(R.id.medQuantity).text =
-                "${med.quantity} pill${if (med.quantity != 1) "s" else ""}"
+                "${med.quantity} табл."
 
             item.findViewById<TextView>(R.id.timeText).text = utcToLocalTime(med.intake_at)
 
@@ -257,10 +256,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             intakeList.addView(item)
         }
     }
-
-    // =========================
-    // NOTIFICATIONS BADGE
-    // =========================
 
     private fun loadNotificationBadge() {
         RetrofitClient.notificationApi.getUserNotifications()
@@ -281,10 +276,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {}
             })
     }
-
-    // =========================
-    // HELPERS
-    // =========================
 
     private fun getPatientId(): Int {
         return requireContext()

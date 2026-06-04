@@ -19,7 +19,6 @@ import android.os.Build
 import android.view.View
 import androidx.annotation.RequiresApi
 import com.example.healthyhelper.utils.utcToLocalTime
-import java.time.LocalDate
 
 class AddMedicationDialogFragment(
     private val patientId: Int,
@@ -37,21 +36,19 @@ class AddMedicationDialogFragment(
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val spinner = dialog.findViewById<Spinner>(R.id.medicationSpinner)
-        val textMedicationHeader = dialog.findViewById<TextView>(R.id.textMedicationHeader) // 🌟 Знаходимо заголовок
+        val textMedicationHeader = dialog.findViewById<TextView>(R.id.textMedicationHeader)
         val textEmptyState = dialog.findViewById<TextView>(R.id.textEmptyState)
         val btnOk = dialog.findViewById<Button>(R.id.btnOk)
         val btnCancel = dialog.findViewById<Button>(R.id.btnCancel)
 
         textEmptyState?.visibility = View.GONE
 
-        // Завантажуємо призначення пацієнта (з урахуванням дати)
         RetrofitClient.containerApi.getTodaysPrescriptions(patientId)
             .enqueue(object : Callback<List<PrescriptionOption>> {
                 @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(call: Call<List<PrescriptionOption>>, response: Response<List<PrescriptionOption>>) {
                     val list = response.body() ?: emptyList()
 
-                    // Перевірка: якщо список порожній — відображаємо підказку
                     if (list.isEmpty()) {
                         spinner.visibility = View.GONE
                         textMedicationHeader.visibility = View.GONE
@@ -62,7 +59,6 @@ class AddMedicationDialogFragment(
                         return
                     }
 
-                    // Якщо призначення є — стандартний рендер
                     spinner.visibility = View.VISIBLE
                     textMedicationHeader.visibility = View.VISIBLE
                     textEmptyState?.visibility = View.GONE

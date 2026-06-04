@@ -37,9 +37,14 @@ class MainActivity : AppCompatActivity() {
     private val badgeHandler = Handler(Looper.getMainLooper())
     private lateinit var badgeRunnable: Runnable
 
+    private var currentDestinationId: Int = 0
+
     private val notificationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            updateNavBadge()
+            // Не оновлюємо badge якщо юзер вже дивиться на список сповіщень
+            if (currentDestinationId != R.id.notificationFragment) {
+                updateNavBadge()
+            }
         }
     }
 
@@ -94,28 +99,25 @@ class MainActivity : AppCompatActivity() {
                 .setPopUpTo(navController.graph.startDestinationId, true)
                 .build()
 
-            val target = if (role == "staff") {
-                R.id.homeStaffFragment
-            } else {
-                R.id.homeFragment
-            }
-
+            val target = if (role == "staff") R.id.homeStaffFragment else R.id.homeFragment
             navController.navigate(target, null, navOptions)
 
-            // Запускаємо badge тільки якщо залогінений
             startNotificationBadgeUpdater()
         }
 
         bottomNav.setupWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
+            currentDestinationId = destination.id
+
             bottomNav.visibility = when (destination.id) {
                 R.id.mainFragment, R.id.loginFragment -> View.GONE
                 else -> View.VISIBLE
             }
+
+            if (destination.id == R.id.notificationFragment) { }
         }
 
-        // FCM token
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val fcmToken = task.result
@@ -126,7 +128,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Logout receiver
         ContextCompat.registerReceiver(
             this,
             logoutReceiver,
@@ -134,7 +135,6 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
 
-        // Push notification receiver
         ContextCompat.registerReceiver(
             this,
             notificationReceiver,
@@ -152,15 +152,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // =========================
-    // BADGE
-    // =========================
-
     private fun startNotificationBadgeUpdater() {
         badgeRunnable = object : Runnable {
             override fun run() {
-                updateNavBadge()
-                badgeHandler.postDelayed(this, 30000)
+                if (currentDestinationId != R.id.notificationFragment) {
+                    updateNavBadge()
+                }
+                badgeHandler.postDelayed(this, 30_000)
             }
         }
         badgeHandler.post(badgeRunnable)
@@ -174,6 +172,7 @@ class MainActivity : AppCompatActivity() {
                     response: Response<List<NotificationResponse>>
                 ) {
                     if (!response.isSuccessful) return
+
                     val unreadCount = response.body()?.count { !it.is_read } ?: 0
 
                     if (unreadCount > 0) {
@@ -186,14 +185,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onFailure(
-                    call: Call<List<NotificationResponse>>,
-                    t: Throwable
-                ) {}
+                override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {}
             })
     }
-
-    // =========================
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -204,8 +198,7 @@ class MainActivity : AppCompatActivity() {
             ).apply {
                 description = "Канал для push-сповіщень"
             }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 }

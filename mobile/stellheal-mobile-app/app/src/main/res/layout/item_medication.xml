@@ -18,7 +18,7 @@
         android:layout_weight="1"
         android:maxLines="1"
         android:ellipsize="end"
-        android:text="Name"
+        android:text="Назва"
         android:textSize="16sp"
         android:textStyle="bold"
         android:textColor="@android:color/white" />
@@ -43,7 +43,7 @@
         android:maxLines="1"
         android:ellipsize="end"
         android:gravity="end"
-        android:text="10 days"
+        android:text="10 днів"
         android:textSize="14sp"
         android:textColor="@android:color/white" />
 

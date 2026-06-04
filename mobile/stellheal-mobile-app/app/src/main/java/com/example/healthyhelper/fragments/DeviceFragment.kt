@@ -28,8 +28,6 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
         devicesContainer = view.findViewById(R.id.devicesContainer)
         progressBar = view.findViewById(R.id.progressBar)
         scrollView = view.findViewById(R.id.scrollView)
-
-        // Показуємо лоадер
         progressBar.visibility = View.VISIBLE
         scrollView.visibility = View.GONE
 
@@ -54,11 +52,15 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         )
 
                         card.findViewById<TextView>(R.id.containerTitle).text =
-                            "Container №${container.container_number}"
+                            "Контейнер №${container.container_number}"
                         card.findViewById<TextView>(R.id.containerStatus).text =
-                            "Status: ${container.status}"
+                            when (container.status.lowercase()) {
+                                "active"             -> "Статус: Активний"
+                                "inactive", "unactive" -> "Статус: Неактивний"
+                                else                 -> "Статус: ${container.status}"
+                            }
                         card.findViewById<TextView>(R.id.containerNetwork).text =
-                            if (container.is_online) "Network: Connected" else "Network: Disconnected"
+                            if (container.is_online) "Мережа: Підключено" else "Мережа: Відключено"
 
                         val networkText = card.findViewById<TextView>(R.id.containerNetwork)
                         networkText.setTextColor(
@@ -74,7 +76,7 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         container.compartments.forEach { comp ->
                             val text = TextView(requireContext())
                             val displayText = java.lang.StringBuilder().apply {
-                                append("Комірка ${comp.compartment_number}: ")
+                                append("Відсік ${comp.compartment_number}: ")
                                 if (comp.is_filled && comp.medication_name != null) {
                                     append("${comp.medication_name} (${comp.quantity} шт.)")
                                     if (comp.intake_at != null) {
@@ -106,7 +108,7 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                     progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
-                        "Failed to load containers",
+                        "Помилка завантаження контейнерів",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
@@ -12,7 +11,7 @@
         android:layout_width="58dp"
         android:layout_height="58dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="40dp"
         android:background="@null"
         android:contentDescription="@string/back_button"
         android:padding="10dp"
@@ -21,22 +20,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Лоадер -->
-
     <TextView
         android:id="@+id/textTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Treatment"
+        android:text="Лікування"
         android:textColor="@color/black"
         android:textSize="26sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.328"
+        app:layout_constraintHorizontal_bias="0.323"
         app:layout_constraintStart_toEndOf="@+id/btnBack"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.114" />
+        app:layout_constraintVertical_bias="0.112" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -48,7 +45,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
-    <!-- ScrollView прихований до завантаження -->
     <ScrollView
         android:id="@+id/treatmentScroll"
         android:layout_width="0dp"
@@ -211,7 +207,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/outline_button"
-                    android:text="Intake statistics"
+                    android:text="Статистика прийомів"
                     android:textColor="@color/teal_700"
                     android:textStyle="bold"
                     android:visibility="gone"
@@ -279,7 +275,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/orange"
-                    android:text="Set up container"
+                    android:text="Налаштувати контейнер"
                     android:textColor="@android:color/white"
                     android:textStyle="bold" />
             </LinearLayout>

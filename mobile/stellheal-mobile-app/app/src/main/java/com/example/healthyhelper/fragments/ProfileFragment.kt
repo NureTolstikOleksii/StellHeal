@@ -110,7 +110,6 @@ class ProfileFragment : Fragment() {
                     call: Call<UserProfileResponse>,
                     response: Response<UserProfileResponse>
                 ) {
-                    // Ховаємо лоадер, показуємо контент
                     progressBar.visibility = View.GONE
                     profileScroll.visibility = View.VISIBLE
 

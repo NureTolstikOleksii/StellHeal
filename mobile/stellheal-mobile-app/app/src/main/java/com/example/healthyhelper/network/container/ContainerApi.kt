@@ -39,8 +39,6 @@ interface ContainerApi {
     @GET("containers/all-container-details")
     fun getAllContainerDetails(): Call<List<ContainerWithDetails>>
 
-
-    // Нові роути для device
     @POST("device/fill/clear")
     fun clearCompartmentWithRotate(@Body body: ClearCompartmentRequest): Call<Unit>
 

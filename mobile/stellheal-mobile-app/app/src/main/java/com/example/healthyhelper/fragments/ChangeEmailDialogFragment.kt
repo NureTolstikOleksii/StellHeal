@@ -103,11 +103,11 @@ class ChangeEmailDialogFragment : DialogFragment() {
                         val msg = extractMessage(response.errorBody()?.string())
                         errorServer.text = msg
                         errorServer.visibility = View.VISIBLE
-                        // Wrong password → highlight password field
+
                         if (response.code() == 400) {
                             showError(editPassword, errorPw, " ")
                         }
-                        // Email already taken
+
                         if (response.code() == 409) {
                             showError(editEmail, errorEmail, "Цей email вже зайнятий")
                         }

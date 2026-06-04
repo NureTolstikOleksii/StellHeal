@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:background="@drawable/search_background"
-        android:queryHint="Search..."
+        android:queryHint="Пошук пацієнта..."
         app:iconifiedByDefault="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -56,7 +56,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sort by:"
+            android:text="Сортувати за:"
             android:textStyle="bold"
             android:textColor="@color/black"
             android:layout_gravity="center_vertical" />
@@ -73,7 +73,6 @@
             tools:ignore="TouchTargetSizeCheck" />
     </LinearLayout>
 
-    <!-- Лоадер -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
@@ -84,7 +83,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/sortContainer" />
 
-    <!-- Список — прихований до завантаження -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/patientRecyclerView"
         android:layout_width="0dp"

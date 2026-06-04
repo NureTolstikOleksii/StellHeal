@@ -19,9 +19,6 @@ import retrofit2.Response
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.healthyhelper.utils.utcToLocalTime
-import java.time.ZonedDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 class ContainerCompartmentFragment : Fragment() {
 
@@ -31,7 +28,6 @@ class ContainerCompartmentFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var scrollView: ScrollView
 
-    // Глобальні посилання на UI елементи
     private lateinit var compartmentList: LinearLayout
     private lateinit var btnFinishFilling: Button
 
@@ -94,7 +90,6 @@ class ContainerCompartmentFragment : Fragment() {
             statusBanner?.text = "Доступ відкрито. Органайзер розблоковано для медичного персоналу."
             statusBanner?.setTextColor(0xFFFFFFFF.toInt())
 
-            // Векторна іконка блокування/замка (переходить у стан активного пристрою)
             rfidIcon?.setImageResource(android.R.drawable.ic_lock_idle_lock)
             rfidIcon?.setColorFilter(0xFFFFFFFF.toInt())
 
@@ -104,7 +99,6 @@ class ContainerCompartmentFragment : Fragment() {
             statusBanner?.text = "Для розблокування барабану прикладіть карту до NFC-мітки смарт-контейнера."
             statusBanner?.setTextColor(0xFF333333.toInt())
 
-            // Інформаційна векторна іконка очікування карти
             rfidIcon?.setImageResource(android.R.drawable.ic_dialog_info)
             rfidIcon?.setColorFilter(0xFFE65100.toInt())
 
@@ -148,11 +142,11 @@ class ContainerCompartmentFragment : Fragment() {
 
                     val data = response.body() ?: return
 
-                    view?.findViewById<TextView>(R.id.containerTitle)?.text = "Container №${data.container_number}"
-                    view?.findViewById<TextView>(R.id.statusText)?.text = if (data.status.lowercase() == "active") "Status: Active" else "Status: Inactive"
+                    view?.findViewById<TextView>(R.id.containerTitle)?.text = "Контейнер №${data.container_number}"
+                    view?.findViewById<TextView>(R.id.statusText)?.text = if (data.status.lowercase() == "active") "Статус: Активний" else "Статус: Неактивний"
 
                     val networkText = view?.findViewById<TextView>(R.id.networkText)
-                    networkText?.text = if (data.is_online) "Network: Connected" else "Network: Disconnected"
+                    networkText?.text = if (data.is_online) "Мережа: Підключено" else "Мережа: Відключено"
                     networkText?.setTextColor(
                         if (data.is_online) android.graphics.Color.parseColor("#4CAF50") else android.graphics.Color.parseColor("#F44336")
                     )
@@ -169,7 +163,7 @@ class ContainerCompartmentFragment : Fragment() {
                         val btnAdd = itemView.findViewById<Button>(R.id.btnAddMed)
                         val btnClear = itemView.findViewById<Button>(R.id.btnClearMed)
 
-                        number.text = "№${item.compartment_number}"
+                        number.text = "Відсік №${item.compartment_number}"
 
                         if (item.is_filled && item.medication_name != null) {
                             val formattedTime = if (item.intake_at != null) utcToLocalTime(item.intake_at) else "??:??"
@@ -228,7 +222,6 @@ class ContainerCompartmentFragment : Fragment() {
                                 .show()
                         }
 
-                        // 🗑 ОЧИЩЕННЯ ВІДСІКУ
                         btnClear.setOnClickListener {
                             android.app.AlertDialog.Builder(requireContext())
                                 .setTitle("Скасування призначення відсіку №${item.compartment_number}")

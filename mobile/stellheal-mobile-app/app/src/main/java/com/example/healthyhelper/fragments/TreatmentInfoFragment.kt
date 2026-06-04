@@ -60,7 +60,6 @@ class TreatmentInfoFragment : Fragment(R.layout.fragment_treatment_info) {
                     call: Call<PrescriptionDetailsResponse>,
                     response: Response<PrescriptionDetailsResponse>
                 ) {
-                    // Ховаємо лоадер, показуємо контент
                     contentProgressBar.visibility = View.GONE
                     contentScroll.visibility = View.VISIBLE
 

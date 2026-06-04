@@ -28,8 +28,6 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
     private val args: TreatmentFragmentArgs by navArgs()
     private var currentContainer: ContainerResponse? = null
-
-    // Лічильник завантажених запитів
     private var loadedRequests = 0
     private val totalRequests = 3
 
@@ -118,9 +116,9 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                         val treatment = response.body()?.firstOrNull()
                         if (treatment != null) {
                             diagnosis.text = treatment.name
-                            dateRange.text = "Application date: ${utcToLocalDate(treatment.date)}\nDuration: ${treatment.duration} days"
-                            textDoctor.text = "Doctor: ${treatment.doctor}"
-                            textWard.text = "Ward: ${treatment.ward}"
+                            dateRange.text = "Дата призначення: ${utcToLocalDate(treatment.date)}\nТривалість: ${treatment.duration} днів"
+                            textDoctor.text = "Лікар: ${treatment.doctor}"
+                            textWard.text = "Палата: ${treatment.ward}"
                             medsContainer.removeAllViews()
                             treatment.medications.forEachIndexed { index, med ->
                                 val medView = layoutInflater.inflate(R.layout.item_medication, medsContainer, false)
@@ -240,11 +238,11 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                         val data = response.body() ?: return
 
                         containerCard.visibility = View.VISIBLE
-                        containerTitle.text = "Container №${data.container_number}"
+                        containerTitle.text = "Контейнер №${data.container_number}"
                         containerStatus.text = if (data.status.lowercase() == "active")
-                            "Status: Active" else "Status: Inactive"
+                            "Статус: Активний" else "Статус: Неактивний"
                         containerNetwork.text = if (data.is_online)
-                            "Network: Connected" else "Network: Disconnected"
+                            "Мережа: Підключено" else "Мережа: Відключено"
                         containerNetwork.setTextColor(
                             if (data.is_online)
                                 android.graphics.Color.parseColor("#4CAF50")
@@ -256,7 +254,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                         data.compartments.forEach { comp ->
                             val textView = TextView(requireContext())
                             val displayText = java.lang.StringBuilder().apply {
-                                append("Комірка ${comp.compartment_number}: ")
+                                append("Відсік ${comp.compartment_number}: ")
                                 if (comp.is_filled && comp.medication_name != null) {
                                     append("${comp.medication_name} (${comp.quantity} шт.)")
                                     if (comp.intake_at != null) {

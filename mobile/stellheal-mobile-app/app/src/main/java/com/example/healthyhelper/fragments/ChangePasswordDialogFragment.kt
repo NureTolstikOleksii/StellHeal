@@ -65,7 +65,6 @@ class ChangePasswordDialogFragment : DialogFragment() {
                 strengthBar.visibility = View.VISIBLE
                 strengthBar.progress = score
 
-                // Update label text and color
                 val (label, color) = when (score) {
                     1    -> "Слабкий"   to "#EF5350"
                     2    -> "Середній"  to "#FF9800"
@@ -135,7 +134,7 @@ class ChangePasswordDialogFragment : DialogFragment() {
                         val msg = extractMessage(response.errorBody()?.string())
                         errorServer.text = msg
                         errorServer.visibility = View.VISIBLE
-                        // Якщо сервер каже «invalid current password» — підсвічуємо поле
+
                         if (response.code() == 400) {
                             showError(editCurrent, errorCurrent, " ")
                         }

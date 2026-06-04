@@ -41,16 +41,20 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val backButton    = view.findViewById<ImageButton>(R.id.btnBack)
+        val backButton     = view.findViewById<ImageButton>(R.id.btnBack)
         val togglePassword = view.findViewById<ImageButton>(R.id.togglePassword)
-        val btnLogin      = view.findViewById<Button>(R.id.btnLogin)
-        val emailInput    = view.findViewById<EditText>(R.id.emailInput)
-        val passwordInput = view.findViewById<EditText>(R.id.passwordInput)
-        val emailError    = view.findViewById<TextView>(R.id.emailError)
-        val passwordError = view.findViewById<TextView>(R.id.passwordError)
-        val controller    = findNavController()
+        val btnLogin       = view.findViewById<Button>(R.id.btnLogin)
+        val emailInput     = view.findViewById<EditText>(R.id.emailInput)
+        val passwordInput  = view.findViewById<EditText>(R.id.passwordInput)
+        val emailError     = view.findViewById<TextView>(R.id.emailError)
+        val passwordError  = view.findViewById<TextView>(R.id.passwordError)
+        val controller     = findNavController()
 
         var isPasswordVisible = false
+
+        val hintColor = android.graphics.Color.parseColor("#AABAC8")
+        emailInput.setHintTextColor(hintColor)
+        passwordInput.setHintTextColor(hintColor)
 
         emailInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) = clearFieldError(emailInput, emailError)
@@ -121,7 +125,6 @@ class LoginFragment : Fragment() {
                         if (!response.isSuccessful) {
                             val errorBody = response.errorBody()?.string()
                             val errorMsg  = extractMessage(errorBody)
-
                             showFieldError(emailInput, emailError, " ")
                             showFieldError(passwordInput, passwordError, errorMsg)
                             return
@@ -158,7 +161,7 @@ class LoginFragment : Fragment() {
                             }
                         }
 
-                        Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Вхід виконано успішно", Toast.LENGTH_SHORT).show()
                         requireActivity().finish()
                         startActivity(Intent(requireContext(), MainActivity::class.java))
                     }

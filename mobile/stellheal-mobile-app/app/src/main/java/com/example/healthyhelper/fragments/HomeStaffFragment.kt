@@ -3,14 +3,12 @@ package com.example.healthyhelper.fragments
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.*
 import androidx.appcompat.widget.SearchView
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
@@ -30,11 +28,9 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
     private lateinit var notificationBadge: TextView
     private var allPatients: List<PatientResponse> = emptyList()
 
-    // Badge автооновлення
     private val badgeHandler = Handler(Looper.getMainLooper())
     private lateinit var badgeRunnable: Runnable
 
-    // BroadcastReceiver для push сповіщень
     private val notificationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             loadNotificationBadge()
@@ -83,7 +79,6 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
         searchView: SearchView,
         sortSpinner: Spinner
     ) {
-        // Показуємо лоадер
         progressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
@@ -93,7 +88,6 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
                     call: Call<List<PatientResponse>>,
                     response: Response<List<PatientResponse>>
                 ) {
-                    // Ховаємо лоадер, показуємо список
                     progressBar.visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE
 
@@ -148,10 +142,6 @@ class HomeStaffFragment : Fragment(R.layout.fragment_home_staff) {
                 }
             })
     }
-
-    // =========================
-    // NOTIFICATIONS BADGE
-    // =========================
 
     private fun loadNotificationBadge() {
         RetrofitClient.notificationApi.getUserNotifications()

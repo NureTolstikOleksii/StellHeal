@@ -8,7 +8,6 @@
     android:background="@color/white"
     android:fitsSystemWindows="true">
 
-    <!-- Логотип -->
     <ImageView
         android:id="@+id/logoIcon"
         android:layout_width="40dp"
@@ -20,7 +19,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintVertical_bias="0.5" />
 
-    <!-- Назва додатку -->
     <TextView
         android:id="@+id/toolbarTitle"
         android:layout_width="wrap_content"
@@ -37,7 +35,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintVertical_bias="0.5" />
 
-    <!-- Обгортка для кнопки сповіщень -->
     <FrameLayout
         android:id="@+id/notificationWrapper"
         android:layout_width="wrap_content"
@@ -71,7 +68,6 @@
 
     </FrameLayout>
 
-    <!-- Сіра лінія знизу тулбара -->
     <View
         android:id="@+id/bottomShadow"
         android:layout_width="0dp"

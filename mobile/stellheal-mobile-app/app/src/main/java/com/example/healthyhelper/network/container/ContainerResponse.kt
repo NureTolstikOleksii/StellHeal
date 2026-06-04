@@ -14,7 +14,7 @@ data class ContainerDetailsResponse(
     val status: String,
     val is_online: Boolean,
     val last_seen: String?,
-    val compartments: List<CompartmentDetail>, // ← Змінено з List<String> на List<CompartmentDetail>
+    val compartments: List<CompartmentDetail>,
     @SerializedName("patient_id")
     val patientId: Int?
 )
@@ -23,7 +23,7 @@ data class PrescriptionOption(
     val prescription_med_id: Int,
     val medication: String,
     val quantity: Int,
-    val intake_at: String,   // ← UTC ISO замість intake_time
+    val intake_at: String,
     val isTaken: Boolean?
 )
 
@@ -38,7 +38,7 @@ data class ContainerWithDetails(
     val status: String,
     val is_online: Boolean,
     val patient_id: Int?,
-    val compartments: List<CompartmentDetail> // ← Змінено з List<String> на List<CompartmentDetail>
+    val compartments: List<CompartmentDetail>
 )
 
 data class CompartmentDetail(
@@ -46,7 +46,7 @@ data class CompartmentDetail(
     val is_filled: Boolean,
     val medication_name: String?,
     val quantity: Int?,
-    val intake_at: String? // ← Сирий UTC ISO рядок часу від сервера
+    val intake_at: String?
 )
 
 data class CompartmentResponse(
@@ -60,7 +60,7 @@ data class CompartmentResponse(
 data class CompartmentMedication(
     val name: String,
     val dosage: String,
-    val intake_at: String?   // ← UTC ISO замість intake_time + intake_date
+    val intake_at: String?
 )
 
 data class FillConfirmRequest(

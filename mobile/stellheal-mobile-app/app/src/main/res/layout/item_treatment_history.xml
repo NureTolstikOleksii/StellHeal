@@ -1,49 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="16dp"
-    android:layout_marginBottom="12dp"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:backgroundTint="@color/teal"
-    android:clipToPadding="false"
-    android:elevation="2dp"
-    android:background="@drawable/bg_teal_rounded">
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/teal">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/diagnosisText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_semibold"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/diagnosisText"
+            android:id="@+id/dateText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Diagnosis"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:layout_marginEnd="10dp"
+            android:fontFamily="@font/montserrat_regular"
+            android:textColor="#CCF5FF"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/arrowIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="Відкрити"
+            android:src="@drawable/ic_arrow_right_white"
+            app:tint="@android:color/white" />
+
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/dateText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="11.11.2025"
-        android:textColor="@android:color/white"
-        android:layout_marginEnd="12dp"
-        android:textSize="14sp" />
-
-    <ImageView
-        android:id="@+id/arrowIcon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_arrow_right_white"
-        android:contentDescription="Open"
-        app:tint="@android:color/white" />
-
-</LinearLayout>
+</androidx.cardview.widget.CardView>

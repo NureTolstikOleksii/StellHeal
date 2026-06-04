@@ -16,6 +16,11 @@ interface ProfileApi {
         @Body body: Map<String, String>
     ): Call<Void>
 
+    @PUT("profile/change-email")
+    fun changeEmail(
+        @Body body: Map<String, String>
+    ): Call<Void>
+
     @Multipart
     @PUT("profile/avatar")
     fun uploadAvatar(

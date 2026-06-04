@@ -100,7 +100,6 @@ class ProfileFragment : Fragment() {
             avatarLauncher.launch("image/*")
         }
 
-        // Показуємо лоадер, ховаємо контент
         progressBar.visibility = View.VISIBLE
         profileScroll.visibility = View.GONE
 
@@ -163,6 +162,14 @@ class ProfileFragment : Fragment() {
 
         changePasswordButton.setOnClickListener {
             ChangePasswordDialogFragment().show(parentFragmentManager, "ChangePasswordDialog")
+        }
+
+        view.findViewById<Button>(R.id.btnChangeEmail).setOnClickListener {
+            val dialog = ChangeEmailDialogFragment()
+            dialog.onEmailChanged = { newEmail ->
+                textEmail.text = newEmail
+            }
+            dialog.show(parentFragmentManager, "ChangeEmailDialog")
         }
     }
 }

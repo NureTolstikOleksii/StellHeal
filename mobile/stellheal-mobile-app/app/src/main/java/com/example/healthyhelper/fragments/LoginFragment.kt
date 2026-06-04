@@ -3,8 +3,11 @@ package com.example.healthyhelper.fragments
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.util.Log
+import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,14 +41,28 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val backButton = view.findViewById<ImageButton>(R.id.btnBack)
+        val backButton    = view.findViewById<ImageButton>(R.id.btnBack)
         val togglePassword = view.findViewById<ImageButton>(R.id.togglePassword)
-        val btnLogin = view.findViewById<Button>(R.id.btnLogin)
-        val emailInput = view.findViewById<EditText>(R.id.emailInput)
+        val btnLogin      = view.findViewById<Button>(R.id.btnLogin)
+        val emailInput    = view.findViewById<EditText>(R.id.emailInput)
         val passwordInput = view.findViewById<EditText>(R.id.passwordInput)
-        val controller = findNavController()
+        val emailError    = view.findViewById<TextView>(R.id.emailError)
+        val passwordError = view.findViewById<TextView>(R.id.passwordError)
+        val controller    = findNavController()
 
         var isPasswordVisible = false
+
+        emailInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) = clearFieldError(emailInput, emailError)
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        })
+
+        passwordInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) = clearFieldError(passwordInput, passwordError)
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        })
 
         togglePassword.setOnClickListener {
             passwordInput.inputType =
@@ -68,17 +85,32 @@ class LoginFragment : Fragment() {
 
         btnLogin.setOnClickListener {
 
-            val email = emailInput.text.toString().trim()
+            val email    = emailInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(context, "Введіть email і пароль", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+            var hasError = false
+
+            if (email.isEmpty()) {
+                showFieldError(emailInput, emailError, "Введіть email")
+                hasError = true
+            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                showFieldError(emailInput, emailError, "Некоректний формат email")
+                hasError = true
             }
 
-            val loginRequest = LoginRequest(email, password)
+            if (password.isEmpty()) {
+                showFieldError(passwordInput, passwordError, "Введіть пароль")
+                hasError = true
+            } else if (password.length < 6) {
+                showFieldError(passwordInput, passwordError, "Пароль має бути не менше 6 символів")
+                hasError = true
+            }
 
+            if (hasError) return@setOnClickListener
+
+            val loginRequest = LoginRequest(email, password)
             val timezone = TimeZone.getDefault().id
+
             RetrofitClient.authApi.login(timezone, loginRequest)
                 .enqueue(object : Callback<LoginResponse> {
 
@@ -86,41 +118,38 @@ class LoginFragment : Fragment() {
                         call: Call<LoginResponse>,
                         response: Response<LoginResponse>
                     ) {
-
                         if (!response.isSuccessful) {
                             val errorBody = response.errorBody()?.string()
-                            val errorMsg = extractMessage(errorBody)
-                            Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                            val errorMsg  = extractMessage(errorBody)
+
+                            showFieldError(emailInput, emailError, " ")
+                            showFieldError(passwordInput, passwordError, errorMsg)
                             return
                         }
 
                         val body = response.body()
 
-                        val accessToken = body?.accessToken
+                        val accessToken  = body?.accessToken
                         val refreshToken = body?.refreshToken
-                        val role = body?.user?.role
-                        val userId = body?.user?.id
+                        val role         = body?.user?.role
+                        val userId       = body?.user?.id
 
                         if (accessToken == null || refreshToken == null || role == null || userId == null) {
                             Toast.makeText(context, "Некоректна відповідь сервера", Toast.LENGTH_SHORT).show()
                             return
                         }
 
-                        // 🔥 токени
                         AuthManager.saveTokens(accessToken, refreshToken)
 
-                        // 🔥 user data
-                        val prefs = requireContext()
+                        requireContext()
                             .getSharedPreferences("prefs", Context.MODE_PRIVATE)
-
-                        prefs.edit {
-                            putInt("user_id", userId)
-                            putString("user_role", role)
-                        }
+                            .edit {
+                                putInt("user_id", userId)
+                                putString("user_role", role)
+                            }
 
                         Log.d("LoginDebug", "Saved user_id = $userId")
 
-                        // 🔥 FCM токен
                         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val fcmToken = task.result
@@ -130,7 +159,6 @@ class LoginFragment : Fragment() {
                         }
 
                         Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-
                         requireActivity().finish()
                         startActivity(Intent(requireContext(), MainActivity::class.java))
                     }
@@ -142,12 +170,26 @@ class LoginFragment : Fragment() {
         }
     }
 
+    private fun showFieldError(field: EditText, errorView: TextView, message: String) {
+        field.background = requireContext().getDrawable(R.drawable.input_field_background_error)
+        if (message.isNotBlank()) {
+            errorView.text = message
+            errorView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun clearFieldError(field: EditText, errorView: TextView) {
+        field.background = requireContext().getDrawable(R.drawable.input_field_background)
+        errorView.visibility = View.GONE
+        errorView.text = ""
+    }
+
     private fun extractMessage(errorBody: String?): String {
         return try {
             val json = JSONObject(errorBody ?: "")
             json.getString("message")
         } catch (e: Exception) {
-            "Login failed"
+            "Невірний email або пароль"
         }
     }
 }

@@ -31,7 +31,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
     // Лічильник завантажених запитів
     private var loadedRequests = 0
-    private val totalRequests = 3 // пацієнт + лікування + контейнер
+    private val totalRequests = 3
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,12 +58,10 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
         val patientId = args.patientId
 
-        // Показуємо лоадер
         progressBar.visibility = View.VISIBLE
         treatmentScroll.visibility = View.GONE
         loadedRequests = 0
 
-        // Функція що ховає лоадер коли всі запити завершені
         fun onRequestComplete() {
             loadedRequests++
             if (loadedRequests >= totalRequests) {

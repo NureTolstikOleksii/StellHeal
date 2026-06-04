@@ -73,7 +73,48 @@ export class ProfileService {
         });
     }
 
-    // ok
+    async changeEmail(userId, currentPassword, newEmail, req) {
+        const user = await prisma.users.findUnique({
+            where: { user_id: userId }
+        });
+
+        if (!user) {
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'User not found', 404);
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            throw new AppError(ERROR_CODES.INVALID_PASSWORD, 'Invalid current password', 400);
+        }
+
+        const emailTaken = await prisma.users.findUnique({
+            where: { login: newEmail }
+        });
+        if (emailTaken) {
+            throw new AppError(
+                ERROR_CODES.EMAIL_ALREADY_EXISTS ?? 'EMAIL_ALREADY_EXISTS',
+                'This email is already in use',
+                409
+            );
+        }
+
+        const updatedUser = await prisma.users.update({
+            where: { user_id: userId },
+            data: { login: newEmail }
+        });
+
+        await logAction({
+            userId,
+            action: ACTIONS.UPDATE_PROFILE,
+            entity: 'USER',
+            entityId: userId,
+            description: `Email changed to ${newEmail}`,
+            req
+        });
+
+        return { login: updatedUser.login };
+    }
+
     async updateProfile(userId, data, req) {
         const updatedUser = await prisma.users.update({
             where: { user_id: userId },

@@ -8,7 +8,7 @@ import { uploadAvatar } from '../../integrations/azure/uploadAvatar.js';
 const router = Router();
 const profileService = new ProfileService();
 
-// GET PROFILE (ok)
+// GET PROFILE
 router.get('/', authenticateToken, async (req, res, next) => {
     try {
         const user = await profileService.getProfile(req.user.userId, req);
@@ -18,20 +18,18 @@ router.get('/', authenticateToken, async (req, res, next) => {
     }
 });
 
-// UPDATE AVATAR ok
+// UPDATE AVATAR
 router.put('/avatar', authenticateToken, async (req, res, next) => {
     try {
         const avatarUrl = await uploadAvatar(req);
         const user = await profileService.updateAvatar(req.user.userId, avatarUrl, req);
-
         res.json({ avatar: user.avatar });
-
     } catch (err) {
         next(err);
     }
 });
 
-// CHANGE PASSWORD ok
+// CHANGE PASSWORD
 router.put(
     '/change-password',
     authenticateToken,
@@ -48,14 +46,40 @@ router.put(
             );
 
             res.json({ message: 'Password updated successfully' });
-
         } catch (err) {
             next(err);
         }
     }
 );
 
-// UPDATE PROFILE ok
+// CHANGE EMAIL
+router.put(
+    '/change-email',
+    authenticateToken,
+    validateEmail,
+    async (req, res, next) => {
+        try {
+            const { currentPassword, newEmail } = req.body;
+
+            if (!currentPassword || !newEmail) {
+                return res.status(400).json({ message: 'currentPassword and newEmail are required' });
+            }
+
+            const result = await profileService.changeEmail(
+                req.user.userId,
+                currentPassword,
+                newEmail,
+                req
+            );
+
+            res.json({ message: 'Email updated successfully', login: result.login });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// UPDATE PROFILE
 router.patch('/', authenticateToken, validateEmail, async (req, res, next) => {
     try {
         const updatedUser = await profileService.updateProfile(
@@ -63,9 +87,7 @@ router.patch('/', authenticateToken, validateEmail, async (req, res, next) => {
             req.body,
             req
         );
-
         res.json(updatedUser);
-
     } catch (err) {
         next(err);
     }

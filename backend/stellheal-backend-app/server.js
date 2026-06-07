@@ -1,13 +1,8 @@
 import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
-import { globalLimiter } from './src/middleware/rateLimiter.js';
-import { errorHandler } from './src/middleware/errorHandler.js';
 import prisma from './src/config/prisma.js';
-import mainRouter from './src/routes/index.js';
-import {BackupService} from "./src/modules/backup/backup.service.js";
+import { createApp } from './src/app.js';
+import { BackupService } from './src/modules/backup/backup.service.js';
 
 dotenv.config();
 
@@ -16,40 +11,13 @@ if (!process.env.DATABASE_URL) {
     process.exit(1);
 }
 
-const app = express();
 const PORT = process.env.PORT || 4200;
 
 async function main() {
-    app.set('trust proxy', 1);
-    app.use(express.json({ limit: '10mb' }));
-    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-    app.use(cookieParser());
-    app.use(globalLimiter);
-
-    app.use(cors({
-        origin: '*',
-        credentials: true,
-    }));
-
-    app.get('/', (req, res) => {
-        res.send('StellHeal API is running...');
-    });
-
-    app.use('/api', mainRouter);
-
-    app.all('*', (req, res) => {
-        res.status(404).json({
-            code: 'NOT_FOUND',
-            message: 'Route not found'
-        });
-    });
-
-    app.use(errorHandler);
-
+    const app = createApp();
     try {
         await prisma.$connect();
         console.log('Database connected');
-
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
         });
@@ -58,17 +26,12 @@ async function main() {
     } catch (err) {
         console.error('Failed to connect to DB:', err);
         await prisma.$disconnect();
+
         process.exit(1);
     }
 }
 
 main();
 
-const gracefulShutdown = async () => {
-    console.log('Shutting down gracefully...');
-    await prisma.$disconnect();
-    process.exit(0);
-};
-
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', async () => { await prisma.$disconnect(); process.exit(0); });
+process.on('SIGTERM', async () => { await prisma.$disconnect(); process.exit(0); });

@@ -26,7 +26,7 @@ const createLimiter = (max, message) =>
 
 export const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000000,
+    max: 10000000,
     keyGenerator,
     handler: (req, res) => {
         res.status(429).json({

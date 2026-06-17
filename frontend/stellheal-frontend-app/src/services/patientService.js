@@ -78,7 +78,7 @@ export const createPrescription = async (patientId, formData) => {
 
 export const streamAiRecommendation = async (type, payload, onChunk, signal) => {
     const token = localStorage.getItem('accessToken');
-    const baseURL = axios.defaults.baseURL; // http://localhost:4200/api
+    const baseURL = axios.defaults.baseURL;
 
     const response = await fetch(`${baseURL}/ai/recommend`, {
         method: 'POST',

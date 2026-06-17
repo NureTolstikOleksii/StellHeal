@@ -4,6 +4,7 @@ import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { authorizeRoles } from '../../middleware/role.middleware.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
+import prisma from "../../config/prisma.js";
 
 const router = Router();
 const aiService = new AiService();
@@ -24,6 +25,19 @@ router.post(
                 ));
             }
 
+            if (payload.patientId) {
+                const medicalHistory = await prisma.prescriptions.findMany({
+                    where:   { patient_id: payload.patientId },
+                    select:  { diagnosis: true, date_issued: true },
+                    orderBy: { date_issued: 'desc' },
+                    take:    5
+                });
+
+                payload.medicalHistory = medicalHistory
+                    .map(p => `${p.diagnosis} (${p.date_issued?.toISOString().substring(0, 10)})`)
+                    .join(', ');
+            }
+
             await aiService.streamRecommendation(type, payload, res);
 
         } catch (err) {
@@ -32,5 +46,4 @@ router.post(
         }
     }
 );
-
 export const aiRouter = router;

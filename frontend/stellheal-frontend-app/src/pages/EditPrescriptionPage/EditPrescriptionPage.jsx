@@ -384,9 +384,9 @@ const EditPrescriptionPage = () => {
         }
     };
 
-    const suggestDiagnosis       = () => requestAiToChat('diagnosis',       { ...patientPayload(), complaints, anamnesis, objectiveStatus }, 'Діагноз',       (text) => setDiagnosis(text),       diagAbortRef);
-    const suggestMedications     = () => requestAiToChat('medications',     { ...patientPayload(), diagnosis, complaints },                  'Препарати',     null,                               medsAbortRef);
-    const suggestRecommendations = () => requestAiToChat('recommendations', { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') }, 'Рекомендації', (text) => setRecommendations(text), recAbortRef);
+    const suggestDiagnosis       = () => requestAiToChat('diagnosis',       { ...patientPayload(), complaints, anamnesis, objectiveStatus, patientId: id }, 'Діагноз',       (text) => setDiagnosis(text),       diagAbortRef);
+    const suggestMedications     = () => requestAiToChat('medications',     { ...patientPayload(), diagnosis, complaints, patientId: id},                  'Препарати',     null,                               medsAbortRef);
+    const suggestRecommendations = () => requestAiToChat('recommendations', { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', '), patientId: id }, 'Рекомендації', (text) => setRecommendations(text), recAbortRef);
 
     // ── Управління препаратами ────────────────────────────────────────────────
     const handleMedChange = (i, field, value) => {

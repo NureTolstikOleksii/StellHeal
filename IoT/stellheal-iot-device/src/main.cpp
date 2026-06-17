@@ -179,12 +179,6 @@ void setup() {
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
 void loop() {
-    static unsigned long lastHallPrint = 0;
-    if (millis() - lastHallPrint > 500) {
-        Serial.printf("HALL: %d\n", digitalRead(HALL_SENSOR_PIN));
-        lastHallPrint = millis();
-    }
-
     static unsigned long lastAuthTry = 0;
     if (deviceToken == "" && millis() - lastAuthTry > 15000) {
         authenticateDevice();

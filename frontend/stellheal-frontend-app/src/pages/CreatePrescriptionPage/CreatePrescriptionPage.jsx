@@ -288,7 +288,7 @@ const CreatePrescriptionPage = () => {
 
     const suggestDiagnosis = () => requestAiToChat(
         'diagnosis',
-        { ...patientPayload(), complaints, anamnesis, objectiveStatus },
+        { ...patientPayload(), complaints, anamnesis, objectiveStatus, patientId: id },
         'Діагноз',
         (text) => setDiagnosis(text),
         diagAbortRef
@@ -296,15 +296,32 @@ const CreatePrescriptionPage = () => {
 
     const suggestMedications = () => requestAiToChat(
         'medications',
-        { ...patientPayload(), diagnosis, complaints },
+        {
+            ...patientPayload(),
+            diagnosis,
+            complaints,
+            patientId: id,
+            currentMedications: medications
+                .filter(m => m.medicationName)
+                .map(m => `${m.medicationName} ${m.quantity}од. ${m.timesPerDay}р/день`)
+                .join(', ')
+        },
         'Препарати',
-        null, // немає прямого apply для ліків
+        null,
         medsAbortRef
     );
 
     const suggestRecommendations = () => requestAiToChat(
         'recommendations',
-        { diagnosis, complaints, medications: medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') },
+        {
+            diagnosis,
+            complaints,
+            patientId: id,
+            medications: medications
+                .filter(m => m.medicationName)
+                .map(m => `${m.medicationName} ${m.quantity}од. ${m.timesPerDay}р/день`)
+                .join(', ')
+        },
         'Рекомендації',
         (text) => setRecommendations(text),
         recAbortRef

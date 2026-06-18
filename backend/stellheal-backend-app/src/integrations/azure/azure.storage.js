@@ -53,7 +53,7 @@ export const uploadAvatarToAzure = async (fileBuffer, originalname, mimetype, us
         blobHTTPHeaders: { blobContentType: mimetype }
     });
 
-    return blockBlobClient.url; // публічний URL
+    return blockBlobClient.url;
 };
 
 // ── Аватарки: видалити ────────────────────────────────────────────────────────

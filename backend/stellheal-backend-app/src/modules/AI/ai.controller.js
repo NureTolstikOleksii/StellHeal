@@ -26,8 +26,18 @@ router.post(
             }
 
             if (payload.patientId) {
+                const numericPatientId = Number(payload.patientId);
+
+                if (isNaN(numericPatientId)) {
+                    return next(new AppError(
+                        ERROR_CODES.VALIDATION_ERROR,
+                        'Некоректний ID пацієнта (має бути числом)',
+                        400
+                    ));
+                }
+
                 const medicalHistory = await prisma.prescriptions.findMany({
-                    where:   { patient_id: payload.patientId },
+                    where:   { patient_id: numericPatientId }, // Передаємо вже число
                     select:  { diagnosis: true, date_issued: true },
                     orderBy: { date_issued: 'desc' },
                     take:    5

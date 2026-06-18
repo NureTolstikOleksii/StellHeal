@@ -82,7 +82,6 @@ model notifications {
   notification_id         Int                       @id @default(autoincrement())
   notification_type       String                    @db.VarChar(100)
   message                 String?
-  // ← замінено два поля на одне
   sent_at                 DateTime?                 @db.Timestamptz(6)
   container_id            Int?
   notification_recipients notification_recipients[]
@@ -92,7 +91,6 @@ model notifications {
 model prescription_medications {
   prescription_med_id     Int                       @id @default(autoincrement())
   quantity                Int?
-  // ← замінено intake_date + intake_time на одне поле
   intake_at               DateTime?                 @db.Timestamptz(6)
   frequency               String?                   @db.VarChar(100)
   prescription_id         Int?
@@ -106,7 +104,6 @@ model prescription_medications {
 
 model prescriptions {
   prescription_id  Int       @id @default(autoincrement())
-  // ← замінено @db.Date на Timestamptz
   date_issued      DateTime? @db.Timestamptz(6)
   duration         Int?
   patient_id       Int?
@@ -157,7 +154,6 @@ model users {
   patronymic                                    String?                   @db.VarChar(100)
   phone                                         String?                   @db.VarChar(50)
   firebase_token                                String?
-  // ← нове поле таймзони
   timezone                                      String                    @default("Europe/Kyiv") @db.VarChar(100)
   compartment_medications                       compartment_medications[]
   containers                                    containers[]

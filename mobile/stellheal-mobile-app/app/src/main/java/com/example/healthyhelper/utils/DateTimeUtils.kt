@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-// ─── UTC ISO → локальний час "HH:mm" ─────────────────────────────────────────
 @RequiresApi(Build.VERSION_CODES.O)
 fun utcToLocalTime(isoString: String?): String {
     if (isoString.isNullOrBlank()) return "—"
@@ -20,7 +19,6 @@ fun utcToLocalTime(isoString: String?): String {
     } catch (e: Exception) { "—" }
 }
 
-// ─── UTC ISO → локальна дата "dd.MM.yyyy" ────────────────────────────────────
 @RequiresApi(Build.VERSION_CODES.O)
 fun utcToLocalDate(isoString: String?): String {
     if (isoString.isNullOrBlank()) return "—"
@@ -32,7 +30,6 @@ fun utcToLocalDate(isoString: String?): String {
     } catch (e: Exception) { "—" }
 }
 
-// ─── UTC ISO → локальна дата довга "6 черв. 2026" ────────────────────────────
 @RequiresApi(Build.VERSION_CODES.O)
 fun utcToLocalDateLong(isoString: String?): String {
     if (isoString.isNullOrBlank()) return "—"
@@ -44,7 +41,6 @@ fun utcToLocalDateLong(isoString: String?): String {
     } catch (e: Exception) { "—" }
 }
 
-// ─── UTC ISO → локальна дата + час "06.06.2026, 11:00" ───────────────────────
 @RequiresApi(Build.VERSION_CODES.O)
 fun utcToLocalDateTime(isoString: String?): String {
     if (isoString.isNullOrBlank()) return "—"
@@ -56,7 +52,6 @@ fun utcToLocalDateTime(isoString: String?): String {
     } catch (e: Exception) { "—" }
 }
 
-// ─── "yyyy-MM-dd" → локальна дата "6 черв. 2026" ─────────────────────────────
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatLocalDate(dateStr: String?): String {
     if (dateStr.isNullOrBlank()) return "—"

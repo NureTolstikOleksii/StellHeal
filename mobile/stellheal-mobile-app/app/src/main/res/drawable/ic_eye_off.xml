@@ -5,12 +5,10 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- Закрытый глаз с диагональной линией -->
     <path
         android:fillColor="#000000"
         android:pathData="M12,4.5C7.5,4.5 3.7,7.3 2,12c1.7,4.7 5.5,7.5 10,7.5s8.3,-2.8 10,-7.5c-1.7,-4.7 -5.5,-7.5 -10,-7.5zM12,17c-2.8,0 -5,-2.2 -5,-5s2.2,-5 5,-5 5,2.2 5,5 -2.2,5 -5,5z"/>
 
-    <!-- Линия закрытия глаза -->
     <path
         android:fillColor="#000000"
         android:strokeWidth="2"

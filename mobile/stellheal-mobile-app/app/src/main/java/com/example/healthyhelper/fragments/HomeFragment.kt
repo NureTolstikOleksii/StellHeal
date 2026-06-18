@@ -36,6 +36,7 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import androidx.annotation.RequiresApi
 import com.example.healthyhelper.utils.utcToLocalTime
+
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var calendarContainer: LinearLayout

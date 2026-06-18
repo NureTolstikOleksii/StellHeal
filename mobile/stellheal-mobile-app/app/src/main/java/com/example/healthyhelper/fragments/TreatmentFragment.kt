@@ -230,6 +230,7 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
 
         RetrofitClient.containerApi.getContainerDetails(containerId)
             .enqueue(object : Callback<ContainerDetailsResponse> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<ContainerDetailsResponse>,
                     response: Response<ContainerDetailsResponse>

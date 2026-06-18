@@ -41,7 +41,6 @@ class MainActivity : AppCompatActivity() {
 
     private val notificationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            // Не оновлюємо badge якщо юзер вже дивиться на список сповіщень
             if (currentDestinationId != R.id.notificationFragment) {
                 updateNavBadge()
             }

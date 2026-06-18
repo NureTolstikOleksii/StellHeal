@@ -9,6 +9,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const medicationService = new MedicationService();
 
+// get all medications
 router.get(
     '/',
     authenticateToken,
@@ -23,6 +24,7 @@ router.get(
     }
 );
 
+// add medication
 router.post(
     '/add',
     authenticateToken,
@@ -69,6 +71,7 @@ router.post(
     }
 );
 
+// delete medication
 router.delete(
     '/delete/:id',
     authenticateToken,
@@ -98,6 +101,7 @@ router.delete(
     }
 );
 
+// update medication quantity
 router.put(
     '/update-quantity/:id',
     authenticateToken,

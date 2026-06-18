@@ -32,7 +32,7 @@ export class ContainerService {
         return { activeCount, inactiveCount };
     }
 
-    // last fills — повертаємо UTC ISO, фронт конвертує
+    // last fills
     async getLatestFillings() {
         const fillings = await prisma.compartment_medications.findMany({
             where:   { fill_time: { not: null } },
@@ -49,8 +49,7 @@ export class ContainerService {
             compartment_number: f.compartments?.compartment_number || '-',
             filled_by: f.users
                 ? `${f.users.last_name} ${f.users.first_name} ${f.users.patronymic || ''}`.trim()
-                : 'Невідомо',
-            // ← UTC ISO рядок — фронт конвертує в локальний час
+                : 'Unknown',
             fill_time: f.fill_time?.toISOString() ?? null,
         }));
     }
@@ -100,7 +99,7 @@ export class ContainerService {
         });
 
         if (existing) {
-            throw new AppError(ERROR_CODES.CONFLICT, 'Контейнер з таким UID вже зареєстровано', 409);
+            throw new AppError(ERROR_CODES.CONFLICT, 'A container with this UID is already registered.', 409);
         }
 
         const { nanoid } = await import('nanoid');
@@ -140,13 +139,13 @@ export class ContainerService {
         });
 
         if (!container) {
-            throw new AppError(ERROR_CODES.NOT_FOUND, 'Контейнер не знайдено', 404);
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Container not found', 404);
         }
 
         if (container.is_online) {
             throw new AppError(
                 ERROR_CODES.CONFLICT,
-                'Не можна видалити онлайн-контейнер. Спочатку відключіть пристрій.',
+                'Unable to delete online container. Disconnect the device first.',
                 409
             );
         }
@@ -206,7 +205,7 @@ export class ContainerService {
                             select: {
                                 medication_name: true,
                                 quantity:        true,
-                                intake_at:       true,  // ← UTC Timestamptz
+                                intake_at:       true,
                             }
                         }
                     },
@@ -236,11 +235,11 @@ export class ContainerService {
         });
 
         if (!container) {
-            throw new AppError(ERROR_CODES.NOT_FOUND, 'Контейнер не знайдено', 404);
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Container not found', 404);
         }
 
         if (container.patient_id !== null) {
-            throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Контейнер вже зайнятий', 400);
+            throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Container already occupied', 400);
         }
 
         const updated = await prisma.containers.update({
@@ -272,7 +271,7 @@ export class ContainerService {
         if (container.patient_id !== patientId) {
             throw new AppError(
                 ERROR_CODES.VALIDATION_ERROR,
-                'Контейнер не належить цьому пацієнту',
+                'he container does not belong to this patient.',
                 400
             );
         }
@@ -451,10 +450,10 @@ export class ContainerService {
                     date_issued: { lte: dayEnd },
                     end_date:    { gte: dayStart },
                 },
-                intake_at: { gte: dayStart, lte: dayEnd }  // ← intake_at
+                intake_at: { gte: dayStart, lte: dayEnd }
             },
             include:  { medications: true },
-            orderBy:  { intake_at: 'asc' }  // ← intake_at
+            orderBy:  { intake_at: 'asc' }
         });
 
         return medications.map(p => ({

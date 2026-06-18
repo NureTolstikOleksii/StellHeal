@@ -8,6 +8,7 @@ import { authenticateDevice } from "../../middleware/device.middleware.js";
 const deviceService = new DeviceService();
 const router = Router();
 
+// device registration
 router.post("/auth", async (req, res, next) => {
     try {
         const { device_uid, secret } = req.body;
@@ -24,6 +25,7 @@ router.post("/auth", async (req, res, next) => {
     }
 });
 
+// device life status
 router.post("/heartbeat", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -34,6 +36,7 @@ router.post("/heartbeat", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// device commands
 router.get("/commands", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -44,6 +47,7 @@ router.get("/commands", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// commands done
 router.post("/commands/:id/done", authenticateDevice, async (req, res, next) => {
     try {
         const result = await deviceService.completeCommand(req.params.id);
@@ -53,6 +57,7 @@ router.post("/commands/:id/done", authenticateDevice, async (req, res, next) => 
     }
 });
 
+// find next-intake for device
 router.get("/next-intake", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -68,6 +73,7 @@ router.get("/next-intake", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// device intakes
 router.post("/intake", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -84,6 +90,7 @@ router.post("/intake", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// start filling
 router.post("/fill/start", authenticateToken, async (req, res, next) => {
     try {
         const { containerId } = req.body;
@@ -94,6 +101,7 @@ router.post("/fill/start", authenticateToken, async (req, res, next) => {
     }
 });
 
+// confirm filling
 router.post("/fill/confirm", authenticateToken, async (req, res, next) => {
     try {
         const { containerId, compartmentNumber, prescription_med_id } = req.body;
@@ -109,6 +117,7 @@ router.post("/fill/confirm", authenticateToken, async (req, res, next) => {
     }
 });
 
+// get compartment
 router.get("/compartments/:containerId", authenticateToken, async (req, res, next) => {
     try {
         const containerId = Number(req.params.containerId);
@@ -124,6 +133,7 @@ router.get("/compartments/:containerId", authenticateToken, async (req, res, nex
     }
 });
 
+// rotate to compartment
 router.post("/fill/rotate", authenticateToken, async (req, res, next) => {
     try {
         const { containerId, compartmentNumber } = req.body;
@@ -139,6 +149,7 @@ router.post("/fill/rotate", authenticateToken, async (req, res, next) => {
     }
 });
 
+// clear compartment
 router.post("/fill/clear", authenticateToken, async (req, res, next) => {
     try {
         const { containerId, compartmentId, compartmentNumber } = req.body;
@@ -154,6 +165,7 @@ router.post("/fill/clear", authenticateToken, async (req, res, next) => {
     }
 });
 
+// employee auth
 router.post("/rfid-status", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -165,6 +177,7 @@ router.post("/rfid-status", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// get rfid status
 router.get("/rfid-status/:containerId", authenticateToken, async (req, res, next) => {
     try {
         const containerId = Number(req.params.containerId);
@@ -175,6 +188,7 @@ router.get("/rfid-status/:containerId", authenticateToken, async (req, res, next
     }
 });
 
+// reset rfid
 router.post("/rfid-reset/:containerId", authenticateToken, async (req, res, next) => {
     try {
         const containerId = Number(req.params.containerId);
@@ -185,6 +199,7 @@ router.post("/rfid-reset/:containerId", authenticateToken, async (req, res, next
     }
 });
 
+// log device event
 router.post("/event", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -201,6 +216,7 @@ router.post("/event", authenticateDevice, async (req, res, next) => {
     }
 });
 
+// get active fill session
 router.get("/fill-session", authenticateToken, async (req, res, next) => {
     try {
         const { containerId } = req.query;

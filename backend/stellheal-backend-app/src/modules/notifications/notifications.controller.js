@@ -40,7 +40,7 @@ router.post(
     }
 );
 
-// відправка FCM
+// send FCM
 router.post(
     '/send',
     authenticateToken,
@@ -78,7 +78,7 @@ router.post(
     }
 );
 
-// сповіщення про неприйнятий препарат
+// notification of an unaccepted drug
 router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;
@@ -90,7 +90,7 @@ router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
     }
 });
 
-// notification of an unaccepted drug
+// reminder to accept the elbow
 router.post("/intake-reminder", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;

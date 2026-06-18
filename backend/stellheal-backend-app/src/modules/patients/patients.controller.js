@@ -125,7 +125,7 @@ router.post(
             const { patientId } = req.body;
 
             if (!patientId) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Не вказано ID пацієнта', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Patient ID not specified', 400));
             }
 
             const result = await patientsService.createPrescription(
@@ -151,11 +151,11 @@ router.delete(
             const id = Number(req.params.id);
 
             if (!id) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Не вказано ID призначення', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'prescription ID not specified', 400));
             }
 
             await patientsService.deletePrescription(id, req);
-            res.json({ message: 'Призначення видалено' });
+            res.json({ message: 'prescription deleted' });
         } catch (err) { next(err); }
     }
 );
@@ -228,7 +228,7 @@ router.get(
             const patientId = Number(req.params.id);
 
             if (!patientId) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Не вказано ID пацієнта', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Patient ID not specified', 400));
             }
 
             const buffer = await patientsService.generateTreatmentReport(patientId);
@@ -308,11 +308,11 @@ router.delete(
             const id = Number(req.params.id);
 
             if (!id) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Не вказано ID пацієнта', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Patient ID not specified', 400));
             }
 
             await patientsService.deletePatient(id, req);
-            res.json({ message: 'Пацієнта видалено' });
+            res.json({ message: 'Patient deleted' });
         } catch (err) { next(err); }
     }
 );

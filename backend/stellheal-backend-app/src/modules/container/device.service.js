@@ -81,7 +81,7 @@ export class DeviceService {
 
         const now = new Date();
 
-        // ← тільки майбутні прийоми
+        // тільки майбутні прийоми
         const nextMed = await prisma.prescription_medications.findFirst({
             where: {
                 prescriptions:           { patient_id: container.patient_id },
@@ -342,9 +342,9 @@ export class DeviceService {
                 await this.startFillSession(containerId, staffUser.user_id);
             }
 
-            await this.logDeviceEvent(containerId, "info", "RFID_AUTH", "Медсестра авторизувалась через RFID");
+            await this.logDeviceEvent(containerId, "info", "RFID_AUTH", "The nurse authenticated via RFID");
         } else {
-            await this.logDeviceEvent(containerId, "info", "RFID_LOGOUT", "RFID сесія завершена");
+            await this.logDeviceEvent(containerId, "info", "RFID_LOGOUT", "RFID session completed");
         }
 
         return { message: "RFID status updated" };
@@ -367,7 +367,7 @@ export class DeviceService {
 
         await this.finishFillSession(containerId);
 
-        await this.logDeviceEvent(containerId, "info", "FILL_SESSION_FINISHED", "Сесія заповнення завершена медсестрою");
+        await this.logDeviceEvent(containerId, "info", "FILL_SESSION_FINISHED", "Filling session completed by nurse");
 
         await prisma.device_commands.create({
             data: {

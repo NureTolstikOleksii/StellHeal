@@ -12,7 +12,6 @@ const containerService = new ContainerService();
 
 // ====== Common (WEB and MOBILE) =============================================
 
-
 // all containers
 router.get(
     '/',
@@ -25,9 +24,7 @@ router.get(
     }
 );
 
-
 // ====== Admin (WEB) =============================================
-
 
 // container statistics
 router.get(
@@ -41,7 +38,7 @@ router.get(
     }
 );
 
-// last fills — повертає fill_time як UTC ISO, фронт конвертує
+// last fills
 router.get(
     '/fillings',
     authenticateToken,
@@ -115,7 +112,7 @@ router.delete(
     }
 );
 
-// device log — created_at як UTC ISO
+// device log
 router.get(
     '/:id/events',
     authenticateToken,
@@ -131,7 +128,7 @@ router.get(
     }
 );
 
-// filling sessions — started_at/finished_at як UTC ISO
+// filling sessions
 router.get(
     '/:id/sessions',
     authenticateToken,
@@ -163,9 +160,7 @@ router.get(
     }
 );
 
-
 // ====== MOBILE =============================================
-
 
 // free containers
 router.get(
@@ -188,7 +183,7 @@ router.post(
         try {
             const { containerId, patientId } = req.body;
             if (!containerId || !patientId) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Потрібні containerId та patientId', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId and patientId are required', 400));
             }
             res.json(await containerService.assignPatientToContainer(containerId, patientId, req));
         } catch (err) { next(err); }
@@ -204,7 +199,7 @@ router.post(
         try {
             const { containerId, patientId } = req.body;
             if (!containerId || !patientId) {
-                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'Потрібні containerId та patientId', 400));
+                return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'containerId and patientId are required', 400));
             }
             res.json(await containerService.unassignContainer(containerId, patientId, req));
         } catch (err) { next(err); }
@@ -275,13 +270,12 @@ router.get(
     async (req, res, next) => {
         try {
             const patientId = Number(req.params.id);
-            const { date }  = req.query; // YYYY-MM-DD від мобайлу
+            const { date }  = req.query;
 
             if (!patientId || !date) {
                 return next(new AppError(ERROR_CODES.VALIDATION_ERROR, 'patientId and date are required', 400));
             }
 
-            // ← intake_at як UTC ISO у відповіді, мобайл конвертує
             res.json(await containerService.getIntakeStatistics(patientId, date));
         } catch (err) { next(err); }
     }

@@ -56,4 +56,5 @@ router.post(
         }
     }
 );
+
 export const aiRouter = router;

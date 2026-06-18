@@ -51,9 +51,9 @@ function getContainer() {
 
 export class BackupService {
 
-    // Запуск автоматичних бекапів (викликати при старті сервера)
+    // Запуск автоматичних бекапів (при старті сервера)
     startScheduler() {
-        // Щодня о 02:00 ночі
+        // щодня о 02:00 ночі
         cron.schedule('0 2 * * *', async () => {
             console.log('[Backup] Starting scheduled backup...');
             try {

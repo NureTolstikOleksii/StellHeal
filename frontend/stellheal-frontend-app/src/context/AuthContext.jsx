@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    // ── Логаут ────────────────────────────────────────────────────────────────
     const logout = useCallback(async (silent = false) => {
         clearAllTimers();
 
@@ -47,14 +46,12 @@ export const AuthProvider = ({ children }) => {
         window.location.href = "/";
     }, []);
 
-    // ── Очистити всі таймери ──────────────────────────────────────────────────
     const clearAllTimers = () => {
         clearTimeout(inactivityTimer.current);
         clearTimeout(warningTimer.current);
         clearInterval(countdownTimer.current);
     };
 
-    // ── Скинути таймер неактивності ───────────────────────────────────────────
     const resetInactivityTimer = useCallback(() => {
         if (!localStorage.getItem("accessToken")) return;
 
@@ -82,7 +79,6 @@ export const AuthProvider = ({ children }) => {
 
     }, [logout]);
 
-    // ── Слухачі активності користувача ───────────────────────────────────────
     useEffect(() => {
         if (!user) return;
 
@@ -100,7 +96,6 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user, resetInactivityTimer]);
 
-    // ── Логін ─────────────────────────────────────────────────────────────────
     const login = async (email, password) => {
         const data = await loginUser(email, password);
 
@@ -112,7 +107,6 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
     };
 
-    // ── Продовжити сесію (з попередження) ────────────────────────────────────
     const extendSession = () => {
         setShowWarning(false);
         resetInactivityTimer();
@@ -132,7 +126,6 @@ export const AuthProvider = ({ children }) => {
         }}>
             {children}
 
-            {/* ── Попередження про автологаут ───────────────────────────────── */}
             {showWarning && (
                 <div style={{
                     position:        'fixed',

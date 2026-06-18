@@ -25,9 +25,6 @@ const StaffHeader = ({ onAddClick, staffCount, onOpenRoles, onExport }) => {
                 <button className={styles.addButton} onClick={onAddClick}>
                     <FaUserPlus size={14} /> {t('staff.add')}
                 </button>
-                {/*<button className={styles.rolesButton} onClick={onOpenRoles}>*/}
-                {/*    <FaShieldAlt size={14} /> {t('staff.configure_roles')}*/}
-                {/*</button>*/}
                 <button className={styles.exportButton} onClick={onExport}>
                     <FaFileExport size={14} /> {t('staff.export')}
                 </button>

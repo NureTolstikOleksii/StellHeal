@@ -82,7 +82,6 @@ const RolesModal = ({ onClose }) => {
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
                 <div className={styles.modalHeader}>
                     <div className={styles.modalTitleRow}>
                         <FaShieldAlt className={styles.modalTitleIcon} />
@@ -93,10 +92,8 @@ const RolesModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                {/* Error */}
                 {error && <div className={styles.errorMsg}>{error}</div>}
 
-                {/* Roles list */}
                 {loading ? (
                     <div className={styles.loaderWrap}>
                         <LoaderOverlay inline />
@@ -143,7 +140,6 @@ const RolesModal = ({ onClose }) => {
                     </ul>
                 )}
 
-                {/* Add new role */}
                 <div className={styles.addBlock}>
                     <p className={styles.addLabel}>{t('roles.new')}</p>
                     <div className={styles.addRow}>
@@ -163,7 +159,6 @@ const RolesModal = ({ onClose }) => {
                     {newRoleError && <span className={styles.fieldError}>{newRoleError}</span>}
                 </div>
 
-                {/* Close */}
                 <button className={styles.doneBtn} onClick={onClose}>
                     {t('roles.close')}
                 </button>

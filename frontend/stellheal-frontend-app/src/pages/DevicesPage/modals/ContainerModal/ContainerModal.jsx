@@ -10,7 +10,7 @@ import { fetchAdminCompartments, fetchContainerEvents, fetchContainerSessions } 
 import LoaderOverlay from '../../../../components/LoaderOverlay/LoaderOverlay.jsx';
 import { formatDateTime, formatTime } from '../../../../utils/dateTime';
 
-// ── Drum SVG ──────────────────────────────────────────────────────────────────
+
 const Drum = ({ compartments, selected, onSelect }) => {
     const total  = 8;
     const cx     = 160;
@@ -46,7 +46,6 @@ const Drum = ({ compartments, selected, onSelect }) => {
         const fill   = isSelected ? '#1976d2' : isFilled ? '#22c55e' : '#f3f4f6';
         const stroke = isSelected ? '#1565c0' : '#fff';
 
-        // ← intake_at замість intake_time, форматуємо через formatTime
         const intakeAt  = comp?.compartment_medications?.[0]
             ?.prescription_medications?.intake_at;
         const timeLabel = intakeAt ? formatTime(intakeAt) : null;
@@ -99,7 +98,6 @@ const Drum = ({ compartments, selected, onSelect }) => {
     );
 };
 
-// ── Event icon by type ────────────────────────────────────────────────────────
 const EventIcon = ({ type }) => {
     if (type === 'error')   return <FaExclamationTriangle size={13} className={styles.eventIconError} />;
     if (type === 'warning') return <FaExclamationTriangle size={13} className={styles.eventIconWarn} />;
@@ -107,7 +105,6 @@ const EventIcon = ({ type }) => {
     return <FaInfoCircle size={13} className={styles.eventIconInfo} />;
 };
 
-// ── Relative time ─────────────────────────────────────────────────────────────
 const relativeTime = (dateStr, lang) => {
     if (!dateStr) return '—';
     const diff  = Date.now() - new Date(dateStr).getTime();
@@ -128,7 +125,6 @@ const relativeTime = (dateStr, lang) => {
     }
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const ContainerModal = ({ container, onClose }) => {
     const { t, i18n } = useTranslation();
     const lang = i18n.language || 'uk';
@@ -170,7 +166,6 @@ const ContainerModal = ({ container, onClose }) => {
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
                         <h3 className={styles.title}>
@@ -186,7 +181,6 @@ const ContainerModal = ({ container, onClose }) => {
                     </button>
                 </div>
 
-                {/* Info row */}
                 <div className={styles.infoRow}>
                     {container.users && (
                         <div className={styles.infoItem}>
@@ -197,7 +191,6 @@ const ContainerModal = ({ container, onClose }) => {
                     {lastFillDate && (
                         <div className={styles.infoItem}>
                             <FaCalendarAlt size={12} className={styles.infoIcon} />
-                            {/* ← UTC ISO → локальний час через утиліту */}
                             <span>Заповнено: {formatDateTime(lastFillDate, lang)}</span>
                         </div>
                     )}
@@ -207,7 +200,6 @@ const ContainerModal = ({ container, onClose }) => {
                     <div className={styles.loaderWrap}><LoaderOverlay inline /></div>
                 ) : (
                     <>
-                        {/* ── Drum + Detail ── */}
                         <div className={styles.content}>
                             <div className={styles.drumWrap}>
                                 <Drum
@@ -259,7 +251,6 @@ const ContainerModal = ({ container, onClose }) => {
                                             )}
                                         </div>
 
-                                        {/* ← intake_at замість intake_time */}
                                         {selectedComp?.compartment_medications?.[0]
                                             ?.prescription_medications?.intake_at && (
                                             <div className={styles.intakeTime}>
@@ -287,7 +278,6 @@ const ContainerModal = ({ container, onClose }) => {
                                                                     {med.prescription_medications.quantity} од.
                                                                 </span>
                                                             )}
-                                                            {/* ← fill_time UTC ISO → локальний */}
                                                             {med.fill_time && (
                                                                 <span>Засипано: {formatDateTime(med.fill_time, lang)}</span>
                                                             )}
@@ -305,7 +295,6 @@ const ContainerModal = ({ container, onClose }) => {
                             </div>
                         </div>
 
-                        {/* ── Fill sessions ── */}
                         <div className={styles.eventsSection}>
                             <div className={styles.eventsTitleRow}>
                                 <FaFlask className={styles.eventsIcon} />
@@ -345,7 +334,6 @@ const ContainerModal = ({ container, onClose }) => {
                                                             : '—'
                                                         }
                                                     </div>
-                                                    {/* ← started_at UTC ISO → локальний */}
                                                     <div className={styles.sessionMeta}>
                                                         {formatDateTime(s.started_at, lang)}
                                                         {durationStr && (
@@ -368,7 +356,6 @@ const ContainerModal = ({ container, onClose }) => {
                             )}
                         </div>
 
-                        {/* ── Device events ── */}
                         <div className={styles.eventsSection}>
                             <div className={styles.eventsTitleRow}>
                                 <FaBolt className={styles.eventsIcon} />
@@ -407,7 +394,6 @@ const ContainerModal = ({ container, onClose }) => {
                                                     <div className={styles.eventMessage}>{ev.message}</div>
                                                 )}
                                             </div>
-                                            {/* ← created_at UTC ISO → відносний час */}
                                             <div className={styles.eventTime}>
                                                 {relativeTime(ev.created_at, lang)}
                                             </div>

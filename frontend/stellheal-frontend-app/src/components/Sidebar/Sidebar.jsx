@@ -44,7 +44,6 @@ const Sidebar = () => {
     return (
         <aside className={styles.sidebar}>
 
-            {/* ── User block ── */}
             <div className={styles.userBlock}>
                 <div className={styles.avatarWrapper}>
                     <img
@@ -62,7 +61,6 @@ const Sidebar = () => {
 
             <div className={styles.divider} />
 
-            {/* ── Nav menu ── */}
             <nav className={styles.menu}>
                 {links.map(link => {
                     const isActive = currentPath.includes(link.key);
@@ -82,7 +80,6 @@ const Sidebar = () => {
                 })}
             </nav>
 
-            {/* ── Logout ── */}
             <div className={styles.logoutBlock}>
                 <div className={styles.divider} />
                 <div className={styles.logout} onClick={handleLogout}>

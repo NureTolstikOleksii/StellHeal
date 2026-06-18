@@ -11,7 +11,7 @@ import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import { formatDateLong, formatTime } from '../../utils/dateTime';
 import i18n from "i18next";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+
 const addDays = (iso, n) => {
     const d = new Date(iso);
     d.setDate(d.getDate() + n);
@@ -22,7 +22,6 @@ const today = () => new Intl.DateTimeFormat('en-CA', {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
 }).format(new Date());
 
-// ── week strip ────────────────────────────────────────────────────────────────
 const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
     const { t } = useTranslation();
     const [weekStart, setWeekStart] = useState(() => {
@@ -70,7 +69,6 @@ const WeekStrip = ({ selected, onChange, startDate, endDate }) => {
     );
 };
 
-// ── ring chart ────────────────────────────────────────────────────────────────
 const RingChart = ({ taken, total }) => {
     const pct  = total > 0 ? taken / total : 0;
     const r    = 54;
@@ -97,7 +95,6 @@ const RingChart = ({ taken, total }) => {
     );
 };
 
-// ── intake row ────────────────────────────────────────────────────────────────
 const IntakeRow = ({ item }) => {
     const { t } = useTranslation();
 
@@ -129,7 +126,6 @@ const IntakeRow = ({ item }) => {
     );
 };
 
-// ── main ──────────────────────────────────────────────────────────────────────
 const PatientIntakePage = () => {
     const { id, prescriptionId } = useParams();
     const navigate  = useNavigate();
@@ -240,7 +236,6 @@ const PatientIntakePage = () => {
                     <div className={styles.scheduleCard}>
                         <div className={styles.scheduleTitle}>
                             <FaClock size={14} />
-                            {/* ← автоматична локаль для заголовку */}
                             <span>{t('patient_intake.schedule_for')} {formatDateLong(date, i18n.language)}</span>
                         </div>
                         {stats.schedule.length === 0 ? (

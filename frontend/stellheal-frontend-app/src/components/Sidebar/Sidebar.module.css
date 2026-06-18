@@ -1,4 +1,3 @@
-/* ── Sidebar ─────────────────────────────────────────────────────────────────── */
 .sidebar {
     width: 220px;
     flex-shrink: 0;
@@ -10,7 +9,6 @@
     padding: 16px 0;
 }
 
-/* ── User block ──────────────────────────────────────────────────────────────── */
 .userBlock {
     display: flex;
     align-items: center;
@@ -64,14 +62,12 @@
     margin-top: 1px;
 }
 
-/* ── Divider ─────────────────────────────────────────────────────────────────── */
 .divider {
     height: 1px;
     background: #f3f4f6;
     margin: 0 16px;
 }
 
-/* ── Menu ────────────────────────────────────────────────────────────────────── */
 .menu {
     display: flex;
     flex-direction: column;
@@ -134,7 +130,6 @@
     text-overflow: ellipsis;
 }
 
-/* Активна смужка справа */
 .activeBar {
     position: absolute;
     right: -8px;
@@ -145,7 +140,6 @@
     border-radius: 3px 0 0 3px;
 }
 
-/* ── Logout ──────────────────────────────────────────────────────────────────── */
 .logoutBlock {
     padding: 0 8px 4px;
 }

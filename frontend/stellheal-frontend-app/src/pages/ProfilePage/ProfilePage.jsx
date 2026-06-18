@@ -31,7 +31,6 @@ const ProfilePage = () => {
         confirmPassword: ''
     });
 
-    // ── Avatar ──────────────────────────────────────────────────────────────────
     const handleEditClick = () => fileInputRef.current.click();
 
     const handleFileChange = async (e) => {
@@ -49,7 +48,6 @@ const ProfilePage = () => {
         }
     };
 
-    // ── Password ────────────────────────────────────────────────────────────────
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordForm(prev => ({ ...prev, [name]: value }));
@@ -75,7 +73,6 @@ const ProfilePage = () => {
         }
     };
 
-    // ── Profile inputs ──────────────────────────────────────────────────────────
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setErrors(prev => { const u = { ...prev }; delete u[name]; delete u.general; return u; });
@@ -115,7 +112,6 @@ const ProfilePage = () => {
         }
     };
 
-    // ── Load ────────────────────────────────────────────────────────────────────
     useEffect(() => {
         getProfile()
             .then(data => setProfileData({ ...data, email: data.login }))
@@ -135,19 +131,14 @@ const ProfilePage = () => {
 
     return (
         <div className={styles.pageWrapper}>
-
-            {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
                     <h2 className={styles.pageTitle}>{t('profile.title')}</h2>
                 </div>
             </div>
 
-            {/* ── Content ── */}
             <div className={styles.contentCard}>
                 <div className={styles.formRow}>
-
-                    {/* Fields */}
                     <div className={styles.fields}>
                         {FIELDS.map(({ name, label }) => (
                             <div key={name} className={styles.inputGroup}>
@@ -164,7 +155,6 @@ const ProfilePage = () => {
                             </div>
                         ))}
 
-                        {/* Роль / Спеціалізація */}
                         <div className={styles.inputGroup}>
                             <label className={styles.inputLabel}>
                                 {isAdmin
@@ -179,7 +169,6 @@ const ProfilePage = () => {
                             />
                         </div>
 
-                        {/* Адреса */}
                         <div className={styles.inputGroupFull}>
                             <label className={styles.inputLabel}>{t('profile.address')}</label>
                             <input
@@ -193,7 +182,6 @@ const ProfilePage = () => {
                             {errors.contact_info && <div className={styles.inputError}>{errors.contact_info}</div>}
                         </div>
 
-                        {/* Кнопка збереження (тільки адмін) */}
                         {isAdmin && (
                             <div className={styles.inputGroupFull}>
                                 {errors.general && (
@@ -207,7 +195,6 @@ const ProfilePage = () => {
                         )}
                     </div>
 
-                    {/* Photo block */}
                     <div className={styles.photoBlock}>
                         <div className={styles.avatarWrapper}>
                             <img

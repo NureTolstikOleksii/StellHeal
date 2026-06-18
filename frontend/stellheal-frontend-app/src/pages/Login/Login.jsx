@@ -76,20 +76,17 @@ const Login = () => {
         <div className={styles.page}>
             <div className={styles.card}>
 
-                {/* Ліва колонка — лого */}
                 <div className={styles.logoBlock}>
                     <img src={logo} alt="StellHeal" className={styles.logo} />
                     <h1 className={styles.appName}>StellHeal</h1>
                     <p className={styles.appSub}>Medical Service</p>
                 </div>
 
-                {/* Права колонка — форма */}
                 <div className={styles.formSide}>
                     <div className={styles.formBlock}>
                         <h2 className={styles.formTitle}>Вхід до системи</h2>
                         <p className={styles.formSubtitle}>Введіть ваші облікові дані</p>
 
-                        {/* Email */}
                         <div className={styles.fieldGroup}>
                             <label className={styles.label}>Email</label>
                             <div className={`${styles.inputWrapper} ${errors.email ? styles.inputWrapperError : ''}`}>
@@ -107,7 +104,6 @@ const Login = () => {
                             {errors.email && <span className={styles.fieldError}>{errors.email}</span>}
                         </div>
 
-                        {/* Password */}
                         <div className={styles.fieldGroup}>
                             <label className={styles.label}>Пароль</label>
                             <div className={`${styles.inputWrapper} ${errors.password ? styles.inputWrapperError : ''}`}>
@@ -133,7 +129,6 @@ const Login = () => {
                             {errors.password && <span className={styles.fieldError}>{errors.password}</span>}
                         </div>
 
-                        {/* Forgot */}
                         <div className={styles.forgotRow}>
                             <button
                                 type="button"
@@ -144,7 +139,6 @@ const Login = () => {
                             </button>
                         </div>
 
-                        {/* Submit */}
                         <button
                             type="button"
                             className={styles.submitBtn}

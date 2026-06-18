@@ -15,7 +15,7 @@ import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay';
 import Toast from '../../components/Toast/Toast';
 import { formatDateTimeLong } from '../../utils/dateTime';
 
-// ── Confirm modal ─────────────────────────────────────────────────────────────
+
 const ConfirmModal = ({ title, message, danger, onConfirm, onClose }) => (
     <div className={styles.overlay} onClick={onClose}>
         <div className={styles.confirmModal} onClick={e => e.stopPropagation()}>
@@ -39,7 +39,6 @@ const ConfirmModal = ({ title, message, danger, onConfirm, onClose }) => (
     </div>
 );
 
-// ── Format size ───────────────────────────────────────────────────────────────
 const formatSize = (bytes) => {
     if (!bytes) return '—';
     if (bytes < 1024)        return `${bytes} B`;
@@ -47,7 +46,6 @@ const formatSize = (bytes) => {
     return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const BackupPage = () => {
     const { t, i18n } = useTranslation();
 
@@ -136,15 +134,12 @@ const BackupPage = () => {
     return (
         <div className={styles.pageWrapper}>
 
-            {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
-                    {/*<FaDatabase className={styles.pageTitleIcon} />*/}
                     <h2 className={styles.pageTitle}>{t('backup.title')}</h2>
                 </div>
             </div>
 
-            {/* ── Status card ── */}
             <div className={styles.statusCard}>
                 <div className={styles.statusLeft}>
                     <div className={`${styles.statusIcon} ${latestBackup ? styles.statusOk : styles.statusWarn}`}>
@@ -179,7 +174,6 @@ const BackupPage = () => {
                 </button>
             </div>
 
-            {/* ── Backups list ── */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>{t('backup.list') || 'Резервні копії'}</h3>
@@ -234,7 +228,6 @@ const BackupPage = () => {
                 )}
             </div>
 
-            {/* ── Warning ── */}
             <div className={styles.warningBlock}>
                 <FiAlertTriangle size={16} className={styles.warningIcon} />
                 <p className={styles.warningText}>
@@ -243,7 +236,6 @@ const BackupPage = () => {
                 </p>
             </div>
 
-            {/* ── Confirm modal ── */}
             {confirm && (
                 <ConfirmModal
                     danger={confirm.type === 'restore' || confirm.type === 'delete'}

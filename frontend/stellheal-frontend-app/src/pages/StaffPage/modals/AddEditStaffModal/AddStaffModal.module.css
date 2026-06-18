@@ -25,7 +25,6 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Header ── */
 .modalHeader {
     display: flex;
     align-items: center;
@@ -61,7 +60,6 @@
 }
 .closeBtn:hover { color: #374151; background: #f3f4f6; }
 
-/* ── Form ── */
 .form {
     display: flex;
     flex-direction: column;
@@ -129,7 +127,6 @@
     color: #ef4444;
 }
 
-/* ── Section divider ── */
 .sectionLabel {
     font-size: 11px;
     font-weight: 700;
@@ -141,7 +138,6 @@
     margin-top: 4px;
 }
 
-/* ── Error ── */
 .errorMsg {
     background: #fef2f2;
     color: #b91c1c;
@@ -151,7 +147,6 @@
     font-size: 13px;
 }
 
-/* ── Actions ── */
 .actions {
     display: flex;
     gap: 10px;
@@ -191,7 +186,6 @@
 .submitBtn:hover:not(:disabled) { background: #1565c0; }
 .submitBtn:disabled { opacity: 0.65; cursor: not-allowed; }
 
-/* ── Responsive ── */
 @media (max-width: 600px) {
     .modal  { padding: 20px 16px; }
     .row    { flex-direction: column; }

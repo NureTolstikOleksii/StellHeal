@@ -20,7 +20,7 @@ import Toast from '../../components/Toast/Toast';
 import ContainerModal from './modals/ContainerModal/ContainerModal.jsx';
 import { formatDateTime, formatTime } from '../../utils/dateTime';
 
-// ── RegisterModal ─────────────────────────────────────────────────────────────
+
 const RegisterModal = ({ onClose, onSuccess }) => {
     const { t } = useTranslation();
     const [deviceUid, setDeviceUid] = useState('');
@@ -85,7 +85,6 @@ const RegisterModal = ({ onClose, onSuccess }) => {
     );
 };
 
-// ── StatusBadge ───────────────────────────────────────────────────────────────
 const StatusBadge = ({ isOnline }) => {
     const { t } = useTranslation();
     return (
@@ -96,7 +95,6 @@ const StatusBadge = ({ isOnline }) => {
     );
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const DevicesPage = () => {
     const { t, i18n } = useTranslation();
 
@@ -183,7 +181,6 @@ const DevicesPage = () => {
     return (
         <div className={styles.pageWrapper}>
 
-            {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.titleBlock}>
                     <div className={styles.pageTitleRow}>
@@ -212,7 +209,6 @@ const DevicesPage = () => {
                 </div>
             </div>
 
-            {/* ── Containers table ── */}
             <div className={styles.section}>
                 <h3 className={styles.sectionTitle}>{t('devices.containers_list')}</h3>
 
@@ -258,7 +254,6 @@ const DevicesPage = () => {
                                             <span className={styles.noPatient}>{t('devices.no_patient')}</span>
                                         )}
                                     </td>
-                                    {/* Використовуємо універсальну функцію з dateTime.js */}
                                     <td className={styles.dateCell}>
                                         {formatDateTime(c.last_seen, i18n.language)}
                                     </td>
@@ -286,7 +281,6 @@ const DevicesPage = () => {
                 )}
             </div>
 
-            {/* ── Latest fillings ── */}
             <div className={styles.section}>
                 <h3 className={styles.sectionTitle}>{t('devices.latest_fillings')}</h3>
 

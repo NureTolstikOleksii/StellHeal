@@ -58,7 +58,6 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
                         <div>
@@ -82,7 +81,6 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
                     </button>
                 </div>
 
-                {/* Occupancy bar */}
                 {ward.capacity > 0 && (
                     <div className={styles.occupancyWrap}>
                         <div className={styles.occupancyBar}>
@@ -95,7 +93,6 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
                     </div>
                 )}
 
-                {/* Block/Unblock button */}
                 <button
                     className={`${styles.blockBtn} ${ward.is_blocked ? styles.unblockBtn : ''}`}
                     onClick={handleBlockToggle}
@@ -116,7 +113,6 @@ const WardPatientsModal = ({ ward: initialWard, onClose, onBlockToggle }) => {
 
                 <div className={styles.divider} />
 
-                {/* Patients */}
                 {loading ? (
                     <div className={styles.loaderWrap}><LoaderOverlay inline /></div>
                 ) : patients.length === 0 ? (

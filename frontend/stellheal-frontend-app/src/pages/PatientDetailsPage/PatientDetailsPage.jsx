@@ -15,7 +15,6 @@ import {
 
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTranslation } from 'react-i18next';
-import {FaUser} from "react-icons/fa";
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 
 const PatientDetailsPage = () => {
@@ -68,12 +67,9 @@ const PatientDetailsPage = () => {
     if (loading) return <LoaderOverlay />;
     if (!patient) return <div className={styles.error}>{t('patient_details.not_found')}</div>;
 
-    const calcAge = (dob) => dob ? String(new Date().getFullYear() - new Date(dob).getFullYear()) : '?';
-
     return (
         <div className={styles.pageWrapper}>
 
-            {/* ── Breadcrumb header ── */}
             <div className={styles.pageHeader}>
                 <div>
                     <div className={styles.breadcrumb}>
@@ -96,7 +92,6 @@ const PatientDetailsPage = () => {
                 {/*</div>*/}
             </div>
 
-            {/* ── Content ── */}
             <div className={styles.contentRow}>
                 <div className={styles.mainContent}>
                     <section className={styles.section}>

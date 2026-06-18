@@ -383,6 +383,7 @@
     "ai_disclaimer": "AI suggestions are advisory. Final decision is made by the doctor.",
     "save": "Save prescription",
     "saving": "Saving...",
+    "save_success": "Prescription was created successfully",
     "error_required": "Fill in diagnosis and select ward.",
     "error_medications": "Fill in all medication fields.",
     "error_save": "Error saving prescription.",

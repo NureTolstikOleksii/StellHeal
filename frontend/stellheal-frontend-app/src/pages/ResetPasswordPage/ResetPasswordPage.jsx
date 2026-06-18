@@ -71,13 +71,11 @@ const ResetPasswordPage = () => {
         <div className={styles.page}>
             <div className={styles.card}>
 
-                {/* Logo */}
                 <div className={styles.logoBlock}>
                     <img src={logo} alt="StellHeal" className={styles.logo} />
                     <span className={styles.appName}>StellHeal</span>
                 </div>
 
-                {/* Header */}
                 <div className={styles.header}>
                     <MdLockReset className={styles.headerIcon} />
                     <h2 className={styles.title}>Зміна пароля</h2>
@@ -93,7 +91,6 @@ const ResetPasswordPage = () => {
                     <form onSubmit={handleSubmit} noValidate className={styles.form}>
                         <p className={styles.subtitle}>Введіть новий пароль для вашого акаунту</p>
 
-                        {/* Новий пароль */}
                         <div className={styles.fieldGroup}>
                             <label className={styles.label}>Новий пароль</label>
                             <div className={`${styles.inputWrapper} ${errors.password ? styles.inputWrapperError : ''}`}>
@@ -113,7 +110,6 @@ const ResetPasswordPage = () => {
                             {errors.password && <span className={styles.fieldError}>{errors.password}</span>}
                         </div>
 
-                        {/* Підтвердження */}
                         <div className={styles.fieldGroup}>
                             <label className={styles.label}>Підтвердіть пароль</label>
                             <div className={`${styles.inputWrapper} ${errors.confirm ? styles.inputWrapperError : ''}`}>
@@ -133,7 +129,6 @@ const ResetPasswordPage = () => {
                             {errors.confirm && <span className={styles.fieldError}>{errors.confirm}</span>}
                         </div>
 
-                        {/* Підказка вимог */}
                         <div className={styles.hint}>
                             Пароль має містити: велику і малу літеру, цифру та спецсимвол
                         </div>

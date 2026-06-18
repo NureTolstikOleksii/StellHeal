@@ -1,10 +1,8 @@
-/* ── Wrapper ─────────────────────────────────────────────────────────────────── */
 .wrapper {
     padding: 8px 0 60px;
     font-family: inherit;
 }
 
-/* ── Header panel ────────────────────────────────────────────────────────────── */
 .headerPanel {
     display: flex;
     justify-content: space-between;
@@ -40,7 +38,6 @@
     letter-spacing: -0.02em;
 }
 
-/* ── Stats counts ────────────────────────────────────────────────────────────── */
 .counts {
     display: flex;
     align-items: center;
@@ -77,7 +74,6 @@
     background: #e0e7ff;
 }
 
-/* ── Action buttons ──────────────────────────────────────────────────────────── */
 .actions {
     display: flex;
     gap: 12px;
@@ -120,7 +116,6 @@
 
 .icon { font-size: 15px; }
 
-/* ── Search panel ────────────────────────────────────────────────────────────── */
 .searchPanel {
     margin-bottom: 16px;
     padding: 14px 16px;
@@ -193,7 +188,6 @@
 }
 .sortSelect:focus { outline: none; border-color: #1976d2; }
 
-/* ── Table ───────────────────────────────────────────────────────────────────── */
 .tableWrapper {
     background: #fff;
     border-radius: 12px;
@@ -254,7 +248,6 @@
     font-size: 14px;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 950px) {
     .headerPanel { flex-direction: column; align-items: stretch; }
     .actions { justify-content: stretch; }

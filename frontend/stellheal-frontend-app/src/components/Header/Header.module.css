@@ -1,4 +1,3 @@
-/* ── Header ──────────────────────────────────────────────────────────────────── */
 .header {
     width: 100%;
     height: 56px;
@@ -21,7 +20,6 @@
     gap: 12px;
 }
 
-/* ── Burger ──────────────────────────────────────────────────────────────────── */
 .menuToggle {
     display: none;
     background: none;
@@ -36,7 +34,6 @@
 .menuToggle:hover   { background: #f3f4f6; }
 .menuToggle:focus   { outline: none; }
 
-/* ── Logo ────────────────────────────────────────────────────────────────────── */
 .logoBlock {
     display: flex;
     align-items: center;
@@ -70,7 +67,6 @@
     font-weight: 400;
 }
 
-/* ── Right side ──────────────────────────────────────────────────────────────── */
 .rightSide {
     display: flex;
     align-items: center;
@@ -78,7 +74,6 @@
     flex-shrink: 0;
 }
 
-/* ── Language switch ─────────────────────────────────────────────────────────── */
 .languageSwitch {
     position: relative;
     display: flex;
@@ -115,7 +110,6 @@
 }
 .chevronOpen { transform: rotate(180deg); }
 
-/* ── Dropdown ────────────────────────────────────────────────────────────────── */
 .dropdown {
     position: absolute;
     top: calc(100% + 6px);
@@ -157,7 +151,6 @@
     flex-shrink: 0;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .menuToggle { display: flex; }
     .title      { font-size: 15px; }

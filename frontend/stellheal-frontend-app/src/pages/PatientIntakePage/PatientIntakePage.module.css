@@ -1,10 +1,8 @@
-/* ── Page ───────────────────────────────────────────────────────────────────── */
 .page {
     margin: 0 auto;
     font-family: inherit;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────────── */
 .header {
     display: flex;
     justify-content: space-between;
@@ -64,7 +62,6 @@
 .patientName { font-weight: 600; font-size: 14px; color: #111827; }
 .patientMeta { font-size: 12px; color: #6b7280; margin-top: 2px; }
 
-/* ── Week strip ─────────────────────────────────────────────────────────────── */
 .weekStrip {
     display: flex;
     align-items: center;
@@ -136,7 +133,6 @@
     color: #374151;
 }
 
-/* ── Loader ─────────────────────────────────────────────────────────────────── */
 .loader {
     display: flex;
     align-items: center;
@@ -150,7 +146,6 @@
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Summary row ────────────────────────────────────────────────────────────── */
 .summaryRow {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -159,7 +154,6 @@
     align-items: center;
 }
 
-/* ── Ring ───────────────────────────────────────────────────────────────────── */
 .ringCard {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -221,7 +215,6 @@
 
 .ringDesc { font-size: 12px; color: #9ca3af; }
 
-/* ── Stats grid ─────────────────────────────────────────────────────────────── */
 .statsGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -268,7 +261,6 @@
     letter-spacing: 0.05em;
 }
 
-/* ── Schedule card ──────────────────────────────────────────────────────────── */
 .scheduleCard {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -288,7 +280,6 @@
     color: #374151;
 }
 
-/* ── Timeline ───────────────────────────────────────────────────────────────── */
 .timeline {
     padding: 8px 0;
 }
@@ -375,7 +366,6 @@
 .badge_missed  { background: #fee2e2; color: #b91c1c; }
 .badge_pending { background: #fef3c7; color: #92400e; }
 
-/* ── Empty ──────────────────────────────────────────────────────────────────── */
 .empty {
     display: flex;
     flex-direction: column;
@@ -388,7 +378,6 @@
 
 .emptyIcon { opacity: 0.3; }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
     .summaryRow { grid-template-columns: 1fr; }
     .statsGrid { grid-template-columns: 1fr 1fr; }

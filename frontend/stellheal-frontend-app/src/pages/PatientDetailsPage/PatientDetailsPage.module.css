@@ -1,4 +1,3 @@
-/* ── Layout ──────────────────────────────────────────────────────────────────── */
 .pageWrapper {
     font-family: inherit;
     background: #fff;
@@ -12,7 +11,6 @@
     color: #888;
 }
 
-/* ── Breadcrumb header (same as Create/Edit pages) ───────────────────────────── */
 .pageHeader {
     display: flex;
     justify-content: space-between;
@@ -81,7 +79,6 @@
 .patientName { font-weight: 600; font-size: 14px; color: #111827; }
 .patientMeta { font-size: 12px; color: #6b7280; margin-top: 2px; }
 
-/* ── Content row ─────────────────────────────────────────────────────────────── */
 .contentRow {
     display: flex;
     gap: 24px;
@@ -101,7 +98,6 @@
     flex-shrink: 0;
 }
 
-/* ── Sections ────────────────────────────────────────────────────────────────── */
 .section {
     background: #fff;
     border-radius: 14px;
@@ -125,7 +121,6 @@
 }
 .historyHeader .sectionTitle { margin-bottom: 0; }
 
-/* ── Sidebar patient card ────────────────────────────────────────────────────── */
 .patientInfoCard {
     background: #f8faff;
     border: 1px solid #e0e7ff;
@@ -256,7 +251,6 @@
 }
 .secondaryButton:hover { background: #eff6ff; }
 
-/* ── Diagnosis card ──────────────────────────────────────────────────────────── */
 .card {
     background: #fff;
     border-radius: 12px;
@@ -337,7 +331,6 @@
 
 .statusIcon { font-size: 15px; }
 
-/* ── Medications ─────────────────────────────────────────────────────────────── */
 .medicationsList {
     display: flex;
     flex-wrap: wrap;
@@ -353,7 +346,6 @@
     font-size: 13px;
 }
 
-/* ── Footer info row ─────────────────────────────────────────────────────────── */
 .detailsRow {
     display: flex;
     gap: 20px;
@@ -362,7 +354,6 @@
     flex-wrap: wrap;
 }
 
-/* ── Expand button ───────────────────────────────────────────────────────────── */
 .expandBtn {
     display: inline-flex;
     align-items: center;
@@ -379,7 +370,6 @@
 }
 .expandBtn:hover { background: #f3f4f6; }
 
-/* ── Details panel ───────────────────────────────────────────────────────────── */
 .detailsPanel {
     margin-top: 14px;
     padding: 14px 16px;
@@ -391,7 +381,6 @@
     gap: 12px;
 }
 
-/* Кнопки дій в деталях */
 .detailActions {
     display: flex;
     gap: 8px;
@@ -446,7 +435,6 @@
 }
 .statsBtn:hover { background: #f0fdf4; }
 
-/* ── Detail items ────────────────────────────────────────────────────────────── */
 .detailItem {
     display: flex;
     flex-direction: column;
@@ -468,7 +456,6 @@
     white-space: pre-wrap;
 }
 
-/* ── Files modal ─────────────────────────────────────────────────────────────── */
 .modalOverlay {
     position: fixed;
     inset: 0;
@@ -529,7 +516,6 @@
 .fileRowName  { flex: 1; font-size: 13px; color: #1976d2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fileRowDate  { font-size: 12px; color: #aaa; flex-shrink: 0; }
 
-/* ── Year selector ───────────────────────────────────────────────────────────── */
 .yearSelector {
     display: flex;
     align-items: center;
@@ -553,7 +539,6 @@
     color: #333;
 }
 
-/* ── Spinner ─────────────────────────────────────────────────────────────────── */
 .spinner {
     animation: spin 0.8s linear infinite;
 }
@@ -563,7 +548,6 @@
     to   { transform: rotate(360deg); }
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .pageHeader { flex-direction: column; }
     .contentRow { flex-direction: column-reverse; gap: 16px; }

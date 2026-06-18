@@ -10,7 +10,7 @@ import Toast from '../../components/Toast/Toast';
 import * as wardsService from '../../services/wardsService';
 import WardPatientsModal from './modals/WardPatientsModal/WardPatientsModal.jsx';
 
-// ── Field поза WardModal щоб уникнути ремонтажу ──────────────────────────────
+
 const Field = ({ name, label, type = 'text', placeholder, value, error, onChange }) => (
     <div className={styles.fieldGroup}>
         <label className={styles.fieldLabel}>{label}</label>
@@ -25,7 +25,7 @@ const Field = ({ name, label, type = 'text', placeholder, value, error, onChange
     </div>
 );
 
-// ── Ward Modal ────────────────────────────────────────────────────────────────
+
 const WardModal = ({ ward, onClose, onSave }) => {
     const { t } = useTranslation();
     const [form, setForm]     = useState({
@@ -116,7 +116,6 @@ const WardModal = ({ ward, onClose, onSave }) => {
     );
 };
 
-// ── Ward Card ─────────────────────────────────────────────────────────────────
 const WardCard = ({ ward, onView, onEdit, onDelete, t }) => {
     const occupancy = ward.capacity ? Math.round((ward.active_patients / ward.capacity) * 100) : 0;
     const barColor  = occupancy >= 100 ? '#ef4444' : occupancy >= 75 ? '#f59e0b' : '#22c55e';
@@ -128,9 +127,6 @@ const WardCard = ({ ward, onView, onEdit, onDelete, t }) => {
             style={{ cursor: 'pointer' }}
         >
             <div className={styles.wardTop}>
-                {/*<div className={`${styles.wardIconWrap} ${ward.is_blocked ? styles.wardIconBlocked : ''}`}>*/}
-                {/*    <FaHospital size={18} className={ward.is_blocked ? styles.wardIconBlockedColor : styles.wardIcon} />*/}
-                {/*</div>*/}
                 <div className={styles.wardInfo}>
                     <div className={styles.wardNumber}>
                         {t('wards.ward')} {ward.ward_number}
@@ -188,7 +184,6 @@ const WardCard = ({ ward, onView, onEdit, onDelete, t }) => {
     );
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const WardsPage = () => {
     const { t } = useTranslation();
 
@@ -258,11 +253,9 @@ const WardsPage = () => {
     return (
         <div className={styles.pageWrapper}>
 
-            {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.titleBlock}>
                     <div className={styles.pageTitleRow}>
-                        {/*<FaHospital className={styles.pageTitleIcon} />*/}
                         <h2 className={styles.pageTitle}>{t('wards.title')}</h2>
                     </div>
                     <div className={styles.counts}>
@@ -301,7 +294,6 @@ const WardsPage = () => {
                 </button>
             </div>
 
-            {/* ── Wards grid ── */}
             {wards.length === 0 ? (
                 <div className={styles.empty}>
                     <FaHospital size={36} color="#d1d5db" />

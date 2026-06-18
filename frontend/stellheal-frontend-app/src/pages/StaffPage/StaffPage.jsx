@@ -77,7 +77,6 @@ const StaffPage = () => {
         }
     };
 
-    // ── Блокування / розблокування ────────────────────────────────────────────
     const handleBlockStaff = async (userId, isBlocked) => {
         const confirmMsg = isBlocked
             ? (t('staff.actions.unblock_confirm') || 'Розблокувати цей акаунт?')

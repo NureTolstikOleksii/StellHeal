@@ -17,7 +17,7 @@ import {
 } from '../../services/patientService';
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay.jsx';
 
-// ─── Константи ────────────────────────────────────────────────────────────────
+
 const FILE_TYPES = [
     { value: 'analysis', label: 'Аналіз крові/сечі',  Icon: FaFileMedical },
     { value: 'xray',     label: 'Рентген',             Icon: FaFileImage   },
@@ -70,7 +70,6 @@ const buildSchedule = (medications) => {
     return entries;
 };
 
-// ─── ICDSearch ────────────────────────────────────────────────────────────────
 const ICDSearch = ({ value, onChange, placeholder, searchingText, notFoundText }) => {
     const [query, setQuery] = useState(value || '');
     const [results, setResults] = useState([]);
@@ -133,7 +132,6 @@ const ICDSearch = ({ value, onChange, placeholder, searchingText, notFoundText }
     );
 };
 
-// ─── ScheduleItem / SchedulePreview ──────────────────────────────────────────
 const ScheduleItem = ({ item, onTimeChange }) => (
     <div className={styles.scheduleItem}>
         <FaPills className={styles.scheduleItemIcon} />
@@ -180,7 +178,6 @@ const SchedulePreview = ({ schedule, onScheduleChange, lang }) => {
     );
 };
 
-// ─── FileItem / SectionHeader ─────────────────────────────────────────────────
 const FileItem = ({ file, index, onRemove, onTypeChange }) => {
     const ft = FILE_TYPES.find(t => t.value === file.fileType) || FILE_TYPES[0];
     return (
@@ -207,7 +204,6 @@ const SectionHeader = ({ icon: Icon, title, color = '#1976d2' }) => (
     </div>
 );
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 const CreatePrescriptionPage = () => {
     const { t, i18n } = useTranslation();
     const lang = i18n.language || 'uk';
@@ -230,7 +226,6 @@ const CreatePrescriptionPage = () => {
     const [saving, setSaving]                 = useState(false);
     const [toast, setToast] = useState({ open: false, type: 'error', title: '', message: '' });
 
-    // ref до плаваючого чату
     const chatRef      = useRef(null);
     const diagAbortRef = useRef(null);
     const medsAbortRef = useRef(null);
@@ -259,24 +254,20 @@ const CreatePrescriptionPage = () => {
         age: patient?.dob ? String(new Date().getFullYear() - new Date(patient.dob).getFullYear()) : '',
     });
 
-    // Контекст для чату
     const chatContext = patient
         ? `Пацієнт: ${patient.name}, вік: ${patientPayload().age} р.\nСкарги: ${complaints || 'не вказано'}\nАнамнез: ${anamnesis || 'не вказано'}\nОб'єктивний стан: ${objectiveStatus || 'не вказано'}\nДіагноз: ${diagnosis || 'не вказано'}\nПрепарати: ${medications.filter(m => m.medicationName).map(m => m.medicationName).join(', ') || 'не призначено'}`
         : '';
 
-    // ── Стрімінг AI підказки в чат ───────────────────────────────────────────
     const requestAiToChat = async (type, payload, label, onApply, abortRef) => {
         abortRef.current?.abort();
         abortRef.current = new AbortController();
 
-        // Відкриваємо чат з порожньою підказкою — стрімитимемо туди
         chatRef.current?.openWithSuggestion(label, '', onApply);
 
         let acc = '';
         try {
             await streamAiRecommendation(type, payload, chunk => {
                 acc += chunk;
-                // Оновлюємо останнє повідомлення в чаті
                 chatRef.current?.updateLastMessage(acc);
             }, abortRef.current.signal);
         } catch (e) {
@@ -494,7 +485,6 @@ const CreatePrescriptionPage = () => {
                 </div>
             </div>
 
-            {/* ── Плаваючий AI чат ── */}
             <AiFloatingChat ref={chatRef} context={chatContext} lang={lang} />
 
             <Toast open={toast.open} type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(t => ({ ...t, open: false }))} />

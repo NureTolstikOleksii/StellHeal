@@ -120,8 +120,6 @@ const EditStaffModal = ({ onClose, onSave, staffData }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate className={styles.form}>
-
-                    {/* ПІБ */}
                     <p className={styles.sectionLabel}>Особисті дані</p>
                     <div className={styles.row}>
                         <FormInput
@@ -150,7 +148,6 @@ const EditStaffModal = ({ onClose, onSave, staffData }) => {
                         />
                     </div>
 
-                    {/* Дата, телефон, email */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label className={styles.fieldLabel}>{t('patient_form.birth_date')}</label>
@@ -184,7 +181,6 @@ const EditStaffModal = ({ onClose, onSave, staffData }) => {
                         />
                     </div>
 
-                    {/* Адреса */}
                     <div className={styles.fieldGroupFull}>
                         <label className={styles.fieldLabel}>{t('staff.address')}</label>
                         <input
@@ -197,7 +193,6 @@ const EditStaffModal = ({ onClose, onSave, staffData }) => {
                         {errors.contact_info && <span className={styles.fieldError}>{errors.contact_info}</span>}
                     </div>
 
-                    {/* Роль, спеціалізація, зміна */}
                     <p className={styles.sectionLabel}>Робочі дані</p>
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>

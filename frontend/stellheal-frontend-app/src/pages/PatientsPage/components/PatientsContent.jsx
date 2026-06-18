@@ -40,7 +40,6 @@ const PatientsContent = () => {
 
     return (
         <>
-            {/* Search panel */}
             <div className={styles.searchPanel}>
                 <div className={styles.searchRow}>
                     <div className={styles.searchInputWrapper}>
@@ -67,7 +66,6 @@ const PatientsContent = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className={styles.tableWrapper}>
                 <table className={styles.patientsTable}>
                     <thead>

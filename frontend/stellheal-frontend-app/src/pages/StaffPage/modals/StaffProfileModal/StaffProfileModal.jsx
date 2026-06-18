@@ -7,8 +7,6 @@ import {
     FaPhone, FaEnvelope, FaMapMarkerAlt,
     FaClock, FaCalendarAlt, FaCheckCircle,
 } from 'react-icons/fa';
-
-// Імпортуємо обидві функції з вашого dateTime.js
 import { formatDateLong } from '../../../../utils/dateTime';
 
 const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
@@ -33,12 +31,10 @@ const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-                {/* Close */}
                 <button className={styles.closeBtn} onClick={onClose}>
                     <FaTimes size={15} />
                 </button>
 
-                {/* Avatar + name */}
                 <div className={styles.top}>
                     <div className={styles.avatarWrap}>
                         <img
@@ -74,7 +70,6 @@ const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
 
                 <div className={styles.divider} />
 
-                {/* Info */}
                 <div className={styles.infoGrid}>
                     <InfoRow icon={FaPhone}        label={t('staff.phone')}   value={staff.phone} />
                     <InfoRow icon={FaEnvelope}     label={t('staff.email')}   value={staff.login} />
@@ -89,14 +84,12 @@ const StaffProfileModal = ({ staff, onClose, onEdit, onDelete, onBlock }) => {
                     <InfoRow
                         icon={FaCalendarAlt}
                         label={t('patient_form.birth_date')}
-                        // Використовуємо коротку локалізовану функцію з утілс ("dd.mm.yyyy")
                         value={formatDateLong(staff.date_of_birth, i18n.language)}
                     />
                 </div>
 
                 <div className={styles.divider} />
 
-                {/* Actions */}
                 <div className={styles.actions}>
                     <div className={styles.topActions}>
                         <button className={styles.editBtn} onClick={onEdit}>

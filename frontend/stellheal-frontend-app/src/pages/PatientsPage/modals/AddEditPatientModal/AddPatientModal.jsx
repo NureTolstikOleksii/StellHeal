@@ -96,8 +96,6 @@ const AddPatientModal = ({ onClose, setPatients }) => {
                 </div>
 
                 <form className={styles.form} onSubmit={handleSubmit} noValidate>
-
-                    {/* ПІБ */}
                     <div className={styles.row}>
                         {[
                             { name: 'last_name',  label: t('patient_form.last_name')  },
@@ -119,7 +117,6 @@ const AddPatientModal = ({ onClose, setPatients }) => {
                         ))}
                     </div>
 
-                    {/* Дата, телефон, email */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label className={styles.fieldLabel}>{t('patient_form.birth_date')}</label>
@@ -156,7 +153,6 @@ const AddPatientModal = ({ onClose, setPatients }) => {
                         </div>
                     </div>
 
-                    {/* Адреса */}
                     <div className={styles.fieldGroupFull}>
                         <label className={styles.fieldLabel}>{t('patient_form.address')}</label>
                         <input

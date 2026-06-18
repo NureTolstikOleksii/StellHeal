@@ -16,7 +16,6 @@ function toLocalYYYYMMDD(date) {
 
 const ROLE_MAP = { doctor: 1, nurse: 2 };
 
-// ✅ 1. ВИНОСИМО КОМПОНЕНТ "F" НАВЕРХ І ПЕРЕДАЄМО НЕОБХІДНІ ДАНІ ЧЕРЕЗ ПРОПСИ
 const F = ({ name, label, placeholder, type = 'text', formData, errors, handleChange }) => (
     <div className={styles.fieldGroup}>
         <label className={styles.fieldLabel}>{label}</label>
@@ -90,7 +89,6 @@ const AddStaffModal = ({ onClose, onSave }) => {
         }
     };
 
-    // ✅ 2. СТВОРЮЄМО ЗРУЧНИЙ ХЕЛПЕР ДЛЯ СКОРОЧЕННЯ ЗАПИСУ (не створює новий компонент)
     const renderField = (name, label, placeholder, type) => (
         <F
             name={name}
@@ -116,8 +114,6 @@ const AddStaffModal = ({ onClose, onSave }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate className={styles.form}>
-
-                    {/* ПІБ */}
                     <p className={styles.sectionLabel}>Особисті дані</p>
                     <div className={styles.row}>
                         {renderField("last_name", t('staff.last_name'))}
@@ -125,7 +121,6 @@ const AddStaffModal = ({ onClose, onSave }) => {
                         {renderField("patronymic", t('staff.patronymic'))}
                     </div>
 
-                    {/* Дата, телефон, email */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label className={styles.fieldLabel}>{t('patient_form.birth_date')}</label>
@@ -140,7 +135,6 @@ const AddStaffModal = ({ onClose, onSave }) => {
                         {renderField("login", t('staff.email'), "example@email.com")}
                     </div>
 
-                    {/* Адреса */}
                     <div className={styles.fieldGroupFull}>
                         <label className={styles.fieldLabel}>{t('staff.address')}</label>
                         <input
@@ -153,7 +147,6 @@ const AddStaffModal = ({ onClose, onSave }) => {
                         {errors.contact_info && <span className={styles.fieldError}>{errors.contact_info}</span>}
                     </div>
 
-                    {/* Роль, спеціалізація, зміна */}
                     <p className={styles.sectionLabel}>Робочі дані</p>
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>

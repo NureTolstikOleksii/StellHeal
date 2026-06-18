@@ -1,4 +1,3 @@
-/* ── Layout ────────────────────────────────────────────────────────────────── */
 .pageWrapper {
     margin: 0 auto;
     font-family: inherit;
@@ -14,7 +13,6 @@
     font-size: 16px;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────────── */
 .pageHeader {
     display: flex;
     justify-content: space-between;
@@ -83,7 +81,6 @@
 .patientName { font-weight: 600; font-size: 14px; color: #111827; }
 .patientMeta { font-size: 12px; color: #6b7280; margin-top: 2px; }
 
-/* ── Form body ──────────────────────────────────────────────────────────────── */
 .formBody { display: flex; flex-direction: column; gap: 20px; }
 
 .formSection {
@@ -94,7 +91,6 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-/* ── Section header ─────────────────────────────────────────────────────────── */
 .sectionHeader {
     display: flex;
     align-items: center;
@@ -121,7 +117,6 @@
     margin: 0;
 }
 
-/* ── Fields ─────────────────────────────────────────────────────────────────── */
 .fieldRow {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -193,7 +188,6 @@
 }
 .select:focus { outline: none; border-color: #1976d2; background: #fff; }
 
-/* ── AI trigger btn ─────────────────────────────────────────────────────────── */
 .aiTriggerBtn {
     display: inline-flex;
     align-items: center;
@@ -212,7 +206,6 @@
 .aiTriggerBtn:hover:not(:disabled) { background: #dbeafe; }
 .aiTriggerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── AI suggestion ──────────────────────────────────────────────────────────── */
 .aiSuggestion {
     margin-top: 8px;
     border: 1px solid #bfdbfe;
@@ -298,11 +291,9 @@
     color: #1976d2;
 }
 
-/* ── Spinner ────────────────────────────────────────────────────────────────── */
 .spinner { animation: spin 0.8s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* ── Files ──────────────────────────────────────────────────────────────────── */
 .fileUploadArea { display: flex; align-items: center; gap: 14px; }
 
 .fileUploadBtn {
@@ -384,7 +375,6 @@
     margin: 0 0 8px;
 }
 
-/* ── Medications ────────────────────────────────────────────────────────────── */
 .medRow { margin-bottom: 10px; display: flex; align-items: center; width: 100%; }
 
 .medFields {
@@ -460,7 +450,6 @@
 }
 .addMedBtn:hover { background: #eff6ff; }
 
-/* ── Schedule ───────────────────────────────────────────────────────────────── */
 .schedulePreview {
     margin-top: 20px;
     border: 1px solid #e5e7eb;
@@ -569,7 +558,6 @@
 }
 .scheduleTime:focus { outline: none; border-color: #1976d2; }
 
-/* ── Actions ────────────────────────────────────────────────────────────────── */
 .formError {
     display: flex;
     align-items: center;
@@ -629,7 +617,6 @@
     letter-spacing: 0.01em;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
     .pageWrapper { padding: 16px 12px 48px; }
     .fieldRow { grid-template-columns: 1fr; }
@@ -640,10 +627,6 @@
     .cancelBtn, .submitBtn { width: 100%; justify-content: center; }
 }
 
-
-/* ── Додайте в кінець CreatePrescriptionPage.module.css ── */
-
-/* Кнопка "Уточнити" в хедері AI підказки */
 .aiClarifyBtn {
     display: inline-flex;
     align-items: center;
@@ -662,7 +645,6 @@
 .aiClarifyBtnActive { background: #7c3aed; color: #fff; border-color: #7c3aed; }
 .aiClarifyBtnActive:hover { background: #6d28d9; }
 
-/* ── Inline chat ── */
 .inlineChat {
     border-top: 1px solid #bfdbfe;
     background: #f8faff;
@@ -687,7 +669,6 @@
 
 .inlineChatIcon { color: #7c3aed; }
 
-/* Швидкі питання */
 .inlineChatQuick {
     display: flex;
     flex-wrap: wrap;
@@ -710,7 +691,6 @@
 .inlineChatQuickBtn:hover:not(:disabled) { background: #7c3aed; color: #fff; }
 .inlineChatQuickBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Повідомлення */
 .inlineChatMessages {
     display: flex;
     flex-direction: column;
@@ -767,7 +747,6 @@
     border-radius: 10px 3px 10px 10px;
 }
 
-/* Typing animation */
 .chatTyping {
     display: inline-flex;
     gap: 3px;
@@ -791,7 +770,6 @@
     30%            { transform: translateY(-5px); }
 }
 
-/* Поле вводу */
 .inlineChatInputWrap {
     display: flex;
     gap: 6px;

@@ -4,7 +4,7 @@ import {
     FaSpinner, FaExternalLinkAlt, FaFolderOpen,
     FaXRay, FaBrain, FaHeartbeat, FaFileAlt
 } from 'react-icons/fa';
-import { GiVial, GiMegaphone } from 'react-icons/gi'; // Додаткові медичні іконки
+import { GiVial, GiMegaphone } from 'react-icons/gi';
 import { useTranslation } from 'react-i18next';
 import styles from './PatientFilesPage.module.css';
 import { getPatientById, getAllPatientFiles } from '../../services/patientService';
@@ -39,7 +39,6 @@ const PatientFilesPage = () => {
             .finally(() => setLoading(false));
     }, [id, t]);
 
-    // Функція для динамічного рендерингу іконок та тексту типів файлів
     const getFileTypeLabel = (type) => {
         const iconSize = 14;
         const types = {

@@ -43,7 +43,6 @@ const ForgotPasswordModal = ({ onClose }) => {
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
                 <div className={styles.modalHeader}>
                     <div className={styles.modalTitleRow}>
                         <MdLockReset className={styles.modalTitleIcon} />
@@ -54,7 +53,6 @@ const ForgotPasswordModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                {/* Success state */}
                 {success ? (
                     <div className={styles.successBlock}>
                         <FaCheckCircle className={styles.successIcon} />

@@ -132,7 +132,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
 
     return (
         <>
-            {/* ── FAB ── */}
             <button
                 className={`${styles.fab} ${open ? styles.fabOpen : ''}`}
                 onClick={() => setOpen(p => !p)}
@@ -142,10 +141,8 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                 {!open && unread > 0 && <span className={styles.badge}>{unread}</span>}
             </button>
 
-            {/* ── Chat window ── */}
             <div className={`${styles.chatWindow} ${open ? styles.chatWindowOpen : ''}`}>
 
-                {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
                         <div className={styles.headerAvatar}><FaComments size={16} /></div>
@@ -168,7 +165,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                     </div>
                 </div>
 
-                {/* Messages */}
                 <div className={styles.messages}>
                     {messages.length === 0 ? (
                         <div className={styles.emptyState}>
@@ -180,7 +176,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                     ) : (
                         messages.map((msg, i) => {
 
-                            // Системна мітка (назва підказки)
                             if (msg.role === 'system-label') {
                                 return (
                                     <div key={i} className={styles.systemLabel}>
@@ -191,7 +186,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                                 );
                             }
 
-                            // Повідомлення користувача
                             if (msg.role === 'user') {
                                 return (
                                     <div key={i} className={`${styles.msg} ${styles.msgUser}`}>
@@ -200,7 +194,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                                 );
                             }
 
-                            // Повідомлення AI
                             return (
                                 <div key={i} className={`${styles.msg} ${styles.msgAi}`}>
                                     <div className={styles.msgAvatar}><FaRegComments size={12} /></div>
@@ -211,7 +204,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                                                     : null
                                             )}
                                         </div>
-                                        {/* Кнопка застосувати */}
                                         {msg.onApply && msg.text && (
                                             <button
                                                 className={styles.applyBtn}
@@ -229,7 +221,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                     <div ref={bottomRef} />
                 </div>
 
-                {/* Quick questions */}
                 <div className={styles.quick}>
                     {QUICK_QUESTIONS.map((q, i) => (
                         <button
@@ -245,7 +236,6 @@ const AiFloatingChat = forwardRef(({ context }, ref) => {
                     ))}
                 </div>
 
-                {/* Input */}
                 <div className={styles.inputWrap}>
                     <textarea
                         ref={inputRef}

@@ -50,16 +50,6 @@ export const getTreatmentHistory = async (patientId) => {
     return res.data;
 };
 
-// export const createPrescription = async (patientId, prescriptionData) => {
-//     const token = localStorage.getItem('token');
-//     const res = await axios.post(
-//         `/patients/prescriptions/create`,
-//         { patientId, ...prescriptionData },
-//         { headers: { Authorization: `Bearer ${token}` } }
-//     );
-//     return res.data;
-// };
-
 export const createPrescription = async (patientId, formData) => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -114,11 +104,6 @@ export const streamAiRecommendation = async (type, payload, onChunk, signal) => 
         }
     }
 };
-
-// export const fetchMedications = async () => {
-//     const res = await axios.get('/medication');
-//     return res.data;
-// };
 
 export const fetchAvailableWards = async () => {
     const res = await axios.get('/wards');

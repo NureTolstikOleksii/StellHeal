@@ -5,7 +5,6 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    /* Замінено на синьо-блакитний градієнт */
     background: linear-gradient(135deg, #2563eb, #38bdf8);
     color: #fff;
     border: none;
@@ -13,7 +12,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Тінь у тон синього кольору */
     border: 0;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
     z-index: 1000;
@@ -26,16 +24,14 @@
     box-shadow: 0 6px 24px rgba(37, 99, 235, 0.5);
 }
 
-/* 1. Повністю прибираємо стандартну рамку при кліку мишкою */
 .fab:focus,
 .iconBtn:focus,
 .sendBtn:focus,
 .quickBtn:focus {
     outline: none !important;
-    box-shadow: none; /* на випадок, якщо браузер додає тінь замість outline */
+    box-shadow: none;
 }
 
-/* 2. Повертаємо красиву синю рамку ТІЛЬКИ коли кнопку натиснули з клавіатури */
 .fab:focus-visible {
     outline: 3px solid rgba(37, 99, 235, 0.4) !important;
     outline-offset: 2px;
@@ -61,7 +57,6 @@
     border: 2px solid #fff;
 }
 
-/* ── Chat window ── */
 .chatWindow {
     position: fixed;
     bottom: 100px;
@@ -88,13 +83,11 @@
     transform: translateY(0) scale(1);
 }
 
-/* ── Header ── */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px;
-    /* Синьо-блакитний градієнт для шапки */
     background: linear-gradient(135deg, #2563eb, #38bdf8);
     flex-shrink: 0;
 }
@@ -125,7 +118,6 @@
 }
 .iconBtn:hover { background: rgba(255,255,255,0.28); }
 
-/* ── Messages ── */
 .messages {
     flex: 1;
     overflow-y: auto;
@@ -147,7 +139,6 @@
 }
 .emptyIcon { font-size: 36px; }
 
-/* System label */
 .systemLabel {
     display: flex;
     align-items: center;
@@ -166,7 +157,6 @@
     letter-spacing: 0.05em;
 }
 
-/* Messages */
 .msg { display: flex; gap: 7px; align-items: flex-start; }
 .msgUser { flex-direction: row-reverse; }
 
@@ -189,20 +179,19 @@
 }
 
 .msgAi .msgBubble {
-    background: #f8fafc; /* Ледь блакитний/сірий відтінок */
+    background: #f8fafc;
     border: 1px solid #e2e8f0;
     color: #1e293b;
     border-radius: 3px 14px 14px 14px;
 }
 
 .msgUser .msgBubble {
-    background: #2563eb; /* Чистий синій колір для повідомлень користувача */
+    background: #2563eb;
     color: #fff;
     border-radius: 14px 3px 14px 14px;
     max-width: 84%;
 }
 
-/* Apply button */
 .applyBtn {
     display: inline-flex;
     align-items: center;
@@ -220,7 +209,6 @@
 }
 .applyBtn:hover { background: #dcfce7; }
 
-/* Typing */
 .typing { display: inline-flex; gap: 4px; align-items: center; padding: 2px 0; }
 .typing span {
     width: 6px; height: 6px; border-radius: 50%;
@@ -235,7 +223,6 @@
     30%            { transform: translateY(-6px); }
 }
 
-/* ── Quick ── */
 .quick {
     display: flex; flex-wrap: wrap; gap: 5px;
     padding: 8px 14px;
@@ -245,7 +232,6 @@
 
 .quickBtn {
     padding: 4px 10px;
-    /* Ніжно-блакитні швидкі кнопки */
     background: #f0f9ff;
     color: #0369a1;
     border: 1px solid #bae6fd;
@@ -261,7 +247,6 @@
 }
 .quickBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Input ── */
 .inputWrap {
     display: flex; gap: 8px; padding: 10px 14px;
     border-top: 1px solid #f1f5f9;
@@ -276,7 +261,7 @@
     line-height: 1.4; transition: border-color 0.15s;
 }
 .input:focus {
-    border-color: #2563eb; /* Синій фокус */
+    border-color: #2563eb;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }

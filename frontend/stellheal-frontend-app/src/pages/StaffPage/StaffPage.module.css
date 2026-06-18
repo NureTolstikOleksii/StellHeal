@@ -1,10 +1,8 @@
-/* ── Container ───────────────────────────────────────────────────────────────── */
 .container {
     padding: 8px 0 60px;
     font-family: inherit;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────────── */
 .header {
     display: flex;
     justify-content: space-between;
@@ -70,7 +68,6 @@
     margin-top: 2px;
 }
 
-/* ── Action buttons ──────────────────────────────────────────────────────────── */
 .actions {
     display: flex;
     gap: 10px;
@@ -129,7 +126,6 @@
 }
 .exportButton:hover { background: #eff6ff; }
 
-/* ── Content layout ──────────────────────────────────────────────────────────── */
 .content {
     display: flex;
     gap: 20px;
@@ -144,7 +140,6 @@
     min-width: 0;
 }
 
-/* ── Filters sidebar ─────────────────────────────────────────────────────────── */
 .filters {
     width: 220px;
     flex-shrink: 0;
@@ -249,7 +244,6 @@
 }
 .clearButton:hover { background: #eff6ff; }
 
-/* ── Search bar ──────────────────────────────────────────────────────────────── */
 .searchBar {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -320,7 +314,6 @@
 }
 .sortSelect:focus { outline: none; border-color: #1976d2; }
 
-/* ── Table ───────────────────────────────────────────────────────────────────── */
 .tableWrapper {
     background: #fff;
     border-radius: 12px;
@@ -406,7 +399,6 @@
     font-size: 14px;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
     .content { flex-direction: column; }
     .filters { width: 100%; }
@@ -429,7 +421,6 @@
     .userCell { font-weight: 600; }
 }
 
-/* ── Block status ── */
 .rowBlocked td { opacity: 0.65; }
 .rowBlocked { background: #fff5f5 !important; }
 
@@ -471,4 +462,3 @@
     color: #6b7280;
     white-space: nowrap;
 }
-/* already appended */

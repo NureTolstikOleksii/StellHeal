@@ -12,7 +12,7 @@ import LoaderOverlay from "../../../components/LoaderOverlay/LoaderOverlay.jsx";
 import { formatDate } from '../../../utils/dateTime';
 import i18n from "i18next";
 
-// ── FilesModal ────────────────────────────────────────────────────────────────
+
 const FilesModal = ({ prescriptionId, patientId, onClose }) => {
     const { t } = useTranslation();
     const [files, setFiles]   = useState([]);
@@ -26,7 +26,6 @@ const FilesModal = ({ prescriptionId, patientId, onClose }) => {
             .finally(() => setLoading(false));
     }, [prescriptionId, patientId, t]);
 
-    // Мапінг типів файлів через переклад
     const getFileTypeLabel = (type) => {
         const labels = {
             analysis: t('file_types.analysis'),
@@ -65,7 +64,6 @@ const FilesModal = ({ prescriptionId, patientId, onClose }) => {
     );
 };
 
-// ── DetailRow ─────────────────────────────────────────────────────────────────
 const DetailRow = ({ label, value }) => {
     if (!value) return null;
     return (
@@ -76,7 +74,6 @@ const DetailRow = ({ label, value }) => {
     );
 };
 
-// ── DiagnosisCard ─────────────────────────────────────────────────────────────
 const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -103,7 +100,6 @@ const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
         <>
             <div className={styles.card}>
 
-                {/* ── Header ── */}
                 <div className={styles.cardHeader}>
                     <div className={styles.cardTitleBlock}>
                         <span className={styles.cardTitle}>{diagnosis.name}</span>
@@ -125,21 +121,18 @@ const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
                     </div>
                 </div>
 
-                {/* ── Medications ── */}
                 <div className={styles.medicationsList}>
                     {diagnosis.medications.map((med, index) => (
                         <div key={index} className={styles.medicationItem}>{index + 1}. {med}</div>
                     ))}
                 </div>
 
-                {/* ── Footer info ── */}
                 <div className={styles.detailsRow}>
                     <span><FaBed /> {t('diagnosis_card.ward')}: {diagnosis.ward}</span>
                     <span><FaUserMd /> {t('diagnosis_card.doctor')}: {diagnosis.doctor}</span>
                     <span><FaClock /> {t('diagnosis_card.duration')}: {diagnosis.duration} {t('diagnosis_card.days')}</span>
                 </div>
 
-                {/* ── Expand button ── */}
                 {(hasDetails || hasActions) && (
                     <button
                         className={styles.expandBtn}
@@ -150,11 +143,9 @@ const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
                     </button>
                 )}
 
-                {/* ── Details panel ── */}
                 {showDetails && (
                     <div className={styles.detailsPanel}>
 
-                        {/* Кнопки дій */}
                         {hasActions && (
                             <div className={styles.detailActions}>
                                 {diagnosis.filesCount > 0 && (
@@ -187,7 +178,6 @@ const DiagnosisCard = ({ diagnosis, isHistory, onDelete, role, patientId }) => {
                             </div>
                         )}
 
-                        {/* Клінічні деталі */}
                         <DetailRow label={t('diagnosis_card.complaints')} value={diagnosis.complaints} />
                         <DetailRow label={t('diagnosis_card.medical_history')} value={diagnosis.anamnesis} />
                         <DetailRow label={t('diagnosis_card.objective_condition')} value={diagnosis.objectiveStatus} />

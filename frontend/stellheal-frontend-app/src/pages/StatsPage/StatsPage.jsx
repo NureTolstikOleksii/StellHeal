@@ -19,7 +19,7 @@ import Toast from '../../components/Toast/Toast';
 import defaultAvatar from '../../assets/icons/default_avatar.svg';
 import { formatDateTime } from '../../utils/dateTime';
 
-// ── StatCard ──────────────────────────────────────────────────────────────────
+
 const StatCard = ({ icon: Icon, value, label, color = '#1976d2' }) => (
     <div className={styles.statCard}>
         <div className={styles.statIconWrap} style={{ background: `${color}18`, border: `1px solid ${color}25` }}>
@@ -30,7 +30,6 @@ const StatCard = ({ icon: Icon, value, label, color = '#1976d2' }) => (
     </div>
 );
 
-// ── Custom Tooltip ────────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
@@ -45,7 +44,6 @@ const CustomTooltip = ({ active, payload, label }) => {
     );
 };
 
-// ── Action badge color ────────────────────────────────────────────────────────
 const ACTION_COLORS = {
     LOGIN:           { bg: '#f0fdf4', color: '#16a34a' },
     LOGIN_FAILED:    { bg: '#fef2f2', color: '#ef4444' },
@@ -67,7 +65,6 @@ const ActionBadge = ({ action }) => {
     );
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const StatsPage = () => {
     const { t, i18n } = useTranslation();
     const lang = i18n.language || 'uk';
@@ -89,7 +86,6 @@ const StatsPage = () => {
     const showToast = (type, title, message = '') =>
         setToast({ open: true, type, title, message });
 
-    // ── Початкове завантаження (все крім intake і audit) ──────────────────────
     useEffect(() => {
         const load = async () => {
             setLoading(true);
@@ -111,7 +107,6 @@ const StatsPage = () => {
         load();
     }, []);
 
-    // ── Завантаження intake при зміні weekOffset ──────────────────────────────
     useEffect(() => {
         const loadIntake = async () => {
             setWeekLoading(true);
@@ -120,7 +115,6 @@ const StatsPage = () => {
                 const days = res.data.days || res.data;
                 setIntakeStats(days);
 
-                // Формуємо підзаголовок "Пн 26 трав — Нд 1 черв"
                 if (days.length === 7) {
                     const from = new Date(days[0].date).toLocaleDateString(
                         lang === 'uk' ? 'uk-UA' : 'en-US',
@@ -141,7 +135,6 @@ const StatsPage = () => {
         loadIntake();
     }, [weekOffset, lang]);
 
-    // ── Завантаження audit log ────────────────────────────────────────────────
     useEffect(() => {
         const loadAudit = async () => {
             setAuditLoading(true);
@@ -157,7 +150,6 @@ const StatsPage = () => {
         loadAudit();
     }, [auditPage, auditFilter]);
 
-    // ── Локалізація днів (Пн-Нд порядок з беку) ──────────────────────────────
     const localizeDay = (day) => {
         const days = {
             uk: { Mon: 'Пн', Tue: 'Вт', Wed: 'Ср', Thu: 'Чт', Fri: 'Пт', Sat: 'Сб', Sun: 'Нд' },
@@ -173,14 +165,12 @@ const StatsPage = () => {
     return (
         <div className={styles.pageWrapper}>
 
-            {/* ── Header ── */}
             <div className={styles.pageHeader}>
                 <div className={styles.pageTitleRow}>
                     <h2 className={styles.pageTitle}>{t('stats.clinic_title')}</h2>
                 </div>
             </div>
 
-            {/* ── Stat cards ── */}
             {clinicStats && (
                 <div className={styles.statsGrid}>
                     <StatCard icon={FaUserInjured}        value={clinicStats.activePatients}     label={t('stats.active_patients')}    color="#1976d2" />
@@ -191,7 +181,6 @@ const StatsPage = () => {
                 </div>
             )}
 
-            {/* ── Intake chart ── */}
             <div className={styles.section}>
                 <div className={styles.chartTopRow}>
                     <div>
@@ -200,7 +189,6 @@ const StatsPage = () => {
                         </h3>
                         <p className={styles.sectionSubtitle}>{weekLabel}</p>
                     </div>
-                    {/* ← навігація по тижнях */}
                     <div className={styles.weekNav}>
                         <button
                             className={styles.weekNavBtn}
@@ -256,7 +244,6 @@ const StatsPage = () => {
                 )}
             </div>
 
-            {/* ── Doctor stats ── */}
             <div className={styles.section}>
                 <h3 className={styles.sectionTitle}>{t('stats.doctor_stats')}</h3>
                 {doctorStats.length === 0 ? (
@@ -309,7 +296,6 @@ const StatsPage = () => {
                 )}
             </div>
 
-            {/* ── Audit log ── */}
             <div className={styles.section}>
                 <div className={styles.auditHeader}>
                     <div className={styles.auditTitleRow}>
@@ -370,7 +356,6 @@ const StatsPage = () => {
                                         </td>
                                         <td className={styles.auditDesc}>{log.description || '—'}</td>
                                         <td className={styles.auditIp}>{log.ip_address || '—'}</td>
-                                        {/* ← UTC ISO → локальний час через утиліту */}
                                         <td className={styles.auditTime}>{formatDateTime(log.created_at, lang)}</td>
                                     </tr>
                                 ))}

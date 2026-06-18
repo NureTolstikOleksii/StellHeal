@@ -16,7 +16,6 @@ const LANGS = [
 const Header = ({ role, onToggleMenu }) => {
     const { t, i18n: i18nHook } = useTranslation();
 
-    // ← беремо мову з i18n хука а не зі стейту — завжди актуальна
     const currentLang = i18nHook.language?.substring(0, 2) || 'en';
     const currentLangData = LANGS.find(l => l.code === currentLang) || LANGS[1];
 
@@ -49,7 +48,7 @@ const Header = ({ role, onToggleMenu }) => {
             <header className={styles.header}>
                 <div className={styles.container}>
 
-                    {/* Burger — тільки мобільний */}
+                    {/* Burger */}
                     <button className={styles.menuToggle} onClick={onToggleMenu} aria-label="Menu">
                         <FaBars size={18} />
                     </button>

@@ -25,7 +25,6 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Header ── */
 .modalHeader {
     display: flex;
     align-items: center;
@@ -64,7 +63,6 @@
 }
 .closeBtn:hover { color: #374151; background: #f3f4f6; }
 
-/* ── Form ── */
 .form {
     display: flex;
     flex-direction: column;
@@ -129,7 +127,6 @@
     color: #ef4444;
 }
 
-/* ── Error message ── */
 .errorMessage {
     background: #fef2f2;
     color: #b91c1c;
@@ -140,7 +137,6 @@
     text-align: center;
 }
 
-/* ── Actions ── */
 .actions {
     display: flex;
     gap: 10px;
@@ -176,7 +172,6 @@
 }
 .cancel:hover { background: #f9fafb; }
 
-/* ── Responsive ── */
 @media (max-width: 600px) {
     .modal { padding: 20px 16px; }
     .row { flex-direction: column; }

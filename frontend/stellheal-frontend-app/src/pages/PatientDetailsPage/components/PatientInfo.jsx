@@ -58,7 +58,6 @@ const PatientInfo = ({ patient, setPatient, onAdd, onDownloadReport, role }) => 
                 )}
             </div>
 
-            {/* Дії — призначення і звіти */}
             <div className={styles.actionButtons}>
                 {role !== 'admin' && (
                     <button
@@ -84,7 +83,6 @@ const PatientInfo = ({ patient, setPatient, onAdd, onDownloadReport, role }) => 
                 </button>
             </div>
 
-            {/* Дії над пацієнтом */}
             {role !== 'admin' && (
                 <div className={styles.buttonBlock}>
                     <button className={styles.editButton} onClick={() => setShowEditModal(true)}>

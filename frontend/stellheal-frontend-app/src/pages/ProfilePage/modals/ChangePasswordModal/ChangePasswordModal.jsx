@@ -44,8 +44,6 @@ const ChangePasswordModal = ({ passwordForm, onChange, onSubmit, onClose, errors
     return (
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
-
-                {/* Header */}
                 <div className={styles.modalHeader}>
                     <div className={styles.modalTitleRow}>
                         <FaLock className={styles.modalTitleIcon} />
@@ -56,7 +54,6 @@ const ChangePasswordModal = ({ passwordForm, onChange, onSubmit, onClose, errors
                     </button>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} noValidate className={styles.form}>
                     <Field
                         name="currentPassword"

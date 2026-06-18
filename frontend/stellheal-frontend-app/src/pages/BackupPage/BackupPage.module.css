@@ -1,4 +1,3 @@
-/* ── Wrapper ── */
 .pageWrapper {
     padding: 8px 0 60px;
     display: flex;
@@ -6,7 +5,6 @@
     gap: 20px;
 }
 
-/* ── Header ── */
 .pageHeader { margin-bottom: 4px; }
 
 .pageTitleRow {
@@ -25,7 +23,6 @@
     letter-spacing: -0.02em;
 }
 
-/* ── Status card ── */
 .statusCard {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -89,7 +86,6 @@
 .createBtn:hover:not(:disabled) { background: #1565c0; }
 .createBtn:disabled { opacity: 0.65; cursor: not-allowed; }
 
-/* ── Section ── */
 .section {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -121,7 +117,6 @@
     border-radius: 10px;
 }
 
-/* ── Empty ── */
 .empty {
     display: flex;
     flex-direction: column;
@@ -132,7 +127,6 @@
     font-size: 14px;
 }
 
-/* ── Backup list ── */
 .backupList {
     display: flex;
     flex-direction: column;
@@ -200,7 +194,6 @@
     flex-shrink: 0;
 }
 
-/* ── Backup actions ── */
 .backupActions {
     display: flex;
     align-items: center;
@@ -245,7 +238,6 @@
 .deleteBtn:hover:not(:disabled) { background: #fee2e2; }
 .deleteBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Warning ── */
 .warningBlock {
     display: flex;
     align-items: flex-start;
@@ -265,7 +257,6 @@
     line-height: 1.5;
 }
 
-/* ── Confirm modal ── */
 .overlay {
     position: fixed;
     inset: 0;
@@ -372,13 +363,11 @@
 }
 .dangerBtn:hover { background: #dc2626; }
 
-/* ── Spin animation ── */
 .spin {
     animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Responsive ── */
 @media (max-width: 600px) {
     .statusCard { flex-direction: column; align-items: stretch; }
     .createBtn  { width: 100%; justify-content: center; }

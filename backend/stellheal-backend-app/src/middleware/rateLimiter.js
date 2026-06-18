@@ -6,7 +6,7 @@ const keyGenerator = (req) => {
         || req.ip
         || req.connection.remoteAddress
         || 'unknown';
-    return ipKeyGenerator(ip);  // ← вбудований хелпер для IPv4/IPv6
+    return ipKeyGenerator(ip);
 };
 
 const createLimiter = (max, message) =>

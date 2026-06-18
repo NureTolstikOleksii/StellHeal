@@ -6,7 +6,7 @@ import { ACTIONS } from '../../shared/constants/actions.js';
 
 export class WardsService {
 
-    // ── Всі палати з кількістю активних пацієнтів ────────────────────────────
+    // all wards with the number of active patients
     async getAllWards() {
         const wards = await prisma.wards.findMany({
             orderBy: { ward_number: 'asc' },
@@ -28,7 +28,7 @@ export class WardsService {
         }));
     }
 
-    // ── Вільні палати для лікаря (без заблокованих) ───────────────────────────
+    // free wards for the doctor (no blocked ones)
     async getAvailableWards() {
         const wards = await prisma.wards.findMany({
             where: { is_blocked: { not: true } },
@@ -48,7 +48,7 @@ export class WardsService {
             .map(w => ({ id: w.ward_id, number: w.ward_number }));
     }
 
-    // ── Створити палату ───────────────────────────────────────────────────────
+    // create a ward
     async createWard(data, req) {
         const { ward_number, capacity } = data;
 
@@ -60,7 +60,7 @@ export class WardsService {
             where: { ward_number: ward_number.trim() }
         });
         if (existing) {
-            throw new AppError(ERROR_CODES.CONFLICT, 'Палата з таким номером вже існує', 409);
+            throw new AppError(ERROR_CODES.CONFLICT, 'A room with this number already exists', 409);
         }
 
         const ward = await prisma.wards.create({
@@ -83,13 +83,13 @@ export class WardsService {
         return ward;
     }
 
-    // ── Оновити палату ────────────────────────────────────────────────────────
+    // update the ward
     async updateWard(wardId, data, req) {
         const { ward_number, capacity } = data;
 
         const existing = await prisma.wards.findUnique({ where: { ward_id: wardId } });
         if (!existing) {
-            throw new AppError(ERROR_CODES.NOT_FOUND, 'Палату не знайдено', 404);
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'Ward not found', 404);
         }
 
         if (ward_number?.trim()) {
@@ -97,7 +97,7 @@ export class WardsService {
                 where: { ward_number: ward_number.trim(), NOT: { ward_id: wardId } }
             });
             if (duplicate) {
-                throw new AppError(ERROR_CODES.CONFLICT, 'Палата з таким номером вже існує', 409);
+                throw new AppError(ERROR_CODES.CONFLICT, 'A room with this number already exists', 409);
             }
         }
 
@@ -121,10 +121,10 @@ export class WardsService {
         return ward;
     }
 
-    // ── Заблокувати палату ────────────────────────────────────────────────────
+    // lock the ward
     async blockWard(wardId, req) {
         const ward = await prisma.wards.findUnique({ where: { ward_id: wardId } });
-        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Палату не знайдено', 404);
+        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Ward not found', 404);
 
         const updated = await prisma.wards.update({
             where: { ward_id: wardId },
@@ -143,10 +143,10 @@ export class WardsService {
         return updated;
     }
 
-    // ── Розблокувати палату ───────────────────────────────────────────────────
+    // unlock the ward
     async unblockWard(wardId, req) {
         const ward = await prisma.wards.findUnique({ where: { ward_id: wardId } });
-        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Палату не знайдено', 404);
+        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Ward not found', 404);
 
         const updated = await prisma.wards.update({
             where: { ward_id: wardId },
@@ -165,10 +165,10 @@ export class WardsService {
         return updated;
     }
 
-    // ── Видалити палату ───────────────────────────────────────────────────────
+    // delete the ward
     async deleteWard(wardId, req) {
         const ward = await prisma.wards.findUnique({ where: { ward_id: wardId } });
-        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Палату не знайдено', 404);
+        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Ward not found', 404);
 
         const activeCount = await prisma.prescriptions.count({
             where: { ward_id: wardId, end_date: { gte: new Date() } }
@@ -176,7 +176,7 @@ export class WardsService {
         if (activeCount > 0) {
             throw new AppError(
                 ERROR_CODES.CONFLICT,
-                `Неможливо видалити палату: ${activeCount} активних пацієнтів`,
+                `Unable to delete ward: ${activeCount} active patients`,
                 409
             );
         }
@@ -193,10 +193,10 @@ export class WardsService {
         });
     }
 
-    // ── Пацієнти палати ───────────────────────────────────────────────────────
+    // ward patients
     async getWardPatients(wardId) {
         const ward = await prisma.wards.findUnique({ where: { ward_id: wardId } });
-        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Палату не знайдено', 404);
+        if (!ward) throw new AppError(ERROR_CODES.NOT_FOUND, 'Ward not found', 404);
 
         const prescriptions = await prisma.prescriptions.findMany({
             where: { ward_id: wardId, end_date: { gte: new Date() } },

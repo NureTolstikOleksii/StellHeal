@@ -103,21 +103,20 @@ model prescription_medications {
 }
 
 model prescriptions {
-  prescription_id  Int       @id @default(autoincrement())
-  date_issued      DateTime? @db.Timestamptz(6)
-  duration         Int?
-  patient_id       Int?
-  doctor_id        Int?
-  diagnosis        String?   @db.VarChar(255)
-  icd_code         String?   @db.VarChar(255)
-  ward_id          Int?
-  end_date         DateTime? @db.Timestamptz(6)
-  complaints       String?
-  anamnesis        String?
-  objective_status String?
-  recommendations  String?
-  notes            String?
-
+  prescription_id                       Int                        @id @default(autoincrement())
+  date_issued                           DateTime?                  @db.Timestamptz(6)
+  duration                              Int?
+  patient_id                            Int?
+  doctor_id                             Int?
+  diagnosis                             String?                    @db.VarChar(255)
+  icd_code                              String?                    @db.VarChar(255)
+  ward_id                               Int?
+  end_date                              DateTime?                  @db.Timestamptz(6)
+  complaints                            String?
+  anamnesis                             String?
+  objective_status                      String?
+  recommendations                       String?
+  notes                                 String?
   prescription_files                    prescription_files[]
   prescription_medications              prescription_medications[]
   users_prescriptions_doctor_idTousers  users?                     @relation("prescriptions_doctor_idTousers", fields: [doctor_id], references: [user_id])

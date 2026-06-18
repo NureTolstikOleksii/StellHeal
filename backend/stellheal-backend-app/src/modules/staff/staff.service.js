@@ -12,9 +12,9 @@ import { generateStaffExcel } from '../../integrations/reports/staffExcel.servic
 
 export class StaffService {
 
-    // get list of medical workers ok
+    // get list of medical workers
     async getAllMedicalStaff() {
-        return await prisma.users.findMany({
+        return prisma.users.findMany({
             where: {
                 medical_staff: {
                     isNot: null,
@@ -30,9 +30,9 @@ export class StaffService {
         });
     }
 
-    // number of employees ok
+    // number of employees
     async getStaffCount() {
-        return await prisma.users.count({
+        return prisma.users.count({
             where: {
                 role_id: {
                     in: [1, 2]
@@ -41,7 +41,7 @@ export class StaffService {
         });
     }
 
-    // add employee ok
+    // add employee
     async addStaff(data, req) {
         const existingUser = await prisma.users.findUnique({
             where: { login: data.login }
@@ -50,7 +50,7 @@ export class StaffService {
         if (existingUser) {
             throw new AppError(
                 ERROR_CODES.USER_EXISTS,
-                'Користувач з такою поштою вже існує',
+                'A user with this email already exists',
                 400
             );
         }
@@ -85,7 +85,6 @@ export class StaffService {
 
         await sendStaffCredentialsEmail(data.login, plainPassword);
 
-        // ← sent_at як UTC, вкладені recipients
         await prisma.notifications.create({
             data: {
                 notification_type: 'success',
@@ -109,13 +108,13 @@ export class StaffService {
         return createdUser;
     }
 
-    // update employee ok
+    // update employee
     async updateStaff(id, data, req) {
         const { role_id, first_name, last_name, patronymic, login, phone, contact_info, date_of_birth, specialization, shift } = data;
 
         const existing = await prisma.users.findUnique({ where: { user_id: id } });
         if (!existing) {
-            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Employee not found', 404);
         }
 
         const [updatedUser] = await prisma.$transaction([
@@ -142,11 +141,11 @@ export class StaffService {
         return updatedUser;
     }
 
-    // delete employee ok
+    // delete employee
     async deleteStaff(userId, req) {
         const existing = await prisma.users.findUnique({ where: { user_id: userId } });
         if (!existing) {
-            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Employee not found', 404);
         }
 
         await prisma.users.delete({ where: { user_id: userId } });
@@ -157,17 +156,16 @@ export class StaffService {
         });
     }
 
-    // ── Заблокувати акаунт ────────────────────────────────────────────────────
+    // block account
     async blockStaff(userId, req) {
         const user = await prisma.users.findUnique({ where: { user_id: userId } });
         if (!user) {
-            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Employee not found', 404);
         }
 
         const updated = await prisma.users.update({
             where: { user_id: userId },
             data: {
-                // 100 років — фактично назавжди
                 lock_until: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000),
             }
         });
@@ -184,11 +182,11 @@ export class StaffService {
         return updated;
     }
 
-    // ── Розблокувати акаунт ───────────────────────────────────────────────────
+    // unblock account
     async unblockStaff(userId, req) {
         const user = await prisma.users.findUnique({ where: { user_id: userId } });
         if (!user) {
-            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Працівника не знайдено', 404);
+            throw new AppError(ERROR_CODES.USER_NOT_FOUND, 'Employee not found', 404);
         }
 
         const updated = await prisma.users.update({
@@ -211,12 +209,12 @@ export class StaffService {
         return updated;
     }
 
-    // get user roles ok
+    // get user roles
     async getRoles() {
-        return await prisma.roles.findMany({ orderBy: { role_id: 'asc' } });
+        return prisma.roles.findMany({orderBy: {role_id: 'asc'}});
     }
 
-    // create role ok
+    // create role
     async createRole(role_name, req) {
         const name = role_name.trim();
 
@@ -236,7 +234,7 @@ export class StaffService {
         return newRole;
     }
 
-    // delete role ok
+    // delete role
     async deleteRole(roleId, req) {
         const role = await prisma.roles.findUnique({ where: { role_id: roleId } });
         if (!role) throw new AppError(ERROR_CODES.NOT_FOUND, 'Role not found', 404);
@@ -260,7 +258,7 @@ export class StaffService {
         });
     }
 
-    // update role ok
+    // update role
     async updateRole(roleId, role_name, req) {
         const role = await prisma.roles.findUnique({ where: { role_id: roleId } });
         if (!role) throw new AppError(ERROR_CODES.NOT_FOUND, 'Role not found', 404);
@@ -285,7 +283,7 @@ export class StaffService {
         return updated;
     }
 
-    // get report ok
+    // get report
     async exportStaffToExcel(req) {
         const doctors = await prisma.users.findMany({
             where: { role_id: 1 }, include: { medical_staff: true }

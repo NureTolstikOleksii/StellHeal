@@ -9,7 +9,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const backupService = new BackupService();
 
-// Останній бекап
+// Latest backup
 router.get('/last', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const last = await backupService.getLastBackup();
@@ -17,7 +17,7 @@ router.get('/last', authenticateToken, authorizeRoles(4), async (req, res, next)
     } catch (err) { next(err); }
 });
 
-// Список всіх бекапів
+// List of all backups
 router.get('/list', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const backups = await backupService.listBackups();
@@ -25,7 +25,7 @@ router.get('/list', authenticateToken, authorizeRoles(4), async (req, res, next)
     } catch (err) { next(err); }
 });
 
-// Створити бекап вручну
+// Create a manual backup
 router.post('/manual', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const backup = await backupService.createBackup('manual', req);
@@ -37,7 +37,7 @@ router.post('/manual', authenticateToken, authorizeRoles(4), async (req, res, ne
     } catch (err) { next(err); }
 });
 
-// Відновити з бекапу
+// Restore from backup
 router.post('/restore', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const { name } = req.body;
@@ -51,7 +51,7 @@ router.post('/restore', authenticateToken, authorizeRoles(4), async (req, res, n
     } catch (err) { next(err); }
 });
 
-// Видалити бекап
+// Delete backup
 router.delete('/:name', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const name = decodeURIComponent(req.params.name);

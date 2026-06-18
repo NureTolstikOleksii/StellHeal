@@ -9,21 +9,21 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const wardsService = new WardsService();
 
-// ── Всі палати (адмін) ────────────────────────────────────────────────────────
+// all wards (admin)
 router.get('/all', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         res.json(await wardsService.getAllWards());
     } catch (err) { next(err); }
 });
 
-// ── Вільні палати без заблокованих (лікар/медсестра) ─────────────────────────
+// free wards without blocked ones (doctor/nurse)
 router.get('/', authenticateToken, authorizeRoles(1, 2), async (req, res, next) => {
     try {
         res.json(await wardsService.getAvailableWards());
     } catch (err) { next(err); }
 });
 
-// ── Пацієнти палати ───────────────────────────────────────────────────────────
+// card patients
 router.get('/:id/patients', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const wardId = Number(req.params.id);
@@ -32,7 +32,7 @@ router.get('/:id/patients', authenticateToken, authorizeRoles(4), async (req, re
     } catch (err) { next(err); }
 });
 
-// ── Створити палату ───────────────────────────────────────────────────────────
+// create a ward
 router.post('/', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         if (!req.body.ward_number?.trim()) {
@@ -42,7 +42,7 @@ router.post('/', authenticateToken, authorizeRoles(4), async (req, res, next) =>
     } catch (err) { next(err); }
 });
 
-// ── Оновити палату ────────────────────────────────────────────────────────────
+// update the chamber
 router.put('/:id', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const wardId = Number(req.params.id);
@@ -51,7 +51,7 @@ router.put('/:id', authenticateToken, authorizeRoles(4), async (req, res, next) 
     } catch (err) { next(err); }
 });
 
-// ── Заблокувати палату ────────────────────────────────────────────────────────
+// lock the chamber
 router.patch('/:id/block', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const wardId = Number(req.params.id);
@@ -60,7 +60,7 @@ router.patch('/:id/block', authenticateToken, authorizeRoles(4), async (req, res
     } catch (err) { next(err); }
 });
 
-// ── Розблокувати палату ───────────────────────────────────────────────────────
+// unlock the chamber
 router.patch('/:id/unblock', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const wardId = Number(req.params.id);
@@ -69,7 +69,7 @@ router.patch('/:id/unblock', authenticateToken, authorizeRoles(4), async (req, r
     } catch (err) { next(err); }
 });
 
-// ── Видалити палату ───────────────────────────────────────────────────────────
+// delete the ward
 router.delete('/:id', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const wardId = Number(req.params.id);

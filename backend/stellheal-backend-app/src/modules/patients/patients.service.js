@@ -22,7 +22,7 @@ import { generatePrescriptionPdf } from "../../integrations/reports/prescription
 
 export class PatientsService {
 
-    // ─── get all patients ─────────────────────────────────────────────────────
+    // get all patients
     async getAllPatients() {
         const patients = await prisma.users.findMany({
             where: { role_id: 3 },
@@ -44,7 +44,7 @@ export class PatientsService {
         }));
     }
 
-    // ─── count patients ───────────────────────────────────────────────────────
+    // count patients
     async getCounts() {
         const totalPatients = await prisma.users.count({ where: { role_id: 3 } });
 
@@ -59,7 +59,7 @@ export class PatientsService {
         return { totalPatients, onTreatment };
     }
 
-    // ─── create patient ───────────────────────────────────────────────────────
+    // create patient
     async createPatient(data, req) {
         const { last_name, first_name, patronymic, email, birth_date, phone, address } = data;
 
@@ -109,7 +109,7 @@ export class PatientsService {
         return { message: 'Patient created successfully', userId: user.user_id, email };
     }
 
-    // ─── Excel patient report ─────────────────────────────────────────────────
+    // Excel patient report
     async exportPatientsToExcel() {
         const patients = await prisma.users.findMany({
             where: { role_id: 3 },
@@ -126,7 +126,7 @@ export class PatientsService {
         return generatePatientsExcel(patients);
     }
 
-    // ─── get patient by id ────────────────────────────────────────────────────
+    // get patient by id
     async getById(id) {
         const user = await prisma.users.findUnique({
             where: { user_id: id },
@@ -152,7 +152,7 @@ export class PatientsService {
         };
     }
 
-    // ─── get current treatment ────────────────────────────────────────────────
+    // get current treatment
     async getCurrentTreatment(patientId) {
         const prescriptions = await prisma.prescriptions.findMany({
             where: { patient_id: patientId, end_date: { gte: new Date() } },
@@ -199,7 +199,7 @@ export class PatientsService {
         });
     }
 
-    // ─── get treatment history ────────────────────────────────────────────────
+    // get treatment history
     async getTreatmentHistory(patientId) {
         const prescriptions = await prisma.prescriptions.findMany({
             where: { patient_id: patientId, end_date: { lt: new Date() } },
@@ -242,7 +242,7 @@ export class PatientsService {
         });
     }
 
-    // ─── delete patient ───────────────────────────────────────────────────────
+    // delete patient
     async deletePatient(patientId, req) {
         const id = Number(patientId);
 
@@ -266,7 +266,7 @@ export class PatientsService {
         return { message: 'Patient successfully deleted' };
     }
 
-    // ─── update patient ───────────────────────────────────────────────────────
+    // update patient
     async updatePatient(id, data, req) {
         const { last_name, first_name, patronymic, email, phone, contact_info, birth_date } = data;
 
@@ -307,7 +307,7 @@ export class PatientsService {
         };
     }
 
-    // ─── create prescription ──────────────────────────────────────────────────
+    // create prescription
     async createPrescription(doctorId, patientId, data, files, req) {
         const {
             diagnosis, icd_code, wardId, medications,
@@ -325,7 +325,6 @@ export class PatientsService {
         const startOfToday = getStartOfDayInTz(timezone);
         const now          = new Date();
 
-        // ── Визначаємо реальну тривалість з урахуванням extraDay ─────────────────
         // Якщо сьогоднішній час прийому вже минув — препарат починається завтра
         let maxRealDuration = 0;
         const medExtraMap   = new Map();
@@ -339,7 +338,6 @@ export class PatientsService {
                 return todayIntake > now;
             });
 
-            // При створенні немає існуючих записів — тільки перевіряємо час
             const extraDay     = hasTodayFuture ? 0 : 1;
             const realDuration = Number(med.duration) + extraDay;
 
@@ -349,7 +347,6 @@ export class PatientsService {
 
         const endDate = addDays(startOfToday, maxRealDuration - 1);
 
-        // ── Створюємо призначення ─────────────────────────────────────────────────
         const prescription = await prisma.prescriptions.create({
             data: {
                 diagnosis,
@@ -368,7 +365,7 @@ export class PatientsService {
             }
         });
 
-        // ── Створюємо записи препаратів ───────────────────────────────────────────
+        // Створюємо записи препаратів
         for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
             const medEntries = parsedSchedule.filter(s => s.name === medicationName);
@@ -382,7 +379,6 @@ export class PatientsService {
                 for (const entry of medEntries) {
                     const intake_at = localToUtc(dateStr, entry.time, timezone);
 
-                    // Пропускаємо якщо час вже минув
                     if (intake_at <= now) continue;
 
                     await prisma.prescription_medications.create({
@@ -399,7 +395,7 @@ export class PatientsService {
             }
         }
 
-        // ── Файли ─────────────────────────────────────────────────────────────────
+        // Файли
         if (files && files.length > 0) {
             const fileTypes = Array.isArray(data.fileTypes)
                 ? data.fileTypes
@@ -420,7 +416,7 @@ export class PatientsService {
             await prisma.prescription_files.createMany({ data: uploadedFiles });
         }
 
-        // ── Лог ───────────────────────────────────────────────────────────────────
+        // Лог
         await logAction({
             userId:      doctorId,
             action:      ACTIONS.CREATE_PRESCRIPTION,
@@ -433,7 +429,7 @@ export class PatientsService {
         return { message: 'Призначення успішно створено', prescriptionId: prescription.prescription_id };
     }
 
-    // ─── delete prescription ──────────────────────────────────────────────────
+    // delete prescription
     async deletePrescription(prescriptionId, req) {
         const id = Number(prescriptionId);
 
@@ -456,7 +452,7 @@ export class PatientsService {
         });
     }
 
-    // ─── get prescription files ───────────────────────────────────────────────
+    // get prescription files
     async getPrescriptionFiles(prescriptionId) {
         const files = await prisma.prescription_files.findMany({
             where: { prescription_id: Number(prescriptionId) }
@@ -473,7 +469,7 @@ export class PatientsService {
         );
     }
 
-    // ─── get all patient files ────────────────────────────────────────────────
+    // get all patient files
     async getAllPatientFiles(patientId) {
         const files = await prisma.prescription_files.findMany({
             where: { prescriptions: { patient_id: patientId } },
@@ -493,7 +489,7 @@ export class PatientsService {
         })));
     }
 
-    // ─── treatment report ─────────────────────────────────────────────────────
+    // treatment report
     async generateTreatmentReport(patientId) {
         const patient = await prisma.users.findUnique({ where: { user_id: patientId } });
 
@@ -513,7 +509,7 @@ export class PatientsService {
         return generateTreatmentExcel(patient, prescriptions);
     }
 
-    // ─── patients for staff (mobile) ──────────────────────────────────────────
+    // patients for staff (mobile)
     async getAllPatientsForStaff() {
         const now = new Date();
 
@@ -548,7 +544,7 @@ export class PatientsService {
         }));
     }
 
-    // ─── prescription history (mobile) ───────────────────────────────────────
+    // prescription history (mobile)
     async getPrescriptionHistoryByPatient(patientId) {
         if (!patientId) {
             throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'patientId is required', 400);
@@ -567,7 +563,7 @@ export class PatientsService {
         }));
     }
 
-    // ─── prescription details (mobile) ───────────────────────────────────────
+    // prescription details (mobile)
     async getPrescriptionDetails(prescriptionId) {
         const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: Number(prescriptionId) },
@@ -592,15 +588,15 @@ export class PatientsService {
                     frequency:    pm.frequency,
                     duration:     0,
                     intake_times: [],
-                    _dates:       new Set(), // для підрахунку унікальних дат
-                    _times:       new Set(), // для унікальних часів дня
+                    _dates:       new Set(),
+                    _times:       new Set(),
                 };
             }
 
             if (pm.intake_at) {
                 const iso     = pm.intake_at.toISOString();
-                const dateStr = iso.substring(0, 10);       // "yyyy-MM-dd"
-                const timeStr = iso.substring(11, 16);      // "HH:mm" UTC
+                const dateStr = iso.substring(0, 10);
+                const timeStr = iso.substring(11, 16);
 
                 medsMap[name]._dates.add(dateStr);
 
@@ -608,7 +604,7 @@ export class PatientsService {
                 if (!medsMap[name]._times.has(timeStr)) {
                     medsMap[name]._times.add(timeStr);
                     medsMap[name].intake_times.push({
-                        intake_at: iso,  // UTC ISO — мобайл конвертує
+                        intake_at: iso,
                         quantity:  pm.quantity
                     });
                 }
@@ -635,7 +631,7 @@ export class PatientsService {
         };
     }
 
-    // ─── PDF report ───────────────────────────────────────────────────────────
+    // PDF report
     async generatePrescriptionReport(prescriptionId) {
         const prescription = await prisma.prescriptions.findUnique({
             where: { prescription_id: prescriptionId },
@@ -658,7 +654,7 @@ export class PatientsService {
         return generatePrescriptionPdf(prescription, totalTaken);
     }
 
-    // ─── get prescription for edit ────────────────────────────────────────────
+    // get prescription for edit
     async getPrescriptionById(prescriptionId) {
         const p = await prisma.prescriptions.findUnique({
             where: { prescription_id: Number(prescriptionId) },
@@ -674,7 +670,7 @@ export class PatientsService {
 
         const now = new Date();
 
-        // ── Препарати — унікальні по назві ───────────────────────────────────────
+        // Препарати — унікальні по назві
         const medsMap = new Map();
         p.prescription_medications.forEach(pm => {
             if (!pm.medication_name) return;
@@ -683,32 +679,28 @@ export class PatientsService {
                     medicationName: pm.medication_name,
                     quantity:       String(pm.quantity || ''),
                     timesPerDay:    pm.frequency?.match(/\d+/)?.[0] || '',
-                    duration:       String(p.duration || ''), // поки що дефолт
-                    _dates:         new Set(), // для підрахунку унікальних дат
+                    duration:       String(p.duration || ''),
+                    _dates:         new Set(),
                 });
             }
-            // Збираємо унікальні дати для цього препарату
             if (pm.intake_at) {
                 const dateStr = pm.intake_at.toISOString().substring(0, 10);
                 medsMap.get(pm.medication_name)._dates.add(dateStr);
             }
         });
 
-        // Після збору — рахуємо duration по унікальних датах
         const medications = Array.from(medsMap.values()).map(({ _dates, ...med }) => ({
             ...med,
             duration: String(_dates.size || p.duration || ''),
         }));
 
-        // ── Розклад — пріоритет майбутнім записам ────────────────────────────────
         // Якщо є майбутній запис для препарату — показуємо його час
-        // Якщо немає — показуємо останній минулий (щоб лікар бачив поточний час)
         const scheduleMap = new Map();
 
         // 1. Спочатку додаємо майбутні записи
         p.prescription_medications
             .filter(pm => pm.medication_name && pm.intake_at && new Date(pm.intake_at) > now)
-            .sort((a, b) => new Date(a.intake_at) - new Date(b.intake_at)) // найранніші першими
+            .sort((a, b) => new Date(a.intake_at) - new Date(b.intake_at))
             .forEach((pm, idx) => {
                 const intake_at_iso = pm.intake_at.toISOString();
                 const key = `${pm.medication_name}-${intake_at_iso.substring(11, 16)}`;
@@ -762,7 +754,7 @@ export class PatientsService {
         };
     }
 
-    // ─── update prescription ──────────────────────────────────────────────────
+    // update prescription
     async updatePrescription(prescriptionId, data, files, req) {
         const {
             diagnosis, icd_code, wardId, medications,
@@ -778,12 +770,9 @@ export class PatientsService {
             ? JSON.parse(data.schedule)
             : data.schedule || [];
 
-        // ── Визначаємо реальну тривалість з урахуванням extraDay ─────────────────
-        // Якщо сьогоднішній час прийому вже минув — препарат починається завтра,
-        // тому реальна тривалість = duration + 1
         let maxRealDuration = 0;
 
-        const medExtraMap = new Map(); // medicationName → extraDay
+        const medExtraMap = new Map();
 
         for (const med of parsedMeds) {
             const medEntries   = parsedSchedule.filter(s => s.name === med.medicationName);
@@ -796,7 +785,7 @@ export class PatientsService {
                 return todayIntake > now;
             });
 
-            // ← Чи вже є будь-який запис сьогодні (прийнятий, пропущений, в контейнері)
+            // Чи вже є будь-який запис сьогодні (прийнятий, пропущений, в контейнері)
             const hasTodayRecord = await prisma.prescription_medications.findFirst({
                 where: {
                     prescription_id: Number(prescriptionId),
@@ -808,8 +797,6 @@ export class PatientsService {
                 }
             });
 
-            // extraDay = 1 тільки якщо немає ні майбутнього прийому сьогодні,
-            // ні вже існуючого запису на сьогодні
             const extraDay = (!hasTodayFuture && !hasTodayRecord) ? 1 : 0;
 
             const realDuration = Number(med.duration) + extraDay;
@@ -819,7 +806,7 @@ export class PatientsService {
 
         const endDate = addDays(startOfToday, maxRealDuration - 1);
 
-        // ── 1. Оновлюємо саме призначення ────────────────────────────────────────
+        // 1. Оновлюємо саме призначення
         await prisma.prescriptions.update({
             where: { prescription_id: Number(prescriptionId) },
             data: {
@@ -836,8 +823,7 @@ export class PatientsService {
             }
         });
 
-        // ── 2. Видаляємо майбутні записи що НЕ в контейнері ──────────────────────
-        // Минулі і записи в контейнері — не чіпаємо
+        // 2. Видаляємо майбутні записи що НЕ в контейнері
         await prisma.prescription_medications.deleteMany({
             where: {
                 prescription_id: Number(prescriptionId),
@@ -846,7 +832,7 @@ export class PatientsService {
             }
         });
 
-        // ── 3. Створюємо нові записи для майбутніх днів ───────────────────────────
+        // 3. Створюємо нові записи для майбутніх днів
         for (const med of parsedMeds) {
             const { medicationName, quantity, timesPerDay, duration } = med;
             const medEntries = parsedSchedule.filter(s => s.name === medicationName);
@@ -860,10 +846,8 @@ export class PatientsService {
                 for (const entry of medEntries) {
                     const intake_at = localToUtc(dateStr, entry.time, timezone);
 
-                    // Пропускаємо якщо час вже минув
                     if (intake_at <= now) continue;
 
-                    // Пропускаємо якщо на цю дату/час вже є запис в контейнері
                     const inContainer = await prisma.prescription_medications.findFirst({
                         where: {
                             prescription_id: Number(prescriptionId),
@@ -889,7 +873,7 @@ export class PatientsService {
             }
         }
 
-        // ── 4. Файли ──────────────────────────────────────────────────────────────
+        // 4. Файли
         if (files && files.length > 0) {
             const { uploadPrescriptionFile } = await import('../../integrations/azure/azure.storage.js');
             const fileTypes = Array.isArray(data.fileTypes)
@@ -911,7 +895,7 @@ export class PatientsService {
             await prisma.prescription_files.createMany({ data: uploadedFiles });
         }
 
-        // ── 5. Лог ────────────────────────────────────────────────────────────────
+        // 5. Лог
         await logAction({
             userId:      req.user?.userId,
             action:      ACTIONS.UPDATE_PRESCRIPTION,
@@ -924,7 +908,7 @@ export class PatientsService {
         return { message: 'Призначення оновлено' };
     }
 
-    // ─── intake stats (web admin) ─────────────────────────────────────────────
+    // intake stats (web admin)
     async getIntakeStats(patientId, prescriptionId, date) {
         const targetDate = date ? new Date(date) : new Date();
         const dayStr = targetDate.toISOString().substring(0, 10);
@@ -968,7 +952,6 @@ export class PatientsService {
                 id:        m.prescription_med_id,
                 name:      m.medication_name || '—',
                 quantity:  m.quantity,
-                // UTC ISO — фронт конвертує в локальний час
                 intake_at: m.intake_at?.toISOString() ?? null,
                 status:    m.intake_status === true  ? 'taken'
                     : m.intake_status === false ? 'missed'
@@ -995,7 +978,6 @@ export class PatientsService {
         if (!prescriptions.length) return [];
 
         return prescriptions.map(p => {
-            // ── Унікальні препарати з деталями ───────────────────────────────────
             const medsMap = new Map();
 
             for (const pm of p.prescription_medications) {

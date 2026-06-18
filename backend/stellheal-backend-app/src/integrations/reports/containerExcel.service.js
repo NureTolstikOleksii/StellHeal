@@ -2,13 +2,6 @@ import ExcelJS from 'exceljs';
 
 export const generateContainerExcel = async (containers) => {
 
-    const formatDate = (val) => {
-        if (!val) return '—';
-        return new Date(val).toLocaleDateString('uk-UA', {
-            day: '2-digit', month: '2-digit', year: 'numeric'
-        });
-    };
-
     const formatDateTime = (val) => {
         if (!val) return '—';
         return new Date(val).toLocaleString('uk-UA', {
@@ -45,20 +38,18 @@ export const generateContainerExcel = async (containers) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 1: Зведений список контейнерів ────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 1: Зведений список контейнерів
     const sheet = workbook.addWorksheet('Контейнери');
     sheet.columns = [
-        { width: 6  },  // №
-        { width: 12 },  // Номер
-        { width: 28 },  // Пацієнт
-        { width: 12 },  // Статус
-        { width: 10 },  // Онлайн
-        { width: 16 },  // Остання активність
-        { width: 10 },  // Відсіків
-        { width: 10 },  // Заповнено
-        { width: 16 },  // Device UID
+        { width: 6  },
+        { width: 12 },
+        { width: 28 },
+        { width: 12 },
+        { width: 10 },
+        { width: 16 },
+        { width: 10 },
+        { width: 10 },
+        { width: 16 },
     ];
 
     // Заголовок
@@ -132,20 +123,18 @@ export const generateContainerExcel = async (containers) => {
         };
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 2: Деталі відсіків ─────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 2: Деталі відсіків
     const details = workbook.addWorksheet('Відсіки');
     details.columns = [
-        { width: 6  },  // №
-        { width: 12 },  // Контейнер
-        { width: 26 },  // Пацієнт
-        { width: 10 },  // Відсік №
-        { width: 12 },  // Стан
-        { width: 26 },  // Препарат
-        { width: 22 },  // Ким заповнено
-        { width: 16 },  // Час заповнення
-        { width: 16 },  // Час відкриття
+        { width: 6  },
+        { width: 12 },
+        { width: 26 },
+        { width: 10 },
+        { width: 12 },
+        { width: 26 },
+        { width: 22 },
+        { width: 16 },
+        { width: 16 },
     ];
 
     details.mergeCells('A1:I1');
@@ -219,9 +208,7 @@ export const generateContainerExcel = async (containers) => {
             });
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 3: Статистика ─────────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 3: Статистика
     const stats = workbook.addWorksheet('Статистика');
     stats.columns = [{ width: 35 }, { width: 15 }];
 

@@ -10,7 +10,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const staffService = new StaffService();
 
-// get list of medical workers ok
+// get list of employees
 router.get(
     '/',
     authenticateToken,
@@ -24,7 +24,7 @@ router.get(
     }
 );
 
-// number of employees ok
+// number of employees
 router.get(
     '/count',
     authenticateToken,
@@ -39,7 +39,7 @@ router.get(
     }
 );
 
-// add employee ok
+// add employee
 router.post(
     '/',
     authenticateToken,
@@ -55,7 +55,7 @@ router.post(
     }
 );
 
-// update employee ok
+// update employee
 router.put(
     '/:id',
     authenticateToken,
@@ -70,7 +70,7 @@ router.put(
     }
 );
 
-// delete employee ok
+// delete employee
 router.delete(
     '/:id',
     authenticateToken,
@@ -85,7 +85,7 @@ router.delete(
     }
 );
 
-// ── Заблокувати акаунт ────────────────────────────────────────────────────────
+// block account
 router.patch(
     '/:id/block',
     authenticateToken,
@@ -93,14 +93,14 @@ router.patch(
     async (req, res, next) => {
         try {
             await staffService.blockStaff(Number(req.params.id), req);
-            res.json({ message: 'Акаунт заблоковано' });
+            res.json({ message: 'Account blocked' });
         } catch (err) {
             next(err);
         }
     }
 );
 
-// ── Розблокувати акаунт ───────────────────────────────────────────────────────
+// unblock account
 router.patch(
     '/:id/unblock',
     authenticateToken,
@@ -108,14 +108,14 @@ router.patch(
     async (req, res, next) => {
         try {
             await staffService.unblockStaff(Number(req.params.id), req);
-            res.json({ message: 'Акаунт розблоковано' });
+            res.json({ message: 'Account unlocked' });
         } catch (err) {
             next(err);
         }
     }
 );
 
-// get user roles ok
+// get user roles
 router.get(
     '/roles',
     authenticateToken,
@@ -129,7 +129,7 @@ router.get(
     }
 );
 
-// create role ok
+// create role
 router.post(
     '/roles',
     authenticateToken,
@@ -147,7 +147,7 @@ router.post(
     }
 );
 
-// delete role ok
+// delete role
 router.delete(
     '/roles/:id',
     authenticateToken,
@@ -162,7 +162,7 @@ router.delete(
     }
 );
 
-// update role ok
+// update role
 router.put(
     '/roles/:id',
     authenticateToken,
@@ -177,7 +177,7 @@ router.put(
     }
 );
 
-// get report ok
+// get report
 router.get(
     '/export',
     authenticateToken,

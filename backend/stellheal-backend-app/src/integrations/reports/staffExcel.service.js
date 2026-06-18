@@ -55,24 +55,21 @@ export const generateStaffExcel = async (doctors, nurses) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 1: Зведений список ────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 1: Зведений список
     const sheet = workbook.addWorksheet('Список працівників');
     sheet.columns = [
-        { width: 6  },  // №
-        { width: 28 },  // ПІБ
-        { width: 8  },  // Вік
-        { width: 14 },  // Дата народження
-        { width: 24 },  // Email
-        { width: 18 },  // Телефон
-        { width: 22 },  // Спеціалізація
-        { width: 14 },  // Зміна
-        { width: 12 },  // Стаж
-        { width: 14 },  // Дата прийому
+        { width: 6  },
+        { width: 28 },
+        { width: 8  },
+        { width: 14 },
+        { width: 24 },
+        { width: 18 },
+        { width: 22 },
+        { width: 14 },
+        { width: 12 },
+        { width: 14 },
     ];
 
-    // Заголовок
     sheet.mergeCells('A1:J1');
     const t1 = sheet.getCell('A1');
     t1.value     = 'ЗВІТ ПРО МЕДИЧНИХ ПРАЦІВНИКІВ';
@@ -81,7 +78,6 @@ export const generateStaffExcel = async (doctors, nurses) => {
     t1.fill      = fill(COLORS.titleBg);
     sheet.getRow(1).height = 36;
 
-    // Підзаголовок
     sheet.mergeCells('A2:J2');
     const t2 = sheet.getCell('A2');
     t2.value     = `Дата формування: ${formatDateTime(now)}   |   Лікарів: ${doctors.length}   |   Медперсоналу: ${nurses.length}   |   Всього: ${doctors.length + nurses.length}`;
@@ -155,9 +151,7 @@ export const generateStaffExcel = async (doctors, nurses) => {
     addColHeaders(sheet, COLORS.nurseBg);
     nurses.forEach((n, i) => addPersonRow(sheet, n, i, COLORS.nurseSubBg));
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 2: Лікарі детально ────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 2: Лікарі детально
     const docSheet = workbook.addWorksheet('Лікарі');
     docSheet.columns = [
         { width: 6  }, { width: 28 }, { width: 8  }, { width: 16 },
@@ -187,9 +181,7 @@ export const generateStaffExcel = async (doctors, nurses) => {
         }
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 3: Медперсонал детально ───────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 3: Медперсонал детально
     const nurseSheet = workbook.addWorksheet('Медперсонал');
     nurseSheet.columns = [
         { width: 6  }, { width: 28 }, { width: 8  }, { width: 16 },
@@ -218,9 +210,7 @@ export const generateStaffExcel = async (doctors, nurses) => {
         }
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 4: Статистика ─────────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 4: Статистика
     const stats = workbook.addWorksheet('Статистика');
     stats.columns = [{ width: 35 }, { width: 15 }];
 
@@ -234,14 +224,12 @@ export const generateStaffExcel = async (doctors, nurses) => {
 
     stats.addRow([]);
 
-    // Розбивка по спеціалізаціях лікарів
     const specMap = {};
     doctors.forEach(d => {
         const spec = d.medical_staff?.specialization || 'Не вказано';
         specMap[spec] = (specMap[spec] || 0) + 1;
     });
 
-    // Розбивка по змінах медперсоналу
     const shiftMap = {};
     nurses.forEach(n => {
         const shift = n.medical_staff?.shift || 'Не вказано';

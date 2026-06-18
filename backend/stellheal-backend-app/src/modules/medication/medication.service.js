@@ -7,7 +7,6 @@ import { ACTIONS } from '../../shared/constants/actions.js';
 
 export class MedicationService {
 
-    // list of medications ok
     async getAll() {
         const medications = await prisma.medications.findMany({
             select: {
@@ -22,7 +21,6 @@ export class MedicationService {
         }));
     }
 
-    // додавання
     async addMedication(data, req) {
         const {
             medication_name,
@@ -66,7 +64,6 @@ export class MedicationService {
         return newMedication;
     }
 
-    // видалення
     async deleteMedication(id, req) {
 
         const medication = await prisma.medications.findUnique({
@@ -97,7 +94,6 @@ export class MedicationService {
         return medication;
     }
 
-    // оновлення кількості
     async updateMedicationQuantity(id, quantity, req) {
 
         const quantityInt = Number(quantity);

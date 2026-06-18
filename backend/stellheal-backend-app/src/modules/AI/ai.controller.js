@@ -20,7 +20,7 @@ router.post(
             if (!type || !payload) {
                 return next(new AppError(
                     ERROR_CODES.VALIDATION_ERROR,
-                    'Потрібно передати type та payload',
+                    'type/payload are required',
                     400
                 ));
             }
@@ -37,7 +37,7 @@ router.post(
                 }
 
                 const medicalHistory = await prisma.prescriptions.findMany({
-                    where:   { patient_id: numericPatientId }, // Передаємо вже число
+                    where:   { patient_id: numericPatientId },
                     select:  { diagnosis: true, date_issued: true },
                     orderBy: { date_issued: 'desc' },
                     take:    5

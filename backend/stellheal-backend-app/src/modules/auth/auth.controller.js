@@ -62,7 +62,7 @@ export const refresh = async (req, res, next) => {
         const { refreshToken } = req.body;
 
         if (!refreshToken) {
-            return res.status(401).json({ message: 'Refresh token відсутній' });
+            return res.status(401).json({ message: 'Refresh token missing' });
         }
 
         const result = await authService.refreshSession(refreshToken, req);
@@ -77,7 +77,7 @@ export const logout = async (req, res, next) => {
         const { refreshToken } = req.body;
 
         if (!refreshToken) {
-            return res.status(400).json({ message: 'Refresh token відсутній' });
+            return res.status(400).json({ message: 'Refresh token missing' });
         }
 
         await authService.logoutByToken(refreshToken, req);

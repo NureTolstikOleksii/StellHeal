@@ -34,11 +34,9 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
         doc.registerFont('Roboto', 'src/fonts/Roboto-Regular.ttf');
         doc.font('Roboto');
 
-        // ── Логотип ───────────────────────────────────────────────────────────
         doc.image('public/logo.png', doc.page.width / 2 - 40, 40, { width: 70 })
             .moveDown(4);
 
-        // ── Заголовок ─────────────────────────────────────────────────────────
         doc.fontSize(20)
             .text('Звiт з лікування', { align: 'center' })
             .moveDown();
@@ -49,7 +47,6 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
         const fullName = `${patient.last_name} ${patient.first_name} ${patient.patronymic || ''}`.trim();
         const now      = new Date();
 
-        // ── Пацієнт ───────────────────────────────────────────────────────────
         doc.fontSize(13)
             .text('Iнформацiя про пацiєнта:', { underline: true })
             .moveDown(0.3);
@@ -62,7 +59,7 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
             .text(`Палата: ${ward?.ward_number || '—'}`)
             .moveDown();
 
-        // ── Призначення ───────────────────────────────────────────────────────
+        // Призначення
         doc.fontSize(13)
             .text('Призначення:', { underline: true })
             .moveDown(0.3);
@@ -76,7 +73,7 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
             .text(`Код МКХ: ${prescription.icd_code || '—'}`)
             .moveDown();
 
-        // ── Клінічна картина ──────────────────────────────────────────────────
+        // Клінічна картина
         if (prescription.complaints || prescription.anamnesis ||
             prescription.objective_status || prescription.recommendations || prescription.notes) {
 
@@ -129,7 +126,7 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
             doc.moveDown(0.5);
         }
 
-        // ── Статистика прийому ────────────────────────────────────────────────
+        // Статистика прийому
         doc.fontSize(13)
             .text('Статистика:', { underline: true })
             .moveDown(0.3);
@@ -149,7 +146,7 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
             .text(`Всього таблеток прийнято: ${totalTaken}`)
             .moveDown();
 
-        // ── Препарати ─────────────────────────────────────────────────────────
+        // Препарати
         const medsMap = {};
 
         for (const pm of prescription.prescription_medications) {
@@ -213,7 +210,6 @@ export const generatePrescriptionPdf = async (prescription, totalTaken) => {
             doc.moveDown();
         });
 
-        // ── Footer ────────────────────────────────────────────────────────────
         doc.moveDown(1);
         doc.fontSize(11).fillColor('gray')
             .text(`Дата формування звiту: ${formatDateTime(now.toISOString())}`, { align: 'right' });

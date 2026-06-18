@@ -48,20 +48,18 @@ export const generatePatientsExcel = async (patients) => {
 
     const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 1: Список пацієнтів ───────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 1: Список пацієнтів
     const sheet = workbook.addWorksheet('Список пацієнтів');
     sheet.columns = [
-        { width: 6  },  // №
-        { width: 30 },  // ПІБ
-        { width: 8  },  // Вік
-        { width: 16 },  // Дата народження
-        { width: 26 },  // Email (login)
-        { width: 18 },  // Телефон
-        { width: 30 },  // Адреса
-        { width: 10 },  // Активних призначень
-        { width: 12 },  // Палата
+        { width: 6  },
+        { width: 30 },
+        { width: 8  },
+        { width: 16 },
+        { width: 26 },
+        { width: 18 },
+        { width: 30 },
+        { width: 10 },
+        { width: 12 },
     ];
 
     // Заголовок
@@ -103,7 +101,6 @@ export const generatePatientsExcel = async (patients) => {
             pr => pr.end_date && new Date(pr.end_date) >= now
         ).length ?? 0;
 
-        // Поточна палата з активного призначення
         const activePrescription = p.prescriptions_prescriptions_patient_idTousers?.find(
             pr => pr.end_date && new Date(pr.end_date) >= now
         );
@@ -133,27 +130,24 @@ export const generatePatientsExcel = async (patients) => {
             row.getCell(c).alignment = { horizontal: 'center', vertical: 'middle' };
         });
 
-        // Підсвітити якщо є активне призначення
         if (activePres > 0) {
             row.getCell(8).fill = fill(COLORS.green);
             row.getCell(8).font = { bold: true, size: 10 };
         }
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 2: Деталі по пацієнтах ────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 2: Деталі по пацієнтах
     const details = workbook.addWorksheet('Деталі');
     details.columns = [
-        { width: 6  },  // №
-        { width: 28 },  // ПІБ
-        { width: 8  },  // Вік
-        { width: 20 },  // Email
-        { width: 16 },  // Телефон
-        { width: 14 },  // Дата призначення
-        { width: 28 },  // Діагноз
-        { width: 10 },  // Палата
-        { width: 12 },  // Статус призначення
+        { width: 6  },
+        { width: 28 },
+        { width: 8  },
+        { width: 20 },
+        { width: 16 },
+        { width: 14 },
+        { width: 28 },
+        { width: 10 },
+        { width: 12 },
     ];
 
     details.mergeCells('A1:I1');
@@ -171,7 +165,6 @@ export const generatePatientsExcel = async (patients) => {
         const age      = calcAge(p.date_of_birth);
         const pres     = p.prescriptions_prescriptions_patient_idTousers || [];
 
-        // Заголовок пацієнта
         const pRow = details.addRow([
             idx + 1,
             fullName,
@@ -197,7 +190,6 @@ export const generatePatientsExcel = async (patients) => {
             noRow.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
             noRow.height = 18;
         } else {
-            // Заголовки призначень
             const phRow = details.addRow(['', '№', 'Діагноз', 'Код МКХ', 'Дата від', 'Дата до', 'Палата', 'Лікар', 'Статус']);
             phRow.height = 20;
             phRow.eachCell(cell => {
@@ -243,9 +235,7 @@ export const generatePatientsExcel = async (patients) => {
         details.addRow([]);
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 3: Загальна статистика ────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // АРКУШ 3: Загальна статистика
     const stats = workbook.addWorksheet('Статистика');
     stats.columns = [{ width: 35 }, { width: 15 }];
 

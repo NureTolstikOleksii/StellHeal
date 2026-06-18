@@ -2,7 +2,7 @@ import prisma from '../../config/prisma.js';
 
 export class StatsService {
 
-    // ─── clinic statistics ────────────────────────────────────────────────────
+    // clinic statistics
     async getClinicStats() {
         const now     = new Date();
         const weekAgo = new Date(now);
@@ -29,7 +29,7 @@ export class StatsService {
         return { activePatients, medicalStaff, treatmentPlans, deviceTriggers, missedAppointments };
     }
 
-    // ─── doctor statistics ────────────────────────────────────────────────────
+    // doctor statistics
     async getDoctorStats() {
         const doctors = await prisma.users.findMany({
             where: { role_id: 1 },
@@ -72,21 +72,18 @@ export class StatsService {
         });
     }
 
-    // ─── intake week stats (з підтримкою weekOffset, починаємо з понеділка) ──
+    // intake week stats
     async getIntakeWeekStats(weekOffset = 0) {
         const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        // Знаходимо поточний понеділок в UTC
         const now        = new Date();
-        const currentDay = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-        // Кількість днів до попереднього понеділка (0=Mon якщо сьогодні пн)
+        const currentDay = now.getUTCDay();
         const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
 
         const monday = new Date(now);
         monday.setUTCDate(now.getUTCDate() + diffToMonday + weekOffset * 7);
         monday.setUTCHours(0, 0, 0, 0);
 
-        // 7 днів Пн-Нд
         const days = Array.from({ length: 7 }, (_, i) => {
             const d = new Date(monday);
             d.setUTCDate(monday.getUTCDate() + i);
@@ -123,7 +120,7 @@ export class StatsService {
         };
     }
 
-    // ─── audit log ────────────────────────────────────────────────────────────
+    // audit log
     async getAuditLog({ limit = 50, action = null, page = 1 } = {}) {
         const skip  = (page - 1) * limit;
         const where = action ? { action } : {};
@@ -169,7 +166,7 @@ export class StatsService {
         };
     }
 
-    // ─── унікальні типи дій для фільтру ──────────────────────────────────────
+    // types of actions for filter
     async getAuditActions() {
         const actions = await prisma.audit_logs.findMany({
             select:   { action: true },

@@ -9,7 +9,7 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const notificationService = new NotificationService();
 
-// отримання сповіщень (тільки свої)
+// receive notifications (only own)
 router.get(
     '/my',
     authenticateToken,
@@ -25,7 +25,7 @@ router.get(
     }
 );
 
-// позначити прочитаними
+// mark as read
 router.post(
     '/mark-read',
     authenticateToken,
@@ -59,7 +59,7 @@ router.post(
     }
 );
 
-// збереження FCM токена
+// send FCM
 router.post(
     '/fcm-token',
     authenticateToken,
@@ -90,7 +90,7 @@ router.post("/weight-alert", authenticateDevice, async (req, res, next) => {
     }
 });
 
-// нагадування пацієнту про прийом
+// notification of an unaccepted drug
 router.post("/intake-reminder", authenticateDevice, async (req, res, next) => {
     try {
         const { containerId } = req.device;

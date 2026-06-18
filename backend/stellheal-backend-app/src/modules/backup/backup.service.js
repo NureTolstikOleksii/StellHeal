@@ -17,9 +17,8 @@ const gunzip = promisify(zlib.gunzip);
 
 const BACKUP_CONTAINER   = 'backups';
 const MAX_MANUAL_BACKUPS = 10;
-const MAX_AUTO_BACKUPS   = 7; // зберігаємо 7 автоматичних (1 на день)
+const MAX_AUTO_BACKUPS   = 7;
 
-// Порядок таблиць
 const TABLE_ORDER = [
     'roles',
     'users',
@@ -68,7 +67,6 @@ export class BackupService {
         console.log('[Backup] Scheduler started — daily at 02:00');
     }
 
-    // Список всіх бекапів з метаданими
     async listBackups() {
         const container = getContainer();
         const backups   = [];
@@ -87,13 +85,11 @@ export class BackupService {
         );
     }
 
-    // Останній бекап
     async getLastBackup() {
         const backups = await this.listBackups();
         return backups[0] || null;
     }
 
-    // Створити бекап (manual або auto)
     async createBackup(type = 'manual', req) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName  = `${type}-backup-${timestamp}.json.gz`;
@@ -133,7 +129,6 @@ export class BackupService {
             }
         });
 
-        // 4. Ротація — видаляємо старі бекапи цього типу
         await this._rotateBackups(type);
 
         if (req?.user?.userId) {
@@ -149,7 +144,6 @@ export class BackupService {
         return { name: fileName, timestamp: new Date().toISOString(), type };
     }
 
-    // Відновлення з бекапу
     async restoreBackup(blobName, req) {
         const container = getContainer();
         const blockBlob = container.getBlockBlobClient(blobName);
@@ -198,7 +192,6 @@ export class BackupService {
         return { message: 'Відновлення успішно завершено', name: blobName };
     }
 
-    // Видалити бекап
     async deleteBackup(blobName, req) {
         const container = getContainer();
         const blockBlob = container.getBlockBlobClient(blobName);
@@ -219,7 +212,6 @@ export class BackupService {
         });
     }
 
-    // Ротація — видаляємо зайві бекапи
     async _rotateBackups(type) {
         const maxKeep = type === 'auto' ? MAX_AUTO_BACKUPS : MAX_MANUAL_BACKUPS;
         const all     = await this.listBackups();
@@ -227,7 +219,7 @@ export class BackupService {
 
         if (ofType.length <= maxKeep) return;
 
-        // Видаляємо найстаріші
+        // видаляємо найстаріші
         const toDelete = ofType.slice(maxKeep);
         const container = getContainer();
 

@@ -7,7 +7,6 @@ import { ACTIONS } from "../../shared/constants/actions.js";
 
 export class DeviceService {
 
-    // ─── Автентифікація пристрою ──────────────────────────────────────────────
     async authenticate(device_uid, secret) {
         const container = await prisma.containers.findFirst({
             where: { device_uid }
@@ -42,7 +41,6 @@ export class DeviceService {
         return { token, container_id: container.container_id };
     }
 
-    // ─── Heartbeat ────────────────────────────────────────────────────────────
     async heartbeat(containerId) {
         const now = new Date();
 
@@ -54,7 +52,6 @@ export class DeviceService {
         return { message: "Heartbeat received", server_time: now.toISOString() };
     }
 
-    // ─── Команди ─────────────────────────────────────────────────────────────
     async getPendingCommands(containerId) {
         return prisma.device_commands.findMany({
             where:   { container_id: containerId, status: "pending" },
@@ -73,7 +70,6 @@ export class DeviceService {
         return { message: "Command completed" };
     }
 
-    // ─── Наступний прийом ─────────────────────────────────────────────────────
     async getNextIntake(containerId) {
         const container = await prisma.containers.findUnique({
             where: { container_id: containerId }
@@ -115,7 +111,6 @@ export class DeviceService {
         };
     }
 
-    // ─── Підтвердження прийому ────────────────────────────────────────────────
     async confirmIntake(containerId, prescriptionMedId) {
         const med = await prisma.prescription_medications.findUnique({
             where: { prescription_med_id: prescriptionMedId }
@@ -156,7 +151,7 @@ export class DeviceService {
             });
         }
 
-        await this.logDeviceEvent(containerId, "info", "INTAKE_CONFIRMED", `Прийом підтверджено: prescription_med_id=${prescriptionMedId}`);
+        await this.logDeviceEvent(containerId, "info", "INTAKE_CONFIRMED", `Acceptance confirmed: prescription_med_id=${prescriptionMedId}`);
 
         await logAction({
             action:      ACTIONS.UPDATE,
@@ -168,7 +163,6 @@ export class DeviceService {
         return { message: "Intake confirmed", time: now.toISOString() };
     }
 
-    // ─── Заповнення ───────────────────────────────────────────────────────────
     async startFill(containerId) {
         const free = await this.getFreeCompartment(containerId);
         await this.createRotateCommand(containerId, free.compartment_number);
@@ -248,7 +242,6 @@ export class DeviceService {
         return { message: "Compartment filled" };
     }
 
-    // ─── Відсіки ──────────────────────────────────────────────────────────────
     async getCompartments(containerId) {
         const compartments = await prisma.compartments.findMany({
             where:   { container_id: containerId },
@@ -284,7 +277,6 @@ export class DeviceService {
         });
     }
 
-    // ─── Ротація і очистка ────────────────────────────────────────────────────
     async rotateToCompartment(containerId, compartmentNumber) {
         const compartment = await prisma.compartments.findFirst({
             where: { container_id: containerId, compartment_number: compartmentNumber }
@@ -335,7 +327,6 @@ export class DeviceService {
         return { message: "Compartment cleared" };
     }
 
-    // ─── RFID ─────────────────────────────────────────────────────────────────
     async updateRfidStatus(containerId, authenticated) {
         await prisma.containers.update({
             where: { container_id: containerId },
@@ -389,7 +380,6 @@ export class DeviceService {
         return { message: "RFID reset" };
     }
 
-    // ─── Fill sessions ────────────────────────────────────────────────────────
     async startFillSession(containerId, userId) {
         await prisma.fill_sessions.updateMany({
             where: { container_id: containerId, status: "active" },
@@ -432,7 +422,6 @@ export class DeviceService {
         });
     }
 
-    // ─── Логування подій пристрою ─────────────────────────────────────────────
     async logDeviceEvent(containerId, type, code, message) {
         return prisma.device_events.create({
             data: {

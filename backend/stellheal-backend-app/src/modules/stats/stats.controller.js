@@ -7,21 +7,21 @@ import { authorizeRoles } from '../../middleware/role.middleware.js';
 const router = Router();
 const statsService = new StatsService();
 
-// clinic statistics ok
+// clinic statistics
 router.get('/clinic', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         res.json(await statsService.getClinicStats());
     } catch (err) { next(err); }
 });
 
-// doctor statistics ok
+// doctor statistics
 router.get('/doctors', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         res.json(await statsService.getDoctorStats());
     } catch (err) { next(err); }
 });
 
-// intake week stats ok
+// intake week stats
 router.get('/intake-week', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const weekOffset = Number(req.query.weekOffset) || 0;
@@ -29,7 +29,7 @@ router.get('/intake-week', authenticateToken, authorizeRoles(4), async (req, res
     } catch (err) { next(err); }
 });
 
-// ── Audit log ─────────────────────────────────────────────────────────────────
+// audit log
 router.get('/audit-log', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         const limit  = Math.min(Number(req.query.limit)  || 50, 200);
@@ -40,7 +40,7 @@ router.get('/audit-log', authenticateToken, authorizeRoles(4), async (req, res, 
     } catch (err) { next(err); }
 });
 
-// ── Типи дій для фільтру ──────────────────────────────────────────────────────
+// types of actions for filter
 router.get('/audit-actions', authenticateToken, authorizeRoles(4), async (req, res, next) => {
     try {
         res.json(await statsService.getAuditActions());

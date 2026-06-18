@@ -27,14 +27,13 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
 
     const now = new Date();
 
-    // ── Стилі ────────────────────────────────────────────────────────────────
     const COLORS = {
-        headerBg:    'FF1565C0', // синій заголовок
-        subHeaderBg: 'FFE3F2FD', // світло-синій
-        titleBg:     'FF0D47A1', // темно-синій
-        takenBg:     'FFE8F5E9', // зелений
-        missedBg:    'FFFCE4EC', // червоний
-        pendingBg:   'FFFFF9C4', // жовтий
+        headerBg:    'FF1565C0',
+        subHeaderBg: 'FFE3F2FD',
+        titleBg:     'FF0D47A1',
+        takenBg:     'FFE8F5E9',
+        missedBg:    'FFFCE4EC',
+        pendingBg:   'FFFFF9C4',
         borderColor: 'FFB0BEC5',
         white:       'FFFFFFFF',
         gray:        'FF9E9E9E',
@@ -50,20 +49,18 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
 
     const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 1: Зведений звіт ──────────────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 1: Зведений звіт
     const summary = workbook.addWorksheet('Зведений звіт');
     summary.columns = [
-        { width: 5  },  // №
-        { width: 14 },  // Дата призначення
-        { width: 14 },  // Дата завершення
-        { width: 28 },  // Діагноз
-        { width: 8  },  // Палата
-        { width: 22 },  // Лікар
-        { width: 10 },  // Тривалість
-        { width: 12 },  // Прийнято %
-        { width: 42 },  // Препарати
+        { width: 5  },
+        { width: 14 },
+        { width: 14 },
+        { width: 28 },
+        { width: 8  },
+        { width: 22 },
+        { width: 10 },
+        { width: 12 },
+        { width: 42 },
     ];
 
     // Заголовок
@@ -95,7 +92,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
     p3.fill      = fill(COLORS.subHeaderBg);
     summary.getRow(3).height = 20;
 
-    summary.addRow([]); // порожній рядок
+    summary.addRow([]);
 
     // Заголовки колонок
     const summaryHeaders = ['№', 'Дата призначення', 'Дата завершення', 'Діагноз', 'Палата', 'Лікар', 'Днів', 'Прийнято', 'Препарати'];
@@ -115,7 +112,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
         const missed  = p.prescription_medications?.filter(pm => pm.intake_status === false).length || 0;
         const rate    = total > 0 ? Math.round((taken / total) * 100) : 0;
 
-        // Унікальні препарати по medication_name
+        // препарати по medication_name
         const medSet  = new Set();
         const medList = [];
         (p.prescription_medications || []).forEach(pm => {
@@ -146,36 +143,31 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
         row.height    = Math.max(24, medList.length * 18);
         row.alignment = { vertical: 'top', wrapText: true };
 
-        // Колір рядка залежно від відсотка виконання
         const rowFill = rate >= 80 ? COLORS.takenBg : rate >= 50 ? COLORS.pendingBg : total === 0 ? COLORS.white : COLORS.missedBg;
         row.eachCell(cell => {
             cell.border    = border();
             cell.alignment = { vertical: 'top', wrapText: true };
             cell.fill      = fill(rowFill);
         });
-        // Центрувати певні колонки
         [1, 2, 3, 5, 7, 8].forEach(c => {
             row.getCell(c).alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
         });
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 2: Деталі по кожному призначенню ──────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 2: Деталі по кожному призначенню
     const details = workbook.addWorksheet('Деталі призначень');
     details.columns = [
-        { width: 5  },  // №
-        { width: 22 },  // Препарат
-        { width: 12 },  // Частота
-        { width: 10 },  // Тривалість
-        { width: 12 },  // Час прийому
-        { width: 8  },  // К-сть
-        { width: 10 },  // Статус
-        { width: 14 },  // Прийнято/Пропущено
+        { width: 5  },
+        { width: 22 },
+        { width: 12 },
+        { width: 10 },
+        { width: 12 },
+        { width: 8  },
+        { width: 10 },
+        { width: 14 },
     ];
 
     prescriptions.forEach((p, pIdx) => {
-        // Заголовок призначення
         details.addRow([]);
         const presTitle = details.addRow([
             `Призначення №${pIdx + 1}`,
@@ -238,7 +230,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
                     mIdx + 1,
                     name,
                     pm.frequency || '—',
-                    '—', // duration на рівні запису не зберігається
+                    '—',
                     time,
                     pm.quantity || '—',
                     status,
@@ -264,9 +256,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
             });
     });
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ── АРКУШ 3: Статистика виконання ───────────────────────────────────────
-    // ════════════════════════════════════════════════════════════════════════
+    // ── АРКУШ 3: Статистика виконання
     const stats = workbook.addWorksheet('Статистика');
     stats.columns = [{ width: 30 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }];
 
@@ -316,7 +306,6 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
         sRow.height = 20;
     });
 
-    // Підсумок
     const totalRate = grandTotal > 0 ? `${Math.round((grandTaken / grandTotal) * 100)}%` : '—';
     const totRow = stats.addRow(['РАЗОМ', grandTotal, grandTaken, grandMissed, totalRate]);
     totRow.height = 24;

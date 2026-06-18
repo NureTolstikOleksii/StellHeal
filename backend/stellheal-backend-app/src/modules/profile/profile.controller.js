@@ -8,7 +8,6 @@ import { uploadAvatar } from '../../integrations/azure/uploadAvatar.js';
 const router = Router();
 const profileService = new ProfileService();
 
-// GET PROFILE
 router.get('/', authenticateToken, async (req, res, next) => {
     try {
         const user = await profileService.getProfile(req.user.userId, req);
@@ -18,7 +17,6 @@ router.get('/', authenticateToken, async (req, res, next) => {
     }
 });
 
-// UPDATE AVATAR
 router.put('/avatar', authenticateToken, async (req, res, next) => {
     try {
         const avatarUrl = await uploadAvatar(req);
@@ -29,7 +27,6 @@ router.put('/avatar', authenticateToken, async (req, res, next) => {
     }
 });
 
-// CHANGE PASSWORD
 router.put(
     '/change-password',
     authenticateToken,
@@ -52,7 +49,6 @@ router.put(
     }
 );
 
-// CHANGE EMAIL
 router.put(
     '/change-email',
     authenticateToken,
@@ -79,7 +75,6 @@ router.put(
     }
 );
 
-// UPDATE PROFILE
 router.patch('/', authenticateToken, validateEmail, async (req, res, next) => {
     try {
         const updatedUser = await profileService.updateProfile(

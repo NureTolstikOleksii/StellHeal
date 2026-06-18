@@ -9,11 +9,10 @@ import { ERROR_CODES } from '../../shared/constants/errorCodes.js';
 const router = Router();
 const medicationService = new MedicationService();
 
-// список препаратів ok
 router.get(
     '/',
     authenticateToken,
-    authorizeRoles(1, 2, 4), // admin, doctor, staff
+    authorizeRoles(1, 2, 4),
     async (req, res, next) => {
         try {
             const medications = await medicationService.getAll();
@@ -24,7 +23,6 @@ router.get(
     }
 );
 
-// додавання препарату
 router.post(
     '/add',
     authenticateToken,
@@ -71,11 +69,10 @@ router.post(
     }
 );
 
-// видалення
 router.delete(
     '/delete/:id',
     authenticateToken,
-    authorizeRoles(1), // тільки admin
+    authorizeRoles(1),
     async (req, res, next) => {
         try {
             const id = Number(req.params.id);
@@ -101,7 +98,6 @@ router.delete(
     }
 );
 
-// оновлення кількості
 router.put(
     '/update-quantity/:id',
     authenticateToken,

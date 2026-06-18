@@ -172,7 +172,6 @@ export class ContainerService {
             take:    50,
         });
 
-        // ← UTC ISO рядки — фронт конвертує
         return events.map(e => ({
             ...e,
             created_at: e.created_at?.toISOString() ?? null,
@@ -189,7 +188,6 @@ export class ContainerService {
             }
         });
 
-        // ← UTC ISO рядки — фронт конвертує
         return sessions.map(s => ({
             ...s,
             started_at:  s.started_at?.toISOString()  ?? null,
@@ -393,7 +391,6 @@ export class ContainerService {
         };
     }
 
-    // today's prescriptions
     async getTodayPrescriptions(patientId, dateStr) {
         const todayStart = new Date(`${dateStr}T00:00:00.000Z`);
         const todayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
@@ -406,10 +403,10 @@ export class ContainerService {
                     date_issued: { lte: todayEnd },
                     end_date:    { gte: todayStart }
                 },
-                intake_status: null,   // ← очікувані
+                intake_status: null,
                 intake_at: {
-                    gte: now,          // ← час ще не настав
-                    lte: todayEnd      // ← в межах сьогодні
+                    gte: now,
+                    lte: todayEnd
                 },
                 NOT: {
                     compartment_medications: { some: {} }
@@ -426,7 +423,7 @@ export class ContainerService {
         const result = await prisma.prescriptions.aggregate({
             where: {
                 patient_id: patientId,
-                end_date:   { gte: new Date() }  // ← тільки активні
+                end_date:   { gte: new Date() }
             },
             _min: { date_issued: true },
             _max: { end_date:    true }
@@ -442,9 +439,8 @@ export class ContainerService {
         };
     }
 
-    // admission statistics — фільтруємо по UTC добі
+    // admission statistics фільтруємо по UTC добі
     async getIntakeStatistics(patientId, dateStr) {
-        // dateStr = "yyyy-MM-dd" від мобайлу
         const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
         const dayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
 
@@ -465,21 +461,8 @@ export class ContainerService {
             prescription_med_id: p.prescription_med_id,
             medication:          p.medications?.name || p.medication_name || 'Unknown',
             quantity:            p.quantity,
-            // UTC ISO — мобайл конвертує через ZonedDateTime
             intake_at:           p.intake_at?.toISOString() ?? null,
             isTaken:             p.intake_status
         }));
     }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatCompartment(comp, med, quantity, intakeAt) {
-    if (med && quantity && intakeAt) {
-        const hour = intakeAt instanceof Date
-            ? intakeAt.toISOString().substring(11, 16)
-            : String(intakeAt).substring(11, 16);
-        return `Comp. ${comp} - ${med} - ${quantity} табл. - ${hour}`;
-    }
-    return `Comp. ${comp} - Вільний`;
 }

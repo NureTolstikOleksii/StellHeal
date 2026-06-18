@@ -8,7 +8,7 @@ import { utcToLocalTime } from '../../shared/timezone/timezone.service.js';
 
 export class NotificationService {
 
-    // ─── отримати свої сповіщення ─────────────────────────────────────────────
+    // get notifications
     async getUserNotifications(userId) {
         const recipients = await prisma.notification_recipients.findMany({
             where:   { user_id: userId },
@@ -25,7 +25,7 @@ export class NotificationService {
         }));
     }
 
-    // ─── позначити як прочитані ───────────────────────────────────────────────
+    // mark as read
     async markNotificationsRead(userId) {
         await prisma.notification_recipients.updateMany({
             where: { user_id: userId, is_read: false },
@@ -33,7 +33,7 @@ export class NotificationService {
         });
     }
 
-    // ─── зберегти FCM токен ───────────────────────────────────────────────────
+    // save FCM token
     async saveFcmToken(userId, token) {
         await prisma.users.update({
             where: { user_id: userId },
@@ -49,7 +49,7 @@ export class NotificationService {
         });
     }
 
-    // ─── відправити push ──────────────────────────────────────────────────────
+    // send push
     async sendNotification(token, title, body) {
         try {
             await admin.messaging().send({
@@ -61,7 +61,7 @@ export class NotificationService {
         }
     }
 
-    // ─── контекст контейнера ──────────────────────────────────────────────────
+    // container context
     async getContainerContext(containerId) {
         const container = await prisma.containers.findUnique({
             where:   { container_id: containerId },
@@ -98,17 +98,15 @@ export class NotificationService {
         };
     }
 
-    // ─── сповіщення про неприйнятий препарат ─────────────────────────────────
+    // notification of an unaccepted drug
     async sendWeightAlert(containerId, prescriptionMedId) {
         const now = new Date();
 
-        // 1. Позначаємо прийом як пропущений
         await prisma.prescription_medications.update({
             where: { prescription_med_id: prescriptionMedId },
             data:  { intake_status: false }
         });
 
-        // 2. Очищаємо відсік — так само як в confirmIntake
         const compartmentMed = await prisma.compartment_medications.findFirst({
             where: { prescription_med_id: prescriptionMedId }
         });
@@ -205,7 +203,7 @@ export class NotificationService {
         return { message: "Alert sent" };
     }
 
-    // ─── нагадування пацієнту про прийом ─────────────────────────────────────
+    // reminding the patient about the appointment
     async sendIntakeReminder(containerId, prescriptionMedId) {
         const now = new Date();
 

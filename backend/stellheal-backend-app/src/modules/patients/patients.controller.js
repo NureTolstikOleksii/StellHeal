@@ -13,7 +13,7 @@ import { ERROR_CODES } from "../../shared/constants/errorCodes.js";
 const router = Router();
 const patientsService = new PatientsService();
 
-// ─── Multer ───────────────────────────────────────────────────────────────────
+
 const uploadDir = path.resolve('uploads/prescriptions');
 fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -39,7 +39,7 @@ router.get(
     }
 );
 
-// ====== Admin/Web ============================================================
+// === Admin/Web ============================================================
 
 // intake stats by patient
 router.get(
@@ -114,7 +114,6 @@ router.post(
 );
 
 // create prescription
-// Таймзона береться автоматично з профілю лікаря в БД
 router.post(
     '/prescriptions/create',
     authenticateToken,
@@ -175,7 +174,6 @@ router.get(
 );
 
 // update prescription
-// Таймзона береться автоматично з профілю лікаря в БД
 router.put(
     '/prescriptions/:id',
     authenticateToken,

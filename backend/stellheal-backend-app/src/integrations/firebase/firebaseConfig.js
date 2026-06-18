@@ -16,7 +16,7 @@ try {
         credential: admin.credential.cert(serviceAccount),
     });
 } catch (error) {
-    console.error('Помилка завантаження Firebase Service Account:', error.message);
+    console.error('Error loading Firebase Service Account: ', error.message);
 }
 
 export default admin;

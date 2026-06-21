@@ -24,7 +24,7 @@ const ProfilePage = () => {
     const [errors, setErrors]             = useState({});
     const [saving, setSaving]             = useState(false);
     const isAdmin = user?.role === 'admin';
-
+    const [avatarVersion, setAvatarVersion] = useState(Date.now());
     const [passwordForm, setPasswordForm] = useState({
         currentPassword: '',
         newPassword: '',
@@ -40,6 +40,7 @@ const ProfilePage = () => {
             const res = await uploadAvatar(file);
             const newAvatar = res.avatar;
             setProfileData(prev => ({ ...prev, avatar: newAvatar }));
+            setAvatarVersion(Date.now());
             const updatedUser = { ...user, avatar: newAvatar };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -92,16 +93,17 @@ const ProfilePage = () => {
             const updatedUser = await updateProfile({ ...profileData, login: profileData.email });
             const normalized = {
                 ...user,
-                avatar:      updatedUser.avatar,
-                firstName:   updatedUser.first_name,
-                lastName:    updatedUser.last_name,
-                patronymic:  updatedUser.patronymic,
-                phone:       updatedUser.phone,
-                email:       updatedUser.email,
-                contact_info: updatedUser.contact_info
+                avatar:       updatedUser.avatar,
+                first_name:   updatedUser.first_name,
+                last_name:    updatedUser.last_name,
+                patronymic:   updatedUser.patronymic,
+                phone:        updatedUser.phone,
+                email:        updatedUser.email,
+                contact_info: updatedUser.contact_info,
             };
             setUser(normalized);
             localStorage.setItem('user', JSON.stringify(normalized));
+            setProfileData(prev => ({ ...prev, ...updatedUser, email: updatedUser.login ?? prev.email }));
             alert(t('profile.saved_successfully'));
             setErrors({});
         } catch (err) {
@@ -198,7 +200,7 @@ const ProfilePage = () => {
                     <div className={styles.photoBlock}>
                         <div className={styles.avatarWrapper}>
                             <img
-                                src={profileData?.avatar || defaultAvatar}
+                                src={profileData?.avatar ? `${profileData.avatar}?v=${avatarVersion}` : defaultAvatar}
                                 alt="avatar"
                                 className={styles.avatar}
                             />

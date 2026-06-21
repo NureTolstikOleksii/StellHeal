@@ -35,7 +35,7 @@ export class PatientsService {
 
         return patients.map(p => ({
             id:      p.user_id,
-            name:    `${p.first_name} ${p.last_name} ${p.patronymic}`,
+            name:    `${p.last_name} ${p.last_name} ${p.patronymic}`,
             email:   p.login,
             phone:   p.phone,
             address: p.contact_info,

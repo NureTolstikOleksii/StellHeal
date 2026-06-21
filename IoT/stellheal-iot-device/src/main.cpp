@@ -13,7 +13,7 @@
 #include "time.h"
 #include <WiFiClientSecure.h>
 
-// ── Піни ─────────────────────────────────────────────────────────────────────
+// Піни
 #define BUTTON_PIN      0
 #define BUZZER_LED      15
 #define RST_PIN         4
@@ -22,7 +22,7 @@
 #define LOADCELL_DT     32
 #define LOADCELL_SCK    33
 
-// ── Ноти ──────────────────────────────────────────────────────────────────────
+// Ноти
 #define NOTE_C4  262
 #define NOTE_E4  330
 #define NOTE_GS4 415
@@ -34,7 +34,7 @@
 #define NOTE_E5  659
 const int BUZZER_PIN = BUZZER_LED;
 
-// ── Пристрої ──────────────────────────────────────────────────────────────────
+// Пристрої
 Stepper drum(2048, 13, 12, 14, 27);
 ThreeWire myWire(16, 17, 2);
 RtcDS1302<ThreeWire> Rtc(myWire);
@@ -45,21 +45,19 @@ Servo unloadServo;
 HX711 scale;
 float calibration_factor = -7050.0;
 
-// ── Позиції відсіків ──────────────────────────────────────────────────────────
+// Позиції відсіків
 const int COMPARTMENT_STEPS[9] = {
     0, 0, 256, 512, 768, 1024, 1280, 1536, 1792
 };
 
-// ── API ───────────────────────────────────────────────────────────────────────
 const char* API_BASE         = "https://stellheal-backend-f9e5azcyamhmg8b6.northeurope-01.azurewebsites.net/api/device";
 const char* API_BASE_NOTIFIC = "https://stellheal-backend-f9e5azcyamhmg8b6.northeurope-01.azurewebsites.net/api/notification";
 const char* DEVICE_UID       = "esp32_container_1";
 const char* DEVICE_SECRET    = "s3cr3t_container_1_2026";
 
-// ── Глобальний HTTPS клієнт (один на всі запити — швидше) ─────────────────────
 WiFiClientSecure secureClient;
 
-// ── Глобальні змінні ──────────────────────────────────────────────────────────
+// Глобальні змінні
 String deviceToken           = "";
 int    containerId           = 0;
 int    currentCompartment    = 1;
@@ -89,7 +87,7 @@ const unsigned long WEIGHT_MONITOR_DURATION = 1 * 60 * 1000;
 const float   WEIGHT_THRESHOLD          = 1.0;
 bool          alertSent                 = false;
 
-// ── Оголошення функцій ────────────────────────────────────────────────────────
+// Оголошення функцій
 void   showMsg(String l1, String l2);
 void   showMsg(String l1, String l2, String l3);
 void   syncRtcWithNtp();
@@ -113,7 +111,6 @@ void   sendIntakeReminder(int prescriptionMedId);
 void   playBeethovenMelody();
 String utcToLocalTime(int utcHour, int utcMin);
 
-// ── UTC → локальний час Київ ──────────────────────────────────────────────────
 String utcToLocalTime(int utcHour, int utcMin) {
     time_t now_epoch;
     time(&now_epoch);
@@ -131,8 +128,7 @@ String utcToLocalTime(int utcHour, int utcMin) {
     return String(buf);
 }
 
-// ── Setup ─────────────────────────────────────────────────────────────────────
-// ── Setup — прибрати стару калібровку ────────────────────────────────────────
+// Setup
 void setup() {
     Serial.begin(115200);
 
@@ -148,9 +144,6 @@ void setup() {
 
     drum.setSpeed(10);
     showMsg("STELLHEAL", "Запуск...");
-
-    // ← ВИДАЛЕНО стару калібровку з setup()
-    // rotateToCompartment сам знайде HOME при першому виклику
 
     scale.begin(LOADCELL_DT, LOADCELL_SCK);
     scale.set_scale(calibration_factor);
@@ -177,7 +170,6 @@ void setup() {
     delay(2000);
 }
 
-// ── Loop ──────────────────────────────────────────────────────────────────────
 void loop() {
     static unsigned long lastAuthTry = 0;
     if (deviceToken == "" && millis() - lastAuthTry > 15000) {
@@ -196,14 +188,12 @@ void loop() {
         lastHeartbeat = millis();
     }
 
-    // ← збільшено з 10 до 15 секунд
     static unsigned long lastCheck = 0;
     if (millis() - lastCheck > 15000) {
         checkNextIntake();
         lastCheck = millis();
     }
 
-    // ← збільшено з 3 до 5 секунд
     static unsigned long lastCommands = 0;
     if (millis() - lastCommands > 2000) {
         handleCommands();
@@ -215,7 +205,6 @@ void loop() {
         lastSyncMillis = millis();
     }
 
-    // ── Моніторинг ваги ───────────────────────────────────────────────────────
     if (weightMonitoring) {
         float currentWeight = scale.get_units(3);
         float weightDiff    = weightAtStart - currentWeight;
@@ -246,7 +235,6 @@ void loop() {
     }
 }
 
-// ── Синхронізація RTC з NTP ───────────────────────────────────────────────────
 void syncRtcWithNtp() {
     showMsg("Синхронізація", "Часу...");
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
@@ -269,7 +257,6 @@ void syncRtcWithNtp() {
     }
 }
 
-// ── Дисплей ───────────────────────────────────────────────────────────────────
 void displayClock() {
     static unsigned long lastDisplayUpdate = 0;
     if (millis() - lastDisplayUpdate < 1000) return;
@@ -322,7 +309,6 @@ void displayClock() {
     u8g2.sendBuffer();
 }
 
-// ── showMsg ───────────────────────────────────────────────────────────────────
 void showMsg(String l1, String l2) { showMsg(l1, l2, ""); }
 
 void showMsg(String l1, String l2, String l3) {
@@ -334,7 +320,6 @@ void showMsg(String l1, String l2, String l3) {
     u8g2.sendBuffer();
 }
 
-// ── RFID ──────────────────────────────────────────────────────────────────────
 void checkRFID() {
     if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
         rfidAuthenticated = true;
@@ -346,7 +331,6 @@ void checkRFID() {
     }
 }
 
-// ── Кнопка ────────────────────────────────────────────────────────────────────
 void handleButtonLogic() {
     static bool buzzerTriggered = false;
     if (digitalRead(BUTTON_PIN) == LOW) {
@@ -386,7 +370,6 @@ void toggleLoadingMode() {
     }
 }
 
-// ── Утиліти ───────────────────────────────────────────────────────────────────
 void triggerBuzzer() {
     digitalWrite(BUZZER_LED, HIGH); delay(200); digitalWrite(BUZZER_LED, LOW);
 }
@@ -404,13 +387,12 @@ void shutdownDevice() {
     esp_deep_sleep_start();
 }
 
-// ── Автентифікація ────────────────────────────────────────────────────────────
 void authenticateDevice() {
     if (WiFi.status() != WL_CONNECTED) return;
     HTTPClient http;
     http.begin(secureClient, String(API_BASE) + "/auth");
     http.addHeader("Content-Type", "application/json");
-    http.setTimeout(30000); // ← 30 сек для першого запиту (Azure може спати)
+    http.setTimeout(30000);
 
     StaticJsonDocument<200> doc;
     doc["device_uid"] = DEVICE_UID;
@@ -433,7 +415,6 @@ void authenticateDevice() {
     http.end();
 }
 
-// ── Heartbeat ─────────────────────────────────────────────────────────────────
 void sendHeartbeat() {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
@@ -445,7 +426,6 @@ void sendHeartbeat() {
     http.end();
 }
 
-// ── Наступний прийом ──────────────────────────────────────────────────────────
 bool checkNextIntake() {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return false;
     HTTPClient http;
@@ -540,7 +520,6 @@ bool checkNextIntake() {
     return true;
 }
 
-// ── Підтвердження прийому ─────────────────────────────────────────────────────
 void confirmIntake(int prescriptionMedId) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
@@ -564,13 +543,11 @@ void confirmIntake(int prescriptionMedId) {
     http.end();
 }
 
-// ── Ротація барабана ──────────────────────────────────────────────────────────
 void rotateToCompartment(int target) {
     if (target < 1 || target > 8) return;
 
     Serial.printf("HOME пошук для відсіку %d...\n", target);
 
-    // ── 3. Шукаємо магніт — максимум 1 повний оберт (2048 кроків) ────────────
     int steps = 0;
     while (steps < 2048) {
         drum.step(1);
@@ -588,7 +565,6 @@ void rotateToCompartment(int target) {
         return;
     }
 
-    // ── 4. Проходимо магніт до заднього краю ─────────────────────────────────
     int magWidth = 0;
     while (digitalRead(HALL_SENSOR_PIN) == LOW) {
         drum.step(1);
@@ -597,7 +573,6 @@ void rotateToCompartment(int target) {
     }
     Serial.printf("Ширина магніту: %d кроків\n", magWidth);
 
-    // ── 5. HOME = задній край магніту ─────────────────────────────────────────
     currentCompartment = 1;
     Serial.println("HOME знайдено");
 
@@ -614,7 +589,6 @@ void rotateToCompartment(int target) {
     logDeviceEvent("info", "MOTOR_OK", "Відсік " + String(target));
 }
 
-// ── Команди від веб-інтерфейсу ───────────────────────────────────────────────
 void handleCommands() {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "" || !rfidAuthenticated) return;
 
@@ -672,7 +646,6 @@ void completeCommand(int id) {
     http.POST(""); http.end();
 }
 
-// ── RFID статус ───────────────────────────────────────────────────────────────
 void sendRfidStatus(bool authenticated) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
@@ -687,7 +660,6 @@ void sendRfidStatus(bool authenticated) {
     http.POST(body); http.end();
 }
 
-// ── Алерт про пропущений прийом ───────────────────────────────────────────────
 void sendWeightAlert(int prescriptionMedId) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
@@ -713,7 +685,6 @@ void sendWeightAlert(int prescriptionMedId) {
     http.end();
 }
 
-// ── Нагадування про прийом ────────────────────────────────────────────────────
 void sendIntakeReminder(int prescriptionMedId) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
@@ -731,14 +702,13 @@ void sendIntakeReminder(int prescriptionMedId) {
     http.end();
 }
 
-// ── Логування подій пристрою ──────────────────────────────────────────────────
 void logDeviceEvent(String type, String code, String message) {
     if (WiFi.status() != WL_CONNECTED || deviceToken == "") return;
     HTTPClient http;
     http.begin(secureClient, String(API_BASE) + "/event");
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", "Bearer " + deviceToken);
-    http.setTimeout(5000); // ← логи не критичні, коротший таймаут
+    http.setTimeout(5000);
 
     StaticJsonDocument<300> doc;
     doc["type"]    = type;
@@ -748,7 +718,6 @@ void logDeviceEvent(String type, String code, String message) {
     http.POST(body); http.end();
 }
 
-// ── Мелодія Бетховена "До Елізи" ─────────────────────────────────────────────
 void playBeethovenMelody() {
     loadServo.detach();
     unloadServo.detach();

@@ -243,6 +243,10 @@ const WardsPage = () => {
         }
     };
 
+    const sortedWards = [...wards].sort((a, b) =>
+        String(a.ward_number ?? '').localeCompare(String(b.ward_number ?? ''), undefined, { numeric: true })
+    );
+
     const totalCapacity = wards.reduce((s, w) => s + (w.capacity || 0), 0);
     const totalPatients = wards.reduce((s, w) => s + w.active_patients, 0);
     const freeWards     = wards.filter(w => !w.is_full && !w.is_blocked).length;
@@ -304,7 +308,7 @@ const WardsPage = () => {
                 </div>
             ) : (
                 <div className={styles.wardsGrid}>
-                    {wards.map(ward => (
+                    {sortedWards.map(ward => (
                         <WardCard
                             key={ward.ward_id}
                             ward={ward}

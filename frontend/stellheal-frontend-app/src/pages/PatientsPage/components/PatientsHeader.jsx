@@ -4,7 +4,7 @@ import { FaUserPlus, FaFileExport, FaUsers } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { fetchPatientsStats, downloadPatientsExcel } from '../../../services/patientService.js';
 
-const PatientsHeader = ({ onAdd, role }) => {
+const PatientsHeader = ({ onAdd, role, patientCount }) => {
     const { t } = useTranslation();
     const [stats, setStats] = useState({ totalPatients: 0, onTreatment: 0 });
 
@@ -12,7 +12,7 @@ const PatientsHeader = ({ onAdd, role }) => {
         fetchPatientsStats()
             .then(setStats)
             .catch(err => console.error('Failed to fetch patient stats:', err));
-    }, []);
+    }, [patientCount]);
 
     return (
         <div className={styles.headerPanel}>

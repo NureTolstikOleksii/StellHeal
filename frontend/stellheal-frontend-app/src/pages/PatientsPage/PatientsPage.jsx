@@ -36,7 +36,11 @@ const PatientsPage = () => {
 
     return (
         <div className={styles.wrapper}>
-            <PatientsHeader onAdd={() => setShowModal(true)} role={role} />
+            <PatientsHeader
+                onAdd={() => setShowModal(true)}
+                role={role}
+                patientCount={patients.length}
+            />
             {showModal && (
                 <AddPatientModal
                     onClose={() => setShowModal(false)}

@@ -320,6 +320,7 @@
       "required": "Required field",
       "invalid_email": "Invalid email format"
     },
+    "update_success": "Data updated",
     "actions": {
       "view": "View",
       "edit": "Edit",
@@ -328,7 +329,9 @@
       "unblock": "Unblock",
       "blocked": "Blocked",
       "blocked_success": "Account blocked",
-      "unblocked": "Account unblocked"
+      "unblocked": "Account unblocked",
+      "block_confirm": "Are you sure you want to block this user?",
+      "unblock_confirm": "Are you sure you want to unblock this user?"
     }
   },
   "roles": {

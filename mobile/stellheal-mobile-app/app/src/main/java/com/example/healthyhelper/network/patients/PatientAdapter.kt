@@ -41,11 +41,19 @@ class PatientAdapter(
         holder.name.text = patient.name
         holder.dob.text = formatLocalDate(patient.dob)
         holder.ward.text = "Палата: ${patient.ward}"
-        holder.avatar.load(patient.avatar ?: "") {
-            placeholder(R.drawable.ic_default_avatar)
-            error(R.drawable.ic_default_avatar)
-            transformations(CircleCropTransformation())
+
+        val avatarUrl = patient.avatar
+        if (!avatarUrl.isNullOrEmpty()) {
+            val freshAvatar = "$avatarUrl?t=${System.currentTimeMillis()}"
+            holder.avatar.load(freshAvatar) {
+                placeholder(R.drawable.ic_default_avatar)
+                error(R.drawable.ic_default_avatar)
+                transformations(CircleCropTransformation())
+            }
+        } else {
+            holder.avatar.setImageResource(R.drawable.ic_default_avatar)
         }
+
         holder.btnView.setOnClickListener {
             onDetailClick(patient)
         }

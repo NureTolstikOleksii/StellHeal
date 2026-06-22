@@ -86,7 +86,8 @@ class TreatmentFragment : Fragment(R.layout.fragment_treatment) {
                 ) {
                     val patient = response.body()?.find { it.id == patientId }
                     if (patient != null) {
-                        avatar.load(patient.avatar) {
+                        val freshAvatar = "${patient.avatar}?t=${System.currentTimeMillis()}"
+                        avatar.load(freshAvatar) {
                             placeholder(R.drawable.ic_default_avatar)
                             error(R.drawable.ic_default_avatar)
                             transformations(CircleCropTransformation())

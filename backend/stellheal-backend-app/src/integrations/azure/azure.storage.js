@@ -40,9 +40,23 @@ export const deletePrescriptionFile = async (blobName) => {
     await blockBlobClient.deleteIfExists();
 };
 
+const deleteOldAvatars = async (userId) => {
+    // дозволені символи розширення — лише букви/цифри
+    const pattern = new RegExp(`^avatar-${userId}(-\\d+)?\\.[A-Za-z0-9]+$`);
+
+    for await (const blob of avatarContainer.listBlobsFlat({ prefix: `avatar-${userId}` })) {
+        if (pattern.test(blob.name)) {
+            await avatarContainer.getBlockBlobClient(blob.name).deleteIfExists();
+        }
+    }
+};
+
 export const uploadAvatarToAzure = async (fileBuffer, originalname, mimetype, userId) => {
-    const ext = originalname.split('.').pop();
-    const blobName = `avatar-${userId}.${ext}`;
+    const ext = (originalname.split('.').pop() || 'jpg').toLowerCase();
+
+    await deleteOldAvatars(userId);
+
+    const blobName = `avatar-${userId}-${Date.now()}.${ext}`;
     const blockBlobClient = avatarContainer.getBlockBlobClient(blobName);
 
     await blockBlobClient.uploadData(fileBuffer, {

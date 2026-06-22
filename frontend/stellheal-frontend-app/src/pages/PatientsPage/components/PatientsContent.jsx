@@ -25,6 +25,20 @@ const PatientsContent = () => {
             .finally(() => setLoading(false));
     }, []);
 
+    useEffect(() => {
+        fetchPatients()
+            .then(data => {
+                const list = Array.isArray(data) ? data : [];
+                const v = Date.now();
+                setPatients(list.map(p => ({
+                    ...p,
+                    avatar: p.avatar ? `${p.avatar}?t=${v}` : null,
+                })));
+            })
+            .catch(err => { console.error('Failed to load patients:', err); setPatients([]); })
+            .finally(() => setLoading(false));
+    }, []);
+
     const filtered = patients
         .filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

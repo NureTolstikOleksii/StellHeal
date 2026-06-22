@@ -52,8 +52,9 @@ class ProfileFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         val avatarUrl = response.body()?.avatar ?: return
+                        val freshUrl = "$avatarUrl?t=${System.currentTimeMillis()}"
 
-                        view?.findViewById<ImageView>(R.id.imageAvatar)?.load(avatarUrl) {
+                        view?.findViewById<ImageView>(R.id.imageAvatar)?.load(freshUrl) {
                             placeholder(R.drawable.ic_default_avatar)
                             error(R.drawable.ic_default_avatar)
                             transformations(CircleCropTransformation())
@@ -116,7 +117,8 @@ class ProfileFragment : Fragment() {
                     if (response.isSuccessful) {
                         val user = response.body()
                         user?.let {
-                            view.findViewById<ImageView>(R.id.imageAvatar).load(it.avatar) {
+                            val freshAvatar = "${it.avatar}?t=${System.currentTimeMillis()}"
+                            view.findViewById<ImageView>(R.id.imageAvatar).load(freshAvatar) {
                                 placeholder(R.drawable.ic_default_avatar)
                                 error(R.drawable.ic_default_avatar)
                                 transformations(CircleCropTransformation())

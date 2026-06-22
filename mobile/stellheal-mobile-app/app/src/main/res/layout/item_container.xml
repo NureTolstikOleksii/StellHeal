@@ -5,7 +5,7 @@
     android:id="@+id/btnContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="8dp"
+    android:layout_marginVertical="2dp"
     android:backgroundTint="@color/orange"
     android:textColor="@android:color/white"
     android:textStyle="bold"

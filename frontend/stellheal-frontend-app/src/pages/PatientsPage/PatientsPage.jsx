@@ -10,15 +10,25 @@ const PatientsPage = () => {
     const [showModal, setShowModal] = useState(false);
     const { user } = useAuth();
     const role = user?.role;
+
     const [patients, setPatients] = useState([]);
+    const [loading, setLoading]   = useState(true);
 
     useEffect(() => {
         const loadPatients = async () => {
             try {
                 const data = await fetchPatients();
-                if (Array.isArray(data)) setPatients(data);
+                const list = Array.isArray(data) ? data : [];
+                const v = Date.now();
+                setPatients(list.map(p => ({
+                    ...p,
+                    avatar: p.avatar ? `${p.avatar}?t=${v}` : null,
+                })));
             } catch (err) {
                 console.error('Failed to fetch patients:', err);
+                setPatients([]);
+            } finally {
+                setLoading(false);
             }
         };
         loadPatients();
@@ -33,7 +43,7 @@ const PatientsPage = () => {
                     setPatients={setPatients}
                 />
             )}
-            <PatientsContent patients={patients} setPatients={setPatients} />
+            <PatientsContent patients={patients} loading={loading} />
         </div>
     );
 };

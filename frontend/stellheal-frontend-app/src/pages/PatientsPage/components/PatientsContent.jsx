@@ -1,43 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { fetchPatients } from '../../../services/patientService.js';
+import React, { useState } from 'react';
 import styles from '../PatientsPage.module.css';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 import LoaderOverlay from '../../../components/LoaderOverlay/LoaderOverlay.jsx';
-import { FaSearch, FaSortAmountDown } from 'react-icons/fa';
-import {formatDate} from "../../../utils/dateTime.js";
+import { FaSearch } from 'react-icons/fa';
+import { formatDate } from "../../../utils/dateTime.js";
 import i18n from "i18next";
 
-const PatientsContent = () => {
+const PatientsContent = ({ patients = [], loading = false }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const [patients, setPatients] = useState([]);
-    const [loading, setLoading]   = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortKey, setSortKey]   = useState('lastName');
-
-    useEffect(() => {
-        fetchPatients()
-            .then(data => setPatients(Array.isArray(data) ? data : []))
-            .catch(err => { console.error('Failed to load patients:', err); setPatients([]); })
-            .finally(() => setLoading(false));
-    }, []);
-
-    useEffect(() => {
-        fetchPatients()
-            .then(data => {
-                const list = Array.isArray(data) ? data : [];
-                const v = Date.now();
-                setPatients(list.map(p => ({
-                    ...p,
-                    avatar: p.avatar ? `${p.avatar}?t=${v}` : null,
-                })));
-            })
-            .catch(err => { console.error('Failed to load patients:', err); setPatients([]); })
-            .finally(() => setLoading(false));
-    }, []);
+    const [sortKey, setSortKey]       = useState('lastName');
 
     const filtered = patients
         .filter(p =>
@@ -45,7 +21,7 @@ const PatientsContent = () => {
             p.email?.toLowerCase().includes(searchTerm.toLowerCase())
         )
         .sort((a, b) => {
-            if (sortKey === 'lastName') return a.name.localeCompare(b.name);
+            if (sortKey === 'lastName')  return a.name.localeCompare(b.name);
             if (sortKey === 'birthDate') return new Date(a.dob) - new Date(b.dob);
             return 0;
         });
@@ -93,9 +69,9 @@ const PatientsContent = () => {
                     </thead>
                     <tbody>
                     {filtered.length > 0 ? (
-                        filtered.map((patient, index) => (
+                        filtered.map((patient) => (
                             <tr
-                                key={index}
+                                key={patient.id}
                                 onClick={() => navigate(`/main/patients/${patient.id}`)}
                                 className={styles.clickableRow}
                             >

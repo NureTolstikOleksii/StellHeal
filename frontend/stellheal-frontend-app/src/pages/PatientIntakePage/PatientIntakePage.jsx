@@ -10,7 +10,7 @@ import { getPatientById, getIntakeStats } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import { formatDateLong, formatTime } from '../../utils/dateTime';
 import i18n from "i18next";
-
+import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 
 const addDays = (iso, n) => {
     const d = new Date(iso);
@@ -182,7 +182,7 @@ const PatientIntakePage = () => {
                 </div>
                 {patient && (
                     <div className={styles.patientBadge}>
-                        <img src={patient.avatar || '/default_avatar.svg'} alt="" className={styles.avatar} />
+                        <img src={patient.avatar || defaultAvatar} alt="" className={styles.avatar} />
                         <div>
                             <div className={styles.patientName}>{patient.name}</div>
                             <div className={styles.patientMeta}>

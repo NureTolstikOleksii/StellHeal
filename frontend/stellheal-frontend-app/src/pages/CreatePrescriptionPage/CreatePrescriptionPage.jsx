@@ -16,7 +16,7 @@ import {
     createPrescription, streamAiRecommendation, searchICDCodes,
 } from '../../services/patientService';
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay.jsx';
-
+import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 
 const FILE_TYPES = [
     { value: 'analysis', label: 'Аналіз крові/сечі',  Icon: FaFileMedical },
@@ -370,7 +370,7 @@ const CreatePrescriptionPage = () => {
                     </div>
                 </div>
                 <div className={styles.patientBadge}>
-                    <img src={patient.avatar || '/default_avatar.svg'} alt="" className={styles.patientAvatar} />
+                    <img src={patient.avatar || defaultAvatar} alt="" className={styles.patientAvatar} />
                     <div>
                         <div className={styles.patientName}>{patient.name}</div>
                         <div className={styles.patientMeta}>{calcAge(patient.dob)} р. · {patient.phone}</div>

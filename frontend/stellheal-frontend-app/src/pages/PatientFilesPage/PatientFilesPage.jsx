@@ -11,6 +11,7 @@ import { getPatientById, getAllPatientFiles } from '../../services/patientServic
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import {formatDate} from "../../utils/dateTime.js";
 import i18n from "i18next";
+import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 
 const FILE_TYPE_COLORS = {
     analysis: '#e3f2fd',
@@ -88,7 +89,7 @@ const PatientFilesPage = () => {
                     </h2>
                 </div>
                 <div className={styles.patientBadge}>
-                    <img src={patient?.avatar || '/default_avatar.svg'} alt="" className={styles.patientAvatar} />
+                    <img src={patient?.avatar || defaultAvatar} alt="" className={styles.patientAvatar} />
                     <div>
                         <div className={styles.patientName}>{patient?.name}</div>
                         <div className={styles.patientMeta}>

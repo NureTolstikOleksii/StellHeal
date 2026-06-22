@@ -11,6 +11,7 @@ import { MdSick } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
 import styles from '../CreatePrescriptionPage/CreatePrescriptionPage.module.css';
 import Toast from '../../components/Toast/Toast';
+import defaultAvatar from '../../../assets/icons/default_avatar.svg';
 
 import {
     fetchAvailableWards,
@@ -496,7 +497,7 @@ const EditPrescriptionPage = () => {
                     </div>
                 </div>
                 <div className={styles.patientBadge}>
-                    <img src={patient.avatar || '/default_avatar.svg'} alt="" className={styles.patientAvatar} />
+                    <img src={patient.avatar || defaultAvatar} alt="" className={styles.patientAvatar} />
                     <div>
                         <div className={styles.patientName}>{patient.name}</div>
                         <div className={styles.patientMeta}>{calcAge(patient.dob)} р. · {patient.phone}</div>

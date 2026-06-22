@@ -16,7 +16,7 @@ import {
     createPrescription, streamAiRecommendation, searchICDCodes,
 } from '../../services/patientService';
 import LoaderOverlay from '../../components/LoaderOverlay/LoaderOverlay.jsx';
-import defaultAvatar from '../../../assets/icons/default_avatar.svg';
+import defaultAvatar from '../../assets/icons/default_avatar.svg';
 
 const FILE_TYPES = [
     { value: 'analysis', label: 'Аналіз крові/сечі',  Icon: FaFileMedical },
@@ -349,7 +349,17 @@ const CreatePrescriptionPage = () => {
         }
     };
 
-    const calcAge = (dob) => dob ? String(new Date().getFullYear() - new Date(dob).getFullYear()) : '?';
+    const calcAge = (dob) => {
+        if (!dob) return '?';
+        const birth = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return String(age);
+    };
 
     if (!patient) return <LoaderOverlay />;
 

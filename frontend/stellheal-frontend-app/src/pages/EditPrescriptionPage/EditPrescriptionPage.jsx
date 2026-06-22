@@ -11,7 +11,7 @@ import { MdSick } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
 import styles from '../CreatePrescriptionPage/CreatePrescriptionPage.module.css';
 import Toast from '../../components/Toast/Toast';
-import defaultAvatar from '../../../assets/icons/default_avatar.svg';
+import defaultAvatar from '../../assets/icons/default_avatar.svg';
 
 import {
     fetchAvailableWards,
@@ -476,7 +476,17 @@ const EditPrescriptionPage = () => {
         }
     };
 
-    const calcAge = (dob) => dob ? String(new Date().getFullYear() - new Date(dob).getFullYear()) : '?';
+    const calcAge = (dob) => {
+        if (!dob) return '?';
+        const birth = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return String(age);
+    };
 
     if (loadingPage) return <LoaderOverlay />;
     if (!patient)   return <div className={styles.loading}>{t('patient_details.not_found')}</div>;

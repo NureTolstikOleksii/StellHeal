@@ -10,7 +10,7 @@ import { getPatientById, getIntakeStats } from '../../services/patientService';
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import { formatDateLong, formatTime } from '../../utils/dateTime';
 import i18n from "i18next";
-import defaultAvatar from '../../../assets/icons/default_avatar.svg';
+import defaultAvatar from '../../assets/icons/default_avatar.svg';
 
 const addDays = (iso, n) => {
     const d = new Date(iso);
@@ -155,7 +155,17 @@ const PatientIntakePage = () => {
             .finally(() => setLoading(false));
     }, [id, date, prescriptionId]);
 
-    const calcAge = (dob) => dob ? String(new Date().getFullYear() - new Date(dob).getFullYear()) : '?';
+    const calcAge = (dob) => {
+        if (!dob) return '?';
+        const birth = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return String(age);
+    };
     const pct = stats ? Math.round((stats.summary.taken / (stats.summary.total || 1)) * 100) : 0;
 
     if (!patient) return <LoaderOverlay />;

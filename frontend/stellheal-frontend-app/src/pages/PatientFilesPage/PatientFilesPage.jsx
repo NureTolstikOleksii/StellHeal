@@ -11,7 +11,7 @@ import { getPatientById, getAllPatientFiles } from '../../services/patientServic
 import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 import {formatDate} from "../../utils/dateTime.js";
 import i18n from "i18next";
-import defaultAvatar from '../../../assets/icons/default_avatar.svg';
+import defaultAvatar from '../../assets/icons/default_avatar.svg';
 
 const FILE_TYPE_COLORS = {
     analysis: '#e3f2fd',

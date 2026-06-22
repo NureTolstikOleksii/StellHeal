@@ -90,7 +90,8 @@
       "required": "All fields are required",
       "invalid_email": "Invalid email format",
       "creation_failed": "Failed to create patient. Please try again later",
-      "update_failed": "Failed to update patient"
+      "update_failed": "Failed to update patient",
+      "user_exists": "User exists"
     },
     "edit_title": "Edit patient",
     "save_changes": "Save"

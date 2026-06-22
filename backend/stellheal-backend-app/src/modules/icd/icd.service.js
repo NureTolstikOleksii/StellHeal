@@ -17,6 +17,7 @@ const ICD_DATA = raw.data
         code:  pick(row[7], row[4]),
         name:  pick(row[9], row[6]),
         group: pick(row[6], row[3]) || '',
+        block: row[3] || '',
     }))
     .filter(d => d.code && d.name);
 
@@ -34,13 +35,15 @@ export const searchICD = async (query) => {
     const matches = ICD_UNIQUE.filter(d =>
         d.code.toLowerCase().includes(q) ||
         d.name.toLowerCase().includes(q) ||
-        (d.group && d.group.toLowerCase().includes(q))
+        (d.group && d.group.toLowerCase().includes(q)) ||
+        (d.block && d.block.toLowerCase().includes(q))
     );
 
     matches.sort((a, b) => {
         const aExact = a.code.toLowerCase() === q ? 0 : 1;
         const bExact = b.code.toLowerCase() === q ? 0 : 1;
-        return aExact - bExact;
+        if (aExact !== bExact) return aExact - bExact;
+        return a.code.length - b.code.length;
     });
 
     return matches.slice(0, 10);

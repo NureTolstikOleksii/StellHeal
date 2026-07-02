@@ -723,7 +723,6 @@ void playBeethovenMelody() {
     ledcSetup(BUZZER_CHANNEL, 1000, 8);
     ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
 
-    // серви НЕ чіпаємо — обидва лишаються attached і тримають люки закритими
     loadServo.write(90);
     unloadServo.write(83);
 

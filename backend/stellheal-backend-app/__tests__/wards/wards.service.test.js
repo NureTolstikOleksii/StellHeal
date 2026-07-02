@@ -44,7 +44,6 @@ vi.mock('../../src/shared/constants/errorCodes.js', () => ({
 
 const { WardsService } = await import('../../src/modules/wards/wards.service.js');
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 const makeReq = (userId = 1) => ({
     user: { userId }
 });

@@ -26,3 +26,5 @@ backups
 backups-temp
 secrets
 coverage
+scripts
+uploads

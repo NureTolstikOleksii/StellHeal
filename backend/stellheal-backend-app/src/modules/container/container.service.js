@@ -32,7 +32,6 @@ export class ContainerService {
         return { activeCount, inactiveCount };
     }
 
-    // last fills
     async getLatestFillings() {
         const fillings = await prisma.compartment_medications.findMany({
             where:   { fill_time: { not: null } },
@@ -438,7 +437,6 @@ export class ContainerService {
         };
     }
 
-    // admission statistics фільтруємо по UTC добі
     async getIntakeStatistics(patientId, dateStr) {
         const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
         const dayEnd   = new Date(`${dateStr}T23:59:59.999Z`);

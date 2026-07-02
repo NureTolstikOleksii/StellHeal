@@ -151,7 +151,7 @@ export const generateStaffExcel = async (doctors, nurses) => {
     addColHeaders(sheet, COLORS.nurseBg);
     nurses.forEach((n, i) => addPersonRow(sheet, n, i, COLORS.nurseSubBg));
 
-    // ── АРКУШ 2: Лікарі детально
+    // АРКУШ 2: Лікарі детально
     const docSheet = workbook.addWorksheet('Лікарі');
     docSheet.columns = [
         { width: 6  }, { width: 28 }, { width: 8  }, { width: 16 },

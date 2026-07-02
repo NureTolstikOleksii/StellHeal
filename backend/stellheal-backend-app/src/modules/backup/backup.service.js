@@ -219,7 +219,6 @@ export class BackupService {
 
         if (ofType.length <= maxKeep) return;
 
-        // видаляємо найстаріші
         const toDelete = ofType.slice(maxKeep);
         const container = getContainer();
 

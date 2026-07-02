@@ -719,8 +719,13 @@ void logDeviceEvent(String type, String code, String message) {
 }
 
 void playBeethovenMelody() {
-    loadServo.detach();
-    unloadServo.detach();
+    const int BUZZER_CHANNEL = 4;
+    ledcSetup(BUZZER_CHANNEL, 1000, 8);
+    ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
+
+    // серви НЕ чіпаємо — обидва лишаються attached і тримають люки закритими
+    loadServo.write(90);
+    unloadServo.write(83);
 
     int melody[] = {
         NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_DS5, NOTE_E5, NOTE_B4, NOTE_D5, NOTE_C5, NOTE_A4,
@@ -780,17 +785,21 @@ void playBeethovenMelody() {
 
     for (int i = 0; i < numNotes; i++) {
         if (melody[i] == 0) {
-            noTone(BUZZER_PIN);
+            ledcWriteTone(BUZZER_CHANNEL, 0);
             delay(noteDurations[i]);
         } else {
-            tone(BUZZER_PIN, melody[i], noteDurations[i]);
+            ledcWriteTone(BUZZER_CHANNEL, melody[i]);
             delay((int)(noteDurations[i] * 1.25));
-            noTone(BUZZER_PIN);
+            ledcWriteTone(BUZZER_CHANNEL, 0);
         }
     }
 
-    noTone(BUZZER_PIN);
+    ledcWriteTone(BUZZER_CHANNEL, 0);
+    ledcDetachPin(BUZZER_PIN);
 
-    loadServo.attach(25);  loadServo.write(90);
-    unloadServo.attach(26); unloadServo.write(83);
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW);
+
+    loadServo.write(90);
+    unloadServo.write(83);
 }

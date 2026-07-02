@@ -49,7 +49,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
 
     const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 
-    // ── АРКУШ 1: Зведений звіт
+    // АРКУШ 1: Зведений звіт
     const summary = workbook.addWorksheet('Зведений звіт');
     summary.columns = [
         { width: 5  },
@@ -154,7 +154,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
         });
     });
 
-    // ── АРКУШ 2: Деталі по кожному призначенню
+    // АРКУШ 2: Деталі по кожному призначенню
     const details = workbook.addWorksheet('Деталі призначень');
     details.columns = [
         { width: 5  },
@@ -256,7 +256,7 @@ export const generateTreatmentExcel = async (patient, prescriptions) => {
             });
     });
 
-    // ── АРКУШ 3: Статистика виконання
+    // АРКУШ 3: Статистика виконання
     const stats = workbook.addWorksheet('Статистика');
     stats.columns = [{ width: 30 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }];
 

@@ -41,7 +41,6 @@ export const deletePrescriptionFile = async (blobName) => {
 };
 
 const deleteOldAvatars = async (userId) => {
-    // дозволені символи розширення — лише букви/цифри
     const pattern = new RegExp(`^avatar-${userId}(-\\d+)?\\.[A-Za-z0-9]+$`);
 
     for await (const blob of avatarContainer.listBlobsFlat({ prefix: `avatar-${userId}` })) {

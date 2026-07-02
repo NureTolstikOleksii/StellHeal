@@ -161,7 +161,7 @@ describe('streamAiRecommendation', () => {
         ]));
 
         const onChunk = vi.fn();
-        // Should not throw
+
         await expect(
             streamAiRecommendation('diagnosis', {}, onChunk)
         ).resolves.not.toThrow();

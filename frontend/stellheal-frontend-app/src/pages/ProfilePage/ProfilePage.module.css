@@ -1,13 +1,43 @@
-.title {
+.pageWrapper {
+    padding: 8px 0 60px;
+    font-family: inherit;
+}
+
+.pageHeader {
+    margin-bottom: 24px;
+}
+
+.pageTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pageTitleIcon {
     font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    margin-top: 10px;
+    color: #1976d2;
+    flex-shrink: 0;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.contentCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .formRow {
     display: flex;
-    justify-content: space-between;
+    gap: 40px;
     align-items: flex-start;
     flex-wrap: wrap;
 }
@@ -17,6 +47,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
+    min-width: 0;
 }
 
 .inputGroup {
@@ -25,35 +56,115 @@
     width: calc(50% - 8px);
 }
 
-.inputGroupAddress {
+.inputGroupFull {
     display: flex;
     flex-direction: column;
-    width: calc(100% - 8px);
+    width: 100%;
 }
 
-.inputGroup label, .inputGroupAddress label{
-    font-size: 13px;
-    margin-bottom: 4px;
-    color: #555;
+.inputLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
 }
 
-.inputGroup input, .inputGroupAddress input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+.input {
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
     font-size: 14px;
+    color: #111827;
+    transition: border-color 0.15s, background 0.15s;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.inputDisabled {
+    background: #f9fafb;
+    color: #6b7280;
     pointer-events: none;
-    background-color: #f1f1f1;
-    color: #444;
     cursor: default;
 }
 
+.inputEditable {
+    background: #fff;
+    pointer-events: auto;
+    cursor: text;
+}
+.inputEditable:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25,118,210,0.08);
+}
+
+.inputError {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.formError {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.saveBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+}
+.saveBtn:hover:not(:disabled) { background: #1565c0; }
+.saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.passwordBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid #1976d2;
+    background: #fff;
+    color: #1976d2;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+    margin-top: 12px;
+}
+.passwordBtn:hover { background: #eff6ff; }
+
 .photoBlock {
-    margin-left: 40px;
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    width: 180px;
+}
+
+.avatarWrapper {
+    position: relative;
+    margin-bottom: 16px;
 }
 
 .avatar {
@@ -61,125 +172,56 @@
     height: 130px;
     border-radius: 50%;
     object-fit: cover;
+    border: 3px solid #e0e7ff;
+    display: block;
 }
 
-.editPhoto {
+.editPhotoBtn {
     position: absolute;
-    bottom: 48px;
-    right: 10px;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background-color: #ffffff;
-    border: 1px solid #ccc;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     border-radius: 50%;
-    cursor: pointer;
+    background: #fff;
+    border: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: background-color 0.2s ease;
-}
-.editPhoto:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-.editPhoto:hover {
-    background-color: #f3f6fd;
-}
-
-.editIcon {
-    font-size: 18px;
-    color: #333;
-}
-
-.editPhoto:hover {
-    background-color: #f3f6fd;
-}
-
-
-.saveButton {
-    margin-top: 16px;
-    padding: 6px 16px;
-    background-color: #0d6efd;
-    color: #ffffff;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    color: #374151;
+    transition: background 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+.editPhotoBtn:hover { background: #eff6ff; color: #1976d2; }
+.editPhotoBtn:focus { outline: none; }
+
+.userNameBlock {
+    text-align: center;
+    margin-bottom: 4px;
 }
 
-.saveButton:hover {
-    background-color: #ffffff;
-    color: #1565c0;
+.userName {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
 }
 
-.disabledInput {
-    pointer-events: none;
-    background-color: #f1f1f1;
-    color: #444;
-    cursor: default;
-}
-
-.editableInput {
-    pointer-events: auto !important;
-    background-color: white !important;
-    color: #333 !important;
-    cursor: text !important;
-}
-
-.inputError {
-    color: #b71c1c;
+.userRole {
     font-size: 13px;
-    margin-top: 4px;
-}
-
-.formError {
-    background-color: #fdecea;
-    color: #b71c1c;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 10px 14px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #f5c2c7;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.actionRow {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    color: #6b7280;
+    margin-top: 2px;
 }
 
 @media (max-width: 768px) {
-    .formRow {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .photoBlock {
-        order: -1;
-        margin: 0 auto 20px auto;
-    }
-
-    .fields {
-        flex-direction: column;
-        align-items: stretch;
-        width: 100%;
-        gap: 12px;
-    }
-
-    .inputGroup {
-        width: 100%;
-    }
-
-    .saveButton {
-        width: 100%;
-    }
+    .contentCard { padding: 20px 16px; }
+    .formRow { flex-direction: column-reverse; align-items: center; gap: 24px; }
+    .photoBlock { width: 100%; }
+    .inputGroup { width: 100%; }
+    .fields { gap: 12px; }
+    .saveBtn { width: 100%; justify-content: center; }
 }

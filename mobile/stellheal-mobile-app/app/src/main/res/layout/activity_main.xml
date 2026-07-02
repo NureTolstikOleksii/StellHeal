@@ -28,7 +28,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Тінь зверху -->
         <View
             android:layout_width="match_parent"
             android:layout_height="6dp"
@@ -36,7 +35,6 @@
             android:layout_gravity="top"
             android:elevation="4dp" />
 
-        <!-- Нижнє меню -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigationView"
             android:layout_width="match_parent"

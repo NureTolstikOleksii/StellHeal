@@ -12,17 +12,26 @@
         android:id="@+id/textTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="40dp"
         android:gravity="center"
-
-        android:text="Profile"
+        android:text="Профіль"
+        android:fontFamily="@font/montserrat_black"
         android:textColor="@color/black"
         android:textSize="26sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/profileScroll"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textTitle" />
 
     <ScrollView
         android:id="@+id/profileScroll"
@@ -32,6 +41,7 @@
         android:paddingEnd="16dp"
         android:paddingBottom="105dp"
         android:paddingTop="8dp"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/textTitle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -43,7 +53,6 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <!-- Аватарка з кнопкою редагування -->
             <FrameLayout
                 android:layout_width="120dp"
                 android:layout_height="120dp">
@@ -70,19 +79,16 @@
                     android:src="@drawable/ic_edit" />
             </FrameLayout>
 
-            <!-- ПІБ -->
             <TextView
                 android:id="@+id/textFullName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="20dp"
-                android:text="Ім'я Прізвище"
                 android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <!-- Email -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -96,11 +102,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="user@example.com"
                 android:textColor="@color/black"
                 android:textSize="16sp" />
 
-            <!-- Телефон -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -114,18 +118,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="+380123456789"
                 android:textColor="@color/black"
                 android:textSize="16sp" />
 
-            <!-- Секція для staff -->
             <LinearLayout
                 android:id="@+id/staffSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <!-- Спеціалізація -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -139,11 +141,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:text="Медсестра денного стаціонару"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
-                <!-- Дата прийому -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -157,11 +157,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:text="01.02.2023"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
-                <!-- Зміна -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -175,19 +173,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:text="Денна"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Секція для patient -->
             <LinearLayout
                 android:id="@+id/patientSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <!-- Адреса -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -201,12 +197,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:text="вул. Київська, 10"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- Дата народження -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -220,11 +214,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="01.01.1990"
                 android:textColor="@color/black"
                 android:textSize="16sp" />
 
-            <!-- Змінити пароль -->
             <Button
                 android:id="@+id/btnChangePassword"
                 android:layout_width="match_parent"
@@ -238,7 +230,19 @@
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
 
-            <!-- Вийти -->
+            <Button
+                android:id="@+id/btnChangeEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/button_gradient_save"
+                android:paddingVertical="12dp"
+                android:text="Змінити email"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
+
             <Button
                 android:id="@+id/btnSignOut"
                 android:layout_width="match_parent"

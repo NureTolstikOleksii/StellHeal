@@ -1,5 +1,7 @@
 package com.example.healthyhelper.network
 
+import com.example.healthyhelper.auth.AuthManager
+import com.example.healthyhelper.auth.TokenAuthenticator
 import com.example.healthyhelper.network.auth.AuthApi
 import com.example.healthyhelper.network.calendar.CalendarApi
 import com.example.healthyhelper.network.container.ContainerApi
@@ -11,10 +13,9 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.TimeZone
 
 object RetrofitClient {
-
-    private const val BASE_URL = "https://stellhealback.onrender.com"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -22,10 +23,23 @@ object RetrofitClient {
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)
+        .addInterceptor { chain ->
+            val token = AuthManager.getAccessToken()
+            val systemTimezone = TimeZone.getDefault().id
+            val requestBuilder = chain.request().newBuilder()
+                .header("x-timezone", systemTimezone)
+
+            if (token != null) {
+                requestBuilder.header("Authorization", "Bearer $token")
+            }
+
+            chain.proceed(requestBuilder.build())
+        }
+        .authenticator(TokenAuthenticator())
         .build()
 
     private val retrofit: Retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(ApiConfig.BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .client(client)
         .build()

@@ -1,14 +1,18 @@
 package com.example.healthyhelper.network.patients
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.transform.CircleCropTransformation
 import com.example.healthyhelper.R
+import com.example.healthyhelper.utils.formatLocalDate
 
 class PatientAdapter(
     private val originalList: List<PatientResponse>,
@@ -31,15 +35,25 @@ class PatientAdapter(
         return PatientViewHolder(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: PatientViewHolder, position: Int) {
         val patient = filteredList[position]
         holder.name.text = patient.name
-        holder.dob.text = patient.dob ?: "Невідомо"
+        holder.dob.text = formatLocalDate(patient.dob)
         holder.ward.text = "Палата: ${patient.ward}"
-        holder.avatar.load(patient.avatar) {
-            placeholder(R.drawable.ic_default_avatar)
-            error(R.drawable.ic_default_avatar)
+
+        val avatarUrl = patient.avatar
+        if (!avatarUrl.isNullOrEmpty()) {
+            val freshAvatar = "$avatarUrl?t=${System.currentTimeMillis()}"
+            holder.avatar.load(freshAvatar) {
+                placeholder(R.drawable.ic_default_avatar)
+                error(R.drawable.ic_default_avatar)
+                transformations(CircleCropTransformation())
+            }
+        } else {
+            holder.avatar.setImageResource(R.drawable.ic_default_avatar)
         }
+
         holder.btnView.setOnClickListener {
             onDetailClick(patient)
         }

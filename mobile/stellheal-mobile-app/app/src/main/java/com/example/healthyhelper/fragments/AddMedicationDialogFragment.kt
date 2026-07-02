@@ -7,21 +7,24 @@ import android.os.Bundle
 import android.view.Window
 import android.widget.*
 import androidx.fragment.app.DialogFragment
-import androidx.navigation.fragment.findNavController
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.container.PrescriptionOption
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import android.content.Context
-import android.util.Log
 import android.view.ViewGroup
+import com.example.healthyhelper.network.container.FillConfirmRequest
+import android.os.Build
+import android.view.View
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalTime
 
 class AddMedicationDialogFragment(
     private val patientId: Int,
-    private val compartmentId: Int,
-    private val containerId: Int
+    private val compartmentNumber: Int,
+    private val containerId: Int,
+    private val onSuccess: () -> Unit
 ) : DialogFragment() {
 
     private var prescriptionMap = emptyMap<String, Int>()
@@ -33,26 +36,37 @@ class AddMedicationDialogFragment(
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val spinner = dialog.findViewById<Spinner>(R.id.medicationSpinner)
+        val textMedicationHeader = dialog.findViewById<TextView>(R.id.textMedicationHeader)
+        val textEmptyState = dialog.findViewById<TextView>(R.id.textEmptyState)
         val btnOk = dialog.findViewById<Button>(R.id.btnOk)
         val btnCancel = dialog.findViewById<Button>(R.id.btnCancel)
 
-        val sharedPref = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val filledBy = sharedPref.getInt("user_id", -1)
+        textEmptyState?.visibility = View.GONE
 
-        RetrofitClient.containerApi.getTodaysPrescriptions(mapOf("patientId" to patientId))
+        RetrofitClient.containerApi.getTodaysPrescriptions(patientId)
             .enqueue(object : Callback<List<PrescriptionOption>> {
-                override fun onResponse(
-                    call: Call<List<PrescriptionOption>>,
-                    response: Response<List<PrescriptionOption>>
-                ) {
-                    val list = response.body() ?: return
+                @RequiresApi(Build.VERSION_CODES.O)
+                override fun onResponse(call: Call<List<PrescriptionOption>>, response: Response<List<PrescriptionOption>>) {
+                    val list = response.body() ?: emptyList()
+
+                    if (list.isEmpty()) {
+                        spinner.visibility = View.GONE
+                        textMedicationHeader.visibility = View.GONE
+                        textEmptyState?.text = "У пацієнта немає запланованих призначень ліків на сьогодні."
+                        textEmptyState?.visibility = View.VISIBLE
+                        btnOk.isEnabled = false
+                        btnOk.alpha = 0.5f
+                        return
+                    }
+
+                    spinner.visibility = View.VISIBLE
+                    textMedicationHeader.visibility = View.VISIBLE
+                    textEmptyState?.visibility = View.GONE
+                    btnOk.isEnabled = true
+                    btnOk.alpha = 1.0f
 
                     val labels = list.map {
-                        val time = try {
-                            it.intake_time.substringAfter("T").substring(0, 5)
-                        } catch (e: Exception) {
-                            "??:??"
-                        }
+                        val time = utcToLocalTime(it.intake_at)
                         "${it.medication} - ${it.quantity} табл. - $time"
                     }
 
@@ -60,14 +74,12 @@ class AddMedicationDialogFragment(
                         labels[index] to item.prescription_med_id
                     }.toMap()
 
-                    val adapter = ArrayAdapter(
+                    spinner.adapter = ArrayAdapter(
                         requireContext(),
                         android.R.layout.simple_spinner_dropdown_item,
                         labels
                     )
-                    spinner.adapter = adapter
                 }
-
                 override fun onFailure(call: Call<List<PrescriptionOption>>, t: Throwable) {
                     Toast.makeText(requireContext(), "Помилка завантаження призначень", Toast.LENGTH_SHORT).show()
                 }
@@ -75,41 +87,31 @@ class AddMedicationDialogFragment(
 
         btnOk.setOnClickListener {
             val selectedLabel = spinner.selectedItem?.toString() ?: return@setOnClickListener
-            val prescriptionId = prescriptionMap[selectedLabel] ?: return@setOnClickListener
+            val prescriptionMedId = prescriptionMap[selectedLabel] ?: return@setOnClickListener
 
-            if (filledBy == -1) {
-                Toast.makeText(requireContext(), "Не знайдено ID користувача", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                return@setOnClickListener
-            }
-            Log.d("AddMedDebug", "filledBy = $filledBy")
-
-            RetrofitClient.containerApi.addMedicationToCompartment(
-                mapOf(
-                    "compartmentId" to compartmentId,
-                    "prescription_med_id" to prescriptionId,
-                    "filled_by" to filledBy
+            RetrofitClient.containerApi.fillConfirm(
+                FillConfirmRequest(
+                    containerId = containerId,
+                    compartmentNumber = compartmentNumber,
+                    prescription_med_id = prescriptionMedId
                 )
             ).enqueue(object : Callback<Unit> {
                 override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                    dialog.dismiss()
-                    requireParentFragment().findNavController().navigate(
-                        R.id.containerCompartmentFragment,
-                        Bundle().apply {
-                            putInt("containerId", containerId)
-                        }
-                    )
+                    if (response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Відсік успішно заповнено", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                        onSuccess()
+                    } else {
+                        Toast.makeText(requireContext(), "Помилка підтвердження заповнення", Toast.LENGTH_SHORT).show()
+                    }
                 }
-
                 override fun onFailure(call: Call<Unit>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Помилка додавання препарату", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Помилка мережі", Toast.LENGTH_SHORT).show()
                 }
             })
         }
 
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
-        }
+        btnCancel.setOnClickListener { dialog.dismiss() }
 
         return dialog
     }

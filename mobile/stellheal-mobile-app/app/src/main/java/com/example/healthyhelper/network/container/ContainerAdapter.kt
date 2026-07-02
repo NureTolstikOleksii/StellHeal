@@ -24,7 +24,7 @@ class ContainerAdapter(
 
     override fun onBindViewHolder(holder: ContainerViewHolder, position: Int) {
         val container = containers[position]
-        holder.btn.text = "Container №${container.container_number}"
+        holder.btn.text = "Контейнер №${container.container_number}"
         holder.btn.setOnClickListener { onClick(container) }
     }
 

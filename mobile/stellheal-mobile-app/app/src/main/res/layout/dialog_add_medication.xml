@@ -10,16 +10,29 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add medications"
+        android:text="Додати препарат"
         android:textStyle="bold"
         android:textSize="22sp"
         android:textColor="@color/black"
         android:layout_marginBottom="24dp"/>
 
     <TextView
+        android:id="@+id/textEmptyState"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Medication"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:text="У пацієнта немає запланованих призначень ліків на сьогодні."
+        android:textColor="#757575"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textMedicationHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Препарат"
         android:textStyle="bold"
         android:textColor="@color/black"/>
 
@@ -45,7 +58,7 @@
             android:layout_weight="1"
             android:background="@drawable/orange_gradient"
             app:backgroundTint="@null"
-            android:text="Ok"
+            android:text="Підтвердити"
             android:textColor="@android:color/white" />
 
         <Space android:layout_width="16dp" android:layout_height="0dp" />
@@ -55,7 +68,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Cancel"
+            android:text="Скасувати"
             android:textColor="@color/orange"
             android:background="@drawable/button_outline_orange"
             app:backgroundTint="@null" />

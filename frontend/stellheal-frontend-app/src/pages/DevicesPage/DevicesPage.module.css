@@ -1,141 +1,416 @@
-/* Основний контейнер */
-.container {
-    background-color: #ffffff;
-    font-family: 'Arial', sans-serif;
+.pageWrapper {
+    padding: 8px 0 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.headerPanel {
-    background-color: #fff;
-    margin-bottom: 20px;
-    margin-top: 5px;
+.pageHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
-}
-
-.pageTitle {
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0px 0px 10px;
+    gap: 16px;
 }
 
 .titleBlock {
     display: flex;
     flex-direction: column;
+    gap: 12px;
+}
+
+.pageTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pageTitleIcon { font-size: 22px; color: #1976d2; }
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .counts {
     display: flex;
     align-items: center;
     gap: 24px;
-    margin-top: 10px;
+    padding: 10px 16px;
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    border-radius: 12px;
+    width: fit-content;
 }
 
-.countItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+.countItem { display: flex; flex-direction: column; align-items: center; }
 
 .countValue {
-    font-size: 35px;
-    font-weight: bold;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1976d2;
+    line-height: 1;
 }
 
-.countLabel {
-    font-size: 15px;
-    color: #666;
-}
+.countLabel { font-size: 12px; color: #6b7280; margin-top: 2px; }
 
-.divider {
-    height: 40px;
-    width: 1px;
-    background-color: #ddd;
-}
+.divider { height: 36px; width: 1px; background: #e0e7ff; }
 
 .actions {
     display: flex;
-    gap: 14px;
+    gap: 10px;
+    align-items: center;
     flex-wrap: wrap;
 }
 
-/* ---------- КНОПКА ЕКСПОРТУ ---------- */
-.exportBtn {
-    border: 1px solid #1976d2;
-    width: 200px;
-    color: #1976d2;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 14px;
-    background-color: transparent;
-    display: flex;
+.registerBtn {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 7px;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
-    text-align: center;
+    transition: background 0.15s;
+    white-space: nowrap;
 }
+.registerBtn:hover { background: #1565c0; }
 
-.exportBtn:hover {
-    background-color: #f1f6ff;
+.exportBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #1976d2;
+    color: #1976d2;
+    background: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
 }
+.exportBtn:hover { background: #eff6ff; }
 
-.icon {
-    font-size: 16px;
-}
-
-/* ---------- СЕКЦІЯ ЗАПОВНЕНЬ ---------- */
 .section {
     background: #fff;
-    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
     padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .sectionTitle {
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0px 0px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px;
 }
 
-.logList {
-    list-style: none;
-    padding-left: 0;
-    color: #333;
+.empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 24px;
 }
-.logItem {
+
+.tableWrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table thead { background: #eff6ff; }
+
+.table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table td {
+    padding: 12px 14px;
+    color: #374151;
+    border-top: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.table tr:hover td { background: #f8faff; }
+
+
+.containerNumber {
+    background: #eff6ff;
+    color: #1976d2;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.uid {
+    font-family: monospace;
+    font-size: 12px;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: #374151;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badgeOnline  { background: #f0fdf4; color: #16a34a; }
+.badgeOffline { background: #f9fafb; color: #9ca3af; }
+
+.patientCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.patientIcon { color: #9ca3af; flex-shrink: 0; }
+
+.noPatient {
+    font-size: 12px;
+    color: #d1d5db;
+    font-style: italic;
+}
+
+.dateCell {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.firmware {
+    font-size: 12px;
+    font-family: monospace;
+    color: #6b7280;
+}
+
+.deleteBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
+}
+.deleteBtn:hover:not(:disabled) { background: #fee2e2; }
+.deleteBtn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.fillList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fillItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+.fillIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+
+.fillInfo { display: flex; flex-direction: column; gap: 3px; }
+
+.fillText { font-size: 13px; color: #111827; }
+
+.fillMeta { font-size: 12px; color: #9ca3af; }
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 8px;
 }
 
-.logText {
-    display: block;
-    word-wrap: break-word;
-    white-space: normal;
-    line-height: 1.4;
+.modalTitleRow { display: flex; align-items: center; gap: 10px; }
+
+.modalTitleIcon { font-size: 20px; color: #1976d2; }
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
 }
-/* ---------- АДАПТИВНІСТЬ ---------- */
-@media (max-width: 950px) {
-    .headerPanel {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 16px;
-    }
 
-    .counts {
-        justify-content: center;
-        gap: 32px;
-    }
+.modalCloseBtn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s, background 0.15s;
+}
+.modalCloseBtn:hover { color: #374151; background: #f3f4f6; }
 
-    .actions {
-        justify-content: center;
-        width: 100%;
-    }
+.modalSubtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
 
-    .exportBtn {
-        width: 100%;
-        justify-content: center;
+.modalForm { display: flex; flex-direction: column; gap: 16px; }
+
+.fieldGroup { display: flex; flex-direction: column; gap: 5px; }
+
+.fieldLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.input {
+    padding: 11px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #111827;
+    background: #f9fafb;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    font-family: monospace;
+}
+.input:focus {
+    border-color: #1976d2;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(25,118,210,0.08);
+}
+.inputError { border-color: #ef4444 !important; background: #fff5f5; }
+
+.fieldError { font-size: 12px; color: #ef4444; }
+
+.modalActions { display: flex; gap: 10px; }
+
+.cancelBtn {
+    flex: 1;
+    padding: 11px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.cancelBtn:hover { background: #f9fafb; }
+
+.submitBtn {
+    flex: 1;
+    padding: 11px;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.submitBtn:hover:not(:disabled) { background: #1565c0; }
+.submitBtn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+    .pageHeader { flex-direction: column; align-items: stretch; }
+    .registerBtn, .exportBtn { flex: 1; justify-content: center; }
+    .table thead { display: none; }
+    .table tr {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
     }
+    .table td { display: block; padding: 6px 0; border: none; }
 }

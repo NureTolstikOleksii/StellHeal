@@ -1,14 +1,17 @@
 package com.example.healthyhelper.fragments
 
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
 import com.example.healthyhelper.network.container.ContainerWithDetails
+import com.example.healthyhelper.utils.utcToLocalTime
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -16,17 +19,28 @@ import retrofit2.Response
 class DeviceFragment : Fragment(R.layout.fragment_device) {
 
     private lateinit var devicesContainer: LinearLayout
+    private lateinit var progressBar: ProgressBar
+    private lateinit var scrollView: ScrollView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         devicesContainer = view.findViewById(R.id.devicesContainer)
+        progressBar = view.findViewById(R.id.progressBar)
+        scrollView = view.findViewById(R.id.scrollView)
+        progressBar.visibility = View.VISIBLE
+        scrollView.visibility = View.GONE
 
         RetrofitClient.containerApi.getAllContainerDetails()
             .enqueue(object : Callback<List<ContainerWithDetails>> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<List<ContainerWithDetails>>,
                     response: Response<List<ContainerWithDetails>>
                 ) {
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
+
                     val containers = response.body() ?: return
                     devicesContainer.removeAllViews()
 
@@ -38,22 +52,44 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                         )
 
                         card.findViewById<TextView>(R.id.containerTitle).text =
-                            "Container №${container.container_number}"
+                            "Контейнер №${container.container_number}"
                         card.findViewById<TextView>(R.id.containerStatus).text =
-                            "Status: ${container.status}"
+                            when (container.status.lowercase()) {
+                                "active"             -> "Статус: Активний"
+                                "inactive", "unactive" -> "Статус: Неактивний"
+                                else                 -> "Статус: ${container.status}"
+                            }
                         card.findViewById<TextView>(R.id.containerNetwork).text =
-                            if (container.status.lowercase() == "active") "Network: Connected" else "Network: Not connected"
+                            if (container.is_online) "Мережа: Підключено" else "Мережа: Відключено"
+
+                        val networkText = card.findViewById<TextView>(R.id.containerNetwork)
+                        networkText.setTextColor(
+                            if (container.is_online)
+                                android.graphics.Color.parseColor("#4CAF50")
+                            else
+                                android.graphics.Color.parseColor("#F44336")
+                        )
 
                         val compLayout = card.findViewById<LinearLayout>(R.id.compartmentsInfo)
-                        container.compartments.forEach { line ->
+                        compLayout.removeAllViews()
+
+                        container.compartments.forEach { comp ->
                             val text = TextView(requireContext())
-                            text.text = line
-                            text.setTextColor(
-                                ContextCompat.getColor(
-                                    requireContext(),
-                                    R.color.black
-                                )
-                            )
+                            val displayText = java.lang.StringBuilder().apply {
+                                append("Відсік ${comp.compartment_number}: ")
+                                if (comp.is_filled && comp.medication_name != null) {
+                                    append("${comp.medication_name} (${comp.quantity} шт.)")
+                                    if (comp.intake_at != null) {
+                                        val localTime = utcToLocalTime(comp.intake_at)
+                                        append(" - Прийом: $localTime")
+                                    }
+                                } else {
+                                    append("Порожньо")
+                                }
+                            }.toString()
+
+                            text.text = displayText
+                            text.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
                             compLayout.addView(text)
                         }
 
@@ -69,13 +105,13 @@ class DeviceFragment : Fragment(R.layout.fragment_device) {
                 }
 
                 override fun onFailure(call: Call<List<ContainerWithDetails>>, t: Throwable) {
+                    progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
-                        "Failed to load containers",
+                        "Помилка завантаження контейнерів",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             })
     }
-
 }

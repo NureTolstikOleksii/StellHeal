@@ -22,6 +22,6 @@ data class MedicationDetail(
 )
 
 data class IntakeTime(
-    val time: String,
+    val intake_at: String,
     val quantity: Int
 )

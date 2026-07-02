@@ -1,119 +1,419 @@
-.container {
-    background-color: #ffffff;
-    font-family: 'Arial', sans-serif;
-}
-
-/* ---------- ШАПКА ---------- */
-.headerPanel {
-    background-color: #fff;
-    margin-bottom: 20px;
-    margin-top: 5px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
-}
-
-.pageTitle {
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0px 0px 10px;
-}
-
-.titleBlock {
+.pageWrapper {
+    padding: 8px 0 60px;
     display: flex;
     flex-direction: column;
-    width: 100%;
+    gap: 20px;
 }
 
-.counts {
+.pageHeader { margin-bottom: 4px; }
+
+.pageTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pageTitleIcon { font-size: 22px; color: #1976d2; }
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+}
+
+.statCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.statIconWrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
-.countItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    word-wrap: break-word;
-    white-space: normal;
+.statValue {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 12px;
+    color: #6b7280;
     line-height: 1.4;
-    min-width: 100px;
 }
 
-.countValue {
-    font-size: 35px;
-    font-weight: bold;
-}
-
-.countLabel {
-    font-size: 15px;
-    color: #666;
-}
-
-.divider {
-    height: 40px;
-    width: 1px;
-    background-color: #ddd;
-}
-
-/* ---------- СТАТИСТИКА ЛІКАРІВ ---------- */
-.panel {
-    margin-bottom: 32px;
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
-
+.section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .sectionTitle {
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0px 0px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
 }
 
-.doctorStats {
-    font-size: 16px;
-    line-height: 1.6;
-    padding: 8px 0;
-    word-wrap: break-word;
-    white-space: normal;
+.sectionSubtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0 0 16px;
 }
 
-@media (max-width: 950px) {
-    .headerPanel {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 16px;
-    }
+.chartWrap { margin-top: 8px; }
 
-    .divider {
-        display: none;
-    }
+.tooltip {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
 
-    .counts {
-        justify-content: center;
-        gap: 32px;
-    }
+.tooltipLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 6px;
+}
 
-    .pageTitle {
-        text-align: center;
-    }
+.tableWrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-top: 12px;
+}
 
-    .countItem {
-        min-width: 100px;
-    }
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
 
-    .doctorStats {
-        font-size: 15px;
-        line-height: 1.6;
+.table thead { background: #eff6ff; }
+
+.table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 11px 14px;
+    color: #374151;
+    border-top: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.table tr:hover td { background: #f8faff; }
+
+.doctorCell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doctorAvatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0e7ff;
+    flex-shrink: 0;
+}
+
+.doctorName { font-weight: 500; }
+.specCell   { font-size: 13px; color: #6b7280; }
+
+.countBadge {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1976d2;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 20px;
+}
+
+.activeBadge {
+    display: inline-block;
+    background: #f0fdf4;
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 20px;
+}
+
+.rateWrap { display: flex; align-items: center; gap: 8px; }
+
+.rateBar {
+    flex: 1;
+    height: 6px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.rateFill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+.rateLabel {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    min-width: 36px;
+}
+
+.auditHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.auditTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auditIcon { color: #1976d2; font-size: 16px; }
+
+.auditTotal {
+    background: #eff6ff;
+    color: #1976d2;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.auditFilter {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #f9fafb;
+    font-size: 13px;
+    color: #111827;
+    cursor: pointer;
+    min-width: 160px;
+}
+.auditFilter:focus { outline: none; border-color: #1976d2; }
+
+.auditLoading { min-height: 120px; }
+
+.actionBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.auditAvatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e0e7ff;
+    flex-shrink: 0;
+}
+
+.auditUserName {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+}
+
+.auditUserRole {
+    font-size: 11px;
+    color: #9ca3af;
+    text-transform: capitalize;
+}
+
+.auditSystem {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.auditEntity {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    font-family: monospace;
+}
+
+.auditEntityId {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.auditDesc {
+    font-size: 12px;
+    color: #6b7280;
+    max-width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.auditIp {
+    font-size: 12px;
+    color: #9ca3af;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.auditTime {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 16px;
+}
+
+.pageBtn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s;
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
+}
+.pageBtn:hover:not(:disabled) { background: #eff6ff; color: #1976d2; border-color: #1976d2; }
+.pageBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pageInfo {
+    font-size: 13px;
+    color: #6b7280;
+    min-width: 60px;
+    text-align: center;
+}
+
+.empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 24px;
+}
+
+@media (max-width: 1100px) {
+    .statsGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+    .statsGrid { grid-template-columns: repeat(2, 1fr); }
+    .table thead { display: none; }
+    .table tr {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
     }
+    .table td { display: block; padding: 6px 0; border: none; }
+    .rateBar { min-width: 80px; }
+    .auditHeader { flex-direction: column; align-items: stretch; }
+    .auditFilter { width: 100%; }
+}
+
+@media (max-width: 480px) {
+    .statsGrid { grid-template-columns: 1fr 1fr; }
+}
+
+.chartTopRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    gap: 12px;
+}
+
+.weekNav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.weekNavBtn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s;
+    padding: 0;
+    line-height: 1;
+    font-size: 0;
+}
+.weekNavBtn:hover:not(:disabled) { background: #eff6ff; color: #1976d2; border-color: #1976d2; }
+.weekNavBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.weekNavLabel {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+    min-width: 110px;
+    text-align: center;
 }

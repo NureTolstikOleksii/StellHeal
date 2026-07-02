@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styles from './PatientsPage.module.css';
-import PatientsHeader from './PatientsHeader';
-import PatientsContent from './PatientsContent.jsx';
-import AddPatientModal from '../../components/Patients/AddPatientModal';
-import { useAuth } from "../../context/AuthContext.jsx";
+import PatientsHeader from './components/PatientsHeader.jsx';
+import PatientsContent from './components/PatientsContent.jsx';
+import AddPatientModal from './modals/AddEditPatientModal/AddPatientModal';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { fetchPatients } from '../../services/patientService';
 
 const PatientsPage = () => {
@@ -12,16 +12,23 @@ const PatientsPage = () => {
     const role = user?.role;
 
     const [patients, setPatients] = useState([]);
+    const [loading, setLoading]   = useState(true);
 
     useEffect(() => {
         const loadPatients = async () => {
             try {
                 const data = await fetchPatients();
-                if (Array.isArray(data)) {
-                    setPatients(data);
-                }
+                const list = Array.isArray(data) ? data : [];
+                const v = Date.now();
+                setPatients(list.map(p => ({
+                    ...p,
+                    avatar: p.avatar ? `${p.avatar}?t=${v}` : null,
+                })));
             } catch (err) {
                 console.error('Failed to fetch patients:', err);
+                setPatients([]);
+            } finally {
+                setLoading(false);
             }
         };
         loadPatients();
@@ -32,17 +39,15 @@ const PatientsPage = () => {
             <PatientsHeader
                 onAdd={() => setShowModal(true)}
                 role={role}
+                patientCount={patients.length}
             />
-            {showModal &&
+            {showModal && (
                 <AddPatientModal
                     onClose={() => setShowModal(false)}
                     setPatients={setPatients}
                 />
-            }
-            <PatientsContent
-                patients={patients}
-                setPatients={setPatients}
-            />
+            )}
+            <PatientsContent patients={patients} loading={loading} />
         </div>
     );
 };

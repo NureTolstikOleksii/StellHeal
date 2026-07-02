@@ -1,11 +1,14 @@
 package com.example.healthyhelper.network.calendar
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.healthyhelper.R
+import com.example.healthyhelper.utils.utcToLocalDate
 
 class CalendarAdapter(
     private val items: List<PrescriptionHistoryItem>,
@@ -23,15 +26,14 @@ class CalendarAdapter(
         return ViewHolder(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.diagnosisText.text = item.diagnosis
-        holder.dateText.text = item.date
-
+        holder.dateText.text = utcToLocalDate(item.date)
         holder.itemView.setOnClickListener {
             onItemClick(item)
         }
     }
-
     override fun getItemCount(): Int = items.size
 }

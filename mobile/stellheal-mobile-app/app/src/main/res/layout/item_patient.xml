@@ -26,7 +26,7 @@
             android:id="@+id/textName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Franko Ivan"
+            android:text="Іванченко Іван"
             android:textStyle="bold"
             android:textColor="@color/black"
             android:textAlignment="center" />
@@ -43,7 +43,7 @@
             android:id="@+id/textWard"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ward: 5"
+            android:text="Палата: 5"
             android:textColor="@color/black"
             android:textAlignment="center" />
 
@@ -51,7 +51,7 @@
             android:id="@+id/btnViewDetail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="View detail"
+            android:text="Детальніше"
             android:backgroundTint="@color/teal_700"
             android:textColor="@android:color/white"
             android:layout_marginTop="8dp" />

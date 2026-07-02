@@ -43,6 +43,12 @@ android {
     buildFeatures{
         viewBinding = true
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -73,10 +79,41 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Import the Firebase BoM
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
-    // Firebase Messaging
     implementation("com.google.firebase:firebase-messaging")
+
+    // ── Базові залежності (Unit) ─────────────────────────────────────────────
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+    // ── Базові залежності (UI Instrumented) ──────────────────────────────────
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    // ── Корутини (Асинхронність) ─────────────────────────────────────────────
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+
+    // ── Тестування LiveData / Architecture Components ────────────────────────
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
+
+    // ── Ізольоване тестування Фрагментів ─────────────────────────────────────
+    debugImplementation("androidx.fragment:fragment-testing:1.6.2")
+
+    // ── MockWebServer для Retrofit ───────────────────────────────────────────
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+
+    // ── Розширення Espresso ──────────────────────────────────────────────────
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.5.1")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+
+    // ── Robolectric для Android unit тестів ──────────────────────────────────────
+    testImplementation("org.robolectric:robolectric:4.12.2")
 }
 
 configurations.all {

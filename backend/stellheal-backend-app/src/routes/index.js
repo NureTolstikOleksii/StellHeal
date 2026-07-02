@@ -1,0 +1,36 @@
+import { Router } from 'express';
+
+import authRouter from '../modules/auth/auth.routes.js';
+import profileRouter from '../modules/profile/profile.controller.js';
+import { medicationRouter } from '../modules/medication/medication.controller.js';
+import { mainRouter } from '../modules/patients/patients.controller.js';
+import { containerRouter } from '../modules/container/container.controller.js';
+import { deviceRouter } from '../modules/container/device.controller.js';
+import { notificationRouter } from '../modules/notifications/notifications.controller.js';
+import wardsRouter from '../modules/wards/wards.controller.js';
+import { staffRouter } from '../modules/staff/staff.controller.js';
+import { statsRouter } from '../modules/stats/stats.controller.js';
+import { backupRouter } from '../modules/backup/backup.controller.js';
+import { aiRouter } from '../modules/AI/ai.controller.js';
+import { icdRouter } from '../modules/icd/icd.controller.js';
+
+const router = Router();
+
+router.use('/auth', authRouter);
+router.use('/profile', profileRouter);
+
+router.use('/medication', medicationRouter);
+router.use('/patients', mainRouter);
+router.use('/ai', aiRouter);
+router.use('/icd', icdRouter);
+
+router.use('/wards', wardsRouter);
+router.use('/containers', containerRouter);
+router.use('/device', deviceRouter);
+
+router.use('/notification', notificationRouter);
+router.use('/staff', staffRouter);
+router.use('/stats', statsRouter);
+router.use('/backup', backupRouter);
+
+export default router;

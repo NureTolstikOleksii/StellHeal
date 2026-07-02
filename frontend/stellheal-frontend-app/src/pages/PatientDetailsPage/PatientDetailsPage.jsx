@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from './PatientDetailsPage.module.css';
 import PatientInfo from './components/PatientInfo';
 import CurrentTreatment from './components/CurrentTreatment';
@@ -9,39 +9,27 @@ import {
     getPatientById,
     getCurrentTreatment,
     getTreatmentHistory,
-    createPrescription,
     deletePrescription,
     downloadPatientReport
 } from '../../services/patientService';
-import AddPrescriptionModal from './components/AddPrescriptionModal';
-import { useAuth } from "../../context/AuthContext.jsx";
-import { useTranslation } from "react-i18next";
+
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useTranslation } from 'react-i18next';
+import LoaderOverlay from "../../components/LoaderOverlay/LoaderOverlay.jsx";
 
 const PatientDetailsPage = () => {
     const { t } = useTranslation();
     const { id } = useParams();
+    const navigate = useNavigate();
     const [patient, setPatient] = useState(null);
     const [currentTreatment, setCurrentTreatment] = useState([]);
     const [treatmentHistory, setTreatmentHistory] = useState([]);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
+    const [_, setShowModal] = useState(false);
     const { user } = useAuth();
     const role = user?.role;
 
-    const handleCreatePrescription = async (data) => {
-        try {
-            await createPrescription(id, data);
-            setShowModal(false);
-            const updatedCurrent = await getCurrentTreatment(id);
-            const updatedHistory = await getTreatmentHistory(id);
-            setCurrentTreatment(updatedCurrent);
-            setTreatmentHistory(updatedHistory);
-        } catch (err) {
-            console.error('Не вдалося створити призначення:', err);
-            alert(t('patient_details.create_error'));
-        }
-    };
 
     useEffect(() => {
         const loadAll = async () => {
@@ -49,7 +37,6 @@ const PatientDetailsPage = () => {
                 const patientData = await getPatientById(id);
                 const current = await getCurrentTreatment(id);
                 const history = await getTreatmentHistory(id);
-
                 setPatient(patientData);
                 setCurrentTreatment(current);
                 setTreatmentHistory(history);
@@ -77,46 +64,65 @@ const PatientDetailsPage = () => {
         downloadPatientReport(patientId);
     };
 
-    if (loading) return <div className={styles.loading}>{t('patient_details.loading')}</div>;
+    if (loading) return <LoaderOverlay />;
     if (!patient) return <div className={styles.error}>{t('patient_details.not_found')}</div>;
 
     return (
         <div className={styles.pageWrapper}>
-            <div className={styles.mainContent}>
-                <section className={styles.section}>
-                    <h3>{t('patient_details.current_treatment')}</h3>
-                    <CurrentTreatment treatment={currentTreatment} onDelete={handleDelete} role={role} />
-                </section>
 
-                <section className={styles.section}>
-                    <div className={styles.historyHeader}>
-                        <h3>{t('patient_details.treatment_history')}</h3>
-                        <YearSelector
-                            selectedYear={selectedYear}
-                            onChange={setSelectedYear}
-                        />
+            <div className={styles.pageHeader}>
+                <div>
+                    <div className={styles.breadcrumb}>
+                        <span className={styles.breadcrumbLink} onClick={() => navigate('/main/patients')}>
+                            {t('patients.title')}
+                        </span>
+                        <span className={styles.breadcrumbSep}>/</span>
+                        <span>{patient.name}</span>
                     </div>
-                    <TreatmentHistory
-                        history={treatmentHistory}
-                        year={selectedYear}
+                    <div className={styles.pageTitleRow}>
+                        <h2 className={styles.pageTitle}>{patient.name}</h2>
+                    </div>
+                </div>
+                {/*<div className={styles.patientBadge}>*/}
+                {/*    <img src={patient.avatar || '/default_avatar.svg'} alt="" className={styles.patientAvatar} />*/}
+                {/*    <div>*/}
+                {/*        <div className={styles.patientName}>{patient.name}</div>*/}
+                {/*        <div className={styles.patientMeta}>{calcAge(patient.dob)} р. · {patient.phone}</div>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
+            </div>
+
+            <div className={styles.contentRow}>
+                <div className={styles.mainContent}>
+                    <section className={styles.section}>
+                        <h3 className={styles.sectionTitle}>{t('patient_details.current_treatment')}</h3>
+                        <CurrentTreatment
+                            treatment={currentTreatment}
+                            onDelete={handleDelete}
+                            role={role}
+                            patientId={id}
+                        />
+                    </section>
+
+                    <section className={styles.section}>
+                        <div className={styles.historyHeader}>
+                            <h3 className={styles.sectionTitle}>{t('patient_details.treatment_history')}</h3>
+                            <YearSelector selectedYear={selectedYear} onChange={setSelectedYear} />
+                        </div>
+                        <TreatmentHistory history={treatmentHistory} year={selectedYear} patientId={id} />
+                    </section>
+                </div>
+
+                <div className={styles.sidebar}>
+                    <PatientInfo
+                        patient={patient}
+                        setPatient={setPatient}
+                        onAdd={() => setShowModal(true)}
+                        onDownloadReport={handleDownloadReport}
+                        role={role}
                     />
-                </section>
+                </div>
             </div>
-            <div className={styles.sidebar}>
-                <PatientInfo
-                    patient={patient}
-                    setPatient={setPatient}
-                    onAdd={() => setShowModal(true)}
-                    onDownloadReport={handleDownloadReport}
-                    role={role}
-                />
-            </div>
-            {showModal && (
-                <AddPrescriptionModal
-                    onClose={() => setShowModal(false)}
-                    onSubmit={handleCreatePrescription}
-                />
-            )}
         </div>
     );
 };

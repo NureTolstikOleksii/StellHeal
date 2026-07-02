@@ -1,40 +1,91 @@
 package com.example.healthyhelper
 
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
+import android.content.*
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.example.healthyhelper.auth.AuthEvents
+import com.example.healthyhelper.auth.AuthManager
+import com.example.healthyhelper.fcm.MyFirebaseMessagingService
+import com.example.healthyhelper.network.RetrofitClient
+import com.example.healthyhelper.network.notification.NotificationResponse
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.messaging.FirebaseMessaging
-
-import android.app.NotificationChannel
-import android.content.pm.PackageManager
-import android.os.Build
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        createNotificationChannel()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+
+    private lateinit var navController: androidx.navigation.NavController
+    private lateinit var bottomNav: BottomNavigationView
+
+    private val badgeHandler = Handler(Looper.getMainLooper())
+    private lateinit var badgeRunnable: Runnable
+
+    private var currentDestinationId: Int = 0
+
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (currentDestinationId != R.id.notificationFragment) {
+                updateNavBadge()
             }
         }
+    }
+
+    private val logoutReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            AuthManager.clear()
+            val intentRestart = Intent(this@MainActivity, MainActivity::class.java)
+            intentRestart.flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intentRestart)
+            finish()
+        }
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+        createNotificationChannel()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
+
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
-        val navController = navHostFragment.navController
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
+        navController = navHostFragment.navController
+        bottomNav = findViewById(R.id.bottomNavigationView)
 
+        val token = AuthManager.getAccessToken()
         val prefs = getSharedPreferences("prefs", Context.MODE_PRIVATE)
-        val token = prefs.getString("jwt_token", null)
         val role = prefs.getString("user_role", "unknown")
 
         if (role == "staff") {
@@ -47,34 +98,94 @@ class MainActivity : AppCompatActivity() {
                 .setPopUpTo(navController.graph.startDestinationId, true)
                 .build()
 
-            if (role == "staff") {
-                navController.navigate(R.id.homeStaffFragment, null, navOptions)
-            } else {
-                navController.navigate(R.id.homeFragment, null, navOptions)
-            }
+            val target = if (role == "staff") R.id.homeStaffFragment else R.id.homeFragment
+            navController.navigate(target, null, navOptions)
+
+            startNotificationBadgeUpdater()
         }
 
         bottomNav.setupWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.mainFragment, R.id.loginFragment -> {
-                    bottomNav.visibility = View.GONE
-                }
-                else -> {
-                    bottomNav.visibility = View.VISIBLE
-                }
+            currentDestinationId = destination.id
+
+            bottomNav.visibility = when (destination.id) {
+                R.id.mainFragment, R.id.loginFragment -> View.GONE
+                else -> View.VISIBLE
             }
+
+            if (destination.id == R.id.notificationFragment) { }
         }
 
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                val token = task.result
-                Log.d("FCM_TOKEN", token)
+                val fcmToken = task.result
+                Log.d("FCM_TOKEN", fcmToken)
+                MyFirebaseMessagingService.sendTokenToServer(this, fcmToken)
             } else {
                 Log.e("FCM_ERROR", "Failed to get token", task.exception)
             }
         }
+
+        ContextCompat.registerReceiver(
+            this,
+            logoutReceiver,
+            IntentFilter(AuthEvents.ACTION_LOGOUT),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        ContextCompat.registerReceiver(
+            this,
+            notificationReceiver,
+            IntentFilter("NEW_NOTIFICATION"),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(logoutReceiver)
+        unregisterReceiver(notificationReceiver)
+        if (::badgeRunnable.isInitialized) {
+            badgeHandler.removeCallbacks(badgeRunnable)
+        }
+    }
+
+    private fun startNotificationBadgeUpdater() {
+        badgeRunnable = object : Runnable {
+            override fun run() {
+                if (currentDestinationId != R.id.notificationFragment) {
+                    updateNavBadge()
+                }
+                badgeHandler.postDelayed(this, 30_000)
+            }
+        }
+        badgeHandler.post(badgeRunnable)
+    }
+
+    private fun updateNavBadge() {
+        RetrofitClient.notificationApi.getUserNotifications()
+            .enqueue(object : Callback<List<NotificationResponse>> {
+                override fun onResponse(
+                    call: Call<List<NotificationResponse>>,
+                    response: Response<List<NotificationResponse>>
+                ) {
+                    if (!response.isSuccessful) return
+
+                    val unreadCount = response.body()?.count { !it.is_read } ?: 0
+
+                    if (unreadCount > 0) {
+                        val badge = bottomNav.getOrCreateBadge(R.id.notificationFragment)
+                        badge.isVisible = true
+                        badge.number = unreadCount
+                        badge.maxCharacterCount = 3
+                    } else {
+                        bottomNav.removeBadge(R.id.notificationFragment)
+                    }
+                }
+
+                override fun onFailure(call: Call<List<NotificationResponse>>, t: Throwable) {}
+            })
     }
 
     private fun createNotificationChannel() {
@@ -83,10 +194,10 @@ class MainActivity : AppCompatActivity() {
                 "default_channel",
                 "Основний канал",
                 NotificationManager.IMPORTANCE_HIGH
-            )
-            channel.description = "Канал для push-сповіщень"
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            ).apply {
+                description = "Канал для push-сповіщень"
+            }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 }

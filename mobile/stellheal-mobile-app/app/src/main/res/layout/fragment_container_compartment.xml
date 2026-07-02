@@ -13,7 +13,7 @@
         android:layout_width="58dp"
         android:layout_height="58dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="40dp"
         android:background="@null"
         android:contentDescription="@string/back_button"
         android:padding="10dp"
@@ -26,43 +26,109 @@
         android:id="@+id/containerTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="24dp"
-        android:text="Container №1"
+        android:text="Контейнер №1"
         android:textColor="@color/black"
-        android:textSize="26sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/statusText"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.298"
-        app:layout_constraintStart_toEndOf="@id/btnBack"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.457" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack" />
 
     <TextView
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Status: Active"
-        android:textColor="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp"
+        android:text="Статус: Активний"
+        android:textColor="#555555"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/containerTitle" />
 
-    <!-- Мережа -->
     <TextView
         android:id="@+id/networkText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Network: Connected"
-        android:textColor="@color/black"
+        android:text="Мережа: Підключено"
+        android:textColor="#555555"
+        android:textSize="14sp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="@id/statusText"
+        app:layout_constraintStart_toEndOf="@id/statusText"
+        app:layout_constraintTop_toTopOf="@id/statusText" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/rfidCardBanner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
         app:layout_constraintTop_toBottomOf="@id/statusText"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- ScrollView для відсіків -->
+        <LinearLayout
+            android:id="@+id/rfidBannerBackground"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="14dp"
+            android:background="#FFF3E0">
+
+            <ImageView
+                android:id="@+id/rfidIcon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="14dp"
+                android:src="@android:drawable/ic_dialog_info"
+                app:tint="#E65100"/>
+
+            <TextView
+                android:id="@+id/rfidStatusBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Для розблокування барабану прикладіть карту до NFC-мітки смарт-контейнера."
+                android:textColor="#333333"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/btnFinishFilling"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:text="Завершити сесію заповнення"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:drawableStart="@android:drawable/ic_lock_power_off"
+        android:drawablePadding="8dp"
+        android:paddingStart="16dp"
+        android:backgroundTint="#D32F2F"
+        android:visibility="gone"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/rfidCardBanner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnFinishFilling"/>
+
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
@@ -70,11 +136,13 @@
         android:paddingStart="16dp"
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="105dp"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/networkText">
+        app:layout_constraintTop_toBottomOf="@id/btnFinishFilling">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -86,7 +154,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="Відсіки для таблеток"
+                android:layout_marginTop="8dp"
+                android:text="Оберіть відсік:"
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold" />

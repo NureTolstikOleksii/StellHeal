@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
@@ -12,7 +11,7 @@
         android:layout_width="58dp"
         android:layout_height="58dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="40dp"
         android:background="@null"
         android:contentDescription="@string/back_button"
         android:padding="10dp"
@@ -25,17 +24,26 @@
         android:id="@+id/textTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Treatment"
+        android:text="Лікування"
         android:textColor="@color/black"
         android:textSize="26sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/treatmentScroll"
+        app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.37"
+        app:layout_constraintHorizontal_bias="0.323"
         app:layout_constraintStart_toEndOf="@+id/btnBack"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.745"
-        tools:ignore="MissingConstraints" />
+        app:layout_constraintVertical_bias="0.112" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
     <ScrollView
         android:id="@+id/treatmentScroll"
@@ -44,13 +52,12 @@
         android:paddingStart="16dp"
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="105dp"
+        android:paddingBottom="80dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -58,7 +65,6 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <!-- Аватар та ім’я пацієнта -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -84,7 +90,6 @@
                         android:id="@+id/textFullName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Franko Ivan (11.11.1919)"
                         android:textColor="@color/black"
                         android:textStyle="bold" />
 
@@ -92,26 +97,22 @@
                         android:id="@+id/textEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ivanfranko@gmail.com"
                         android:textColor="@color/black" />
 
                     <TextView
                         android:id="@+id/textPhone"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="+380...-..-.."
                         android:textColor="@color/black" />
 
                     <TextView
                         android:id="@+id/textAddress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="m. Kharkiv"
                         android:textColor="@color/black" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Карта лікування -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -122,37 +123,31 @@
                 android:clipToOutline="true"
                 android:elevation="2dp"
                 android:orientation="vertical"
-                android:padding="16dp"
-                tools:ignore="ExtraText">
+                android:padding="16dp">
 
-                <!-- Діагноз -->
                 <TextView
                     android:id="@+id/textDiagnosis"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="8dp"
-                    android:text="Salt diathesis"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!-- Дати -->
                 <TextView
                     android:id="@+id/textDates"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="8dp"
-                    android:text="Application date: ... \nDuration: ..." />
+                    android:layout_marginBottom="8dp" />
 
-                <!-- Лікар -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="4dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <ImageView
                         android:layout_width="20dp"
@@ -164,19 +159,16 @@
                         android:id="@+id/textDoctor"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Doctor: ..."
                         android:textColor="@color/black" />
                 </LinearLayout>
-
-                <!-- Палата -->
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="12dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <ImageView
                         android:layout_width="20dp"
@@ -188,7 +180,6 @@
                         android:id="@+id/textWard"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ward: ..."
                         android:textColor="@color/black" />
                 </LinearLayout>
 
@@ -216,11 +207,11 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/outline_button"
-                    android:text="Intake statistics"
+                    android:text="Статистика прийомів"
                     android:textColor="@color/teal_700"
                     android:textStyle="bold"
                     android:visibility="gone"
-                    app:backgroundTint="@null"/>
+                    app:backgroundTint="@null" />
 
                 <Button
                     android:id="@+id/btnUnassignContainer"
@@ -254,7 +245,6 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="8dp"
-                    android:text="Container №1"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -263,16 +253,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="4dp"
-                    android:text="Status: Active" />
+                    android:layout_marginBottom="4dp" />
 
                 <TextView
                     android:id="@+id/containerNetwork"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="8dp"
-                    android:text="Network: Connected" />
+                    android:layout_marginBottom="8dp" />
 
                 <LinearLayout
                     android:id="@+id/compartmentsInfo"
@@ -287,7 +275,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/orange"
-                    android:text="Set up container"
+                    android:text="Налаштувати контейнер"
                     android:textColor="@android:color/white"
                     android:textStyle="bold" />
             </LinearLayout>

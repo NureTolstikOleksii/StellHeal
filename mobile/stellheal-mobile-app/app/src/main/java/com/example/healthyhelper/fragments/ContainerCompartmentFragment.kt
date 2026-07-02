@@ -1,24 +1,38 @@
 package com.example.healthyhelper.fragments
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.os.Handler
+import android.os.Looper
+import android.view.*
 import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
+import com.example.healthyhelper.network.container.ClearCompartmentRequest
 import com.example.healthyhelper.network.container.ContainerDetailsResponse
-import com.example.healthyhelper.network.container.FilledCompartmentResponse
+import com.example.healthyhelper.network.container.RfidStatusResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.healthyhelper.utils.utcToLocalTime
 
 class ContainerCompartmentFragment : Fragment() {
 
     private val args: ContainerCompartmentFragmentArgs by navArgs()
+    private var patientId: Int? = null
+    private var rfidAuthenticated = false
+    private lateinit var progressBar: ProgressBar
+    private lateinit var scrollView: ScrollView
+
+    private lateinit var compartmentList: LinearLayout
+    private lateinit var btnFinishFilling: Button
+
+    private val rfidHandler = Handler(Looper.getMainLooper())
+    private lateinit var rfidRunnable: Runnable
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,118 +40,250 @@ class ContainerCompartmentFragment : Fragment() {
     ): View = inflater.inflate(R.layout.fragment_container_compartment, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val containerTitle = view.findViewById<TextView>(R.id.containerTitle)
-        val statusText = view.findViewById<TextView>(R.id.statusText)
-        val networkText = view.findViewById<TextView>(R.id.networkText)
-        val compartmentList = view.findViewById<LinearLayout>(R.id.compartmentList)
-
-        val containerId = args.containerId
-        var patientId: Int? = null
         val btnBack = view.findViewById<ImageButton>(R.id.btnBack)
+        btnFinishFilling = view.findViewById(R.id.btnFinishFilling)
+        compartmentList = view.findViewById(R.id.compartmentList)
+        progressBar = view.findViewById(R.id.progressBar)
+        scrollView = view.findViewById(R.id.scrollView)
+        val containerId = args.containerId
 
-        btnBack.setOnClickListener {
-            findNavController().popBackStack()
+        btnBack.setOnClickListener { findNavController().popBackStack() }
+
+        btnFinishFilling.setOnClickListener {
+            RetrofitClient.containerApi.resetRfidStatus(containerId)
+                .enqueue(object : Callback<Unit> {
+                    override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                        if (response.isSuccessful) {
+                            rfidAuthenticated = false
+                            updateRfidUI(false, containerId)
+                            Toast.makeText(requireContext(), "Сесію заповнення успішно завершено", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    override fun onFailure(call: Call<Unit>, t: Throwable) {
+                        Toast.makeText(requireContext(), "Помилка мережі", Toast.LENGTH_SHORT).show()
+                    }
+                })
         }
 
-        RetrofitClient.containerApi.getContainerDetails(mapOf("containerId" to containerId))
+        rfidRunnable = object : Runnable {
+            override fun run() {
+                checkRfidStatus(containerId)
+                rfidHandler.postDelayed(this, 5000)
+            }
+        }
+
+        loadContainerAndCompartments(containerId)
+        rfidHandler.post(rfidRunnable)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        rfidHandler.removeCallbacks(rfidRunnable)
+    }
+
+    private fun updateRfidUI(authenticated: Boolean, containerId: Int) {
+        val statusBanner = view?.findViewById<TextView>(R.id.rfidStatusBanner)
+        val bannerBackground = view?.findViewById<LinearLayout>(R.id.rfidBannerBackground)
+        val rfidIcon = view?.findViewById<ImageView>(R.id.rfidIcon)
+
+        if (authenticated) {
+            statusBanner?.text = "Доступ відкрито. Органайзер розблоковано для медичного персоналу."
+            statusBanner?.setTextColor(0xFFFFFFFF.toInt())
+
+            rfidIcon?.setImageResource(android.R.drawable.ic_lock_idle_lock)
+            rfidIcon?.setColorFilter(0xFFFFFFFF.toInt())
+
+            bannerBackground?.setBackgroundColor(0xFF2E7D32.toInt())
+            btnFinishFilling.visibility = View.VISIBLE
+        } else {
+            statusBanner?.text = "Для розблокування барабану прикладіть карту до NFC-мітки смарт-контейнера."
+            statusBanner?.setTextColor(0xFF333333.toInt())
+
+            rfidIcon?.setImageResource(android.R.drawable.ic_dialog_info)
+            rfidIcon?.setColorFilter(0xFFE65100.toInt())
+
+            bannerBackground?.setBackgroundColor(0xFFFFF3E0.toInt())
+            btnFinishFilling.visibility = View.GONE
+        }
+
+        loadContainerAndCompartments(containerId)
+    }
+
+    private fun checkRfidStatus(containerId: Int) {
+        RetrofitClient.containerApi.getRfidStatus(containerId)
+            .enqueue(object : Callback<RfidStatusResponse> {
+                override fun onResponse(
+                    call: Call<RfidStatusResponse>,
+                    response: Response<RfidStatusResponse>
+                ) {
+                    val newStatus = response.body()?.rfid_authenticated ?: false
+                    if (newStatus != rfidAuthenticated) {
+                        rfidAuthenticated = newStatus
+                        updateRfidUI(newStatus, containerId)
+                    }
+                }
+                override fun onFailure(call: Call<RfidStatusResponse>, t: Throwable) {}
+            })
+    }
+
+    private fun loadContainerAndCompartments(containerId: Int) {
+        progressBar.visibility = View.VISIBLE
+        scrollView.visibility = View.GONE
+
+        RetrofitClient.containerApi.getContainerDetails(containerId)
             .enqueue(object : Callback<ContainerDetailsResponse> {
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onResponse(
                     call: Call<ContainerDetailsResponse>,
                     response: Response<ContainerDetailsResponse>
                 ) {
+                    progressBar.visibility = View.GONE
+                    scrollView.visibility = View.VISIBLE
+
                     val data = response.body() ?: return
 
-                    containerTitle.text = "Container №${data.container_number}"
-                    statusText.text = "Status: ${data.status}"
-                    networkText.text = if (data.status.lowercase() == "active") "Network: Connected" else "Network: Not connected"
+                    view?.findViewById<TextView>(R.id.containerTitle)?.text = "Контейнер №${data.container_number}"
+                    view?.findViewById<TextView>(R.id.statusText)?.text = if (data.status.lowercase() == "active") "Статус: Активний" else "Статус: Неактивний"
+
+                    val networkText = view?.findViewById<TextView>(R.id.networkText)
+                    networkText?.text = if (data.is_online) "Мережа: Підключено" else "Мережа: Відключено"
+                    networkText?.setTextColor(
+                        if (data.is_online) android.graphics.Color.parseColor("#4CAF50") else android.graphics.Color.parseColor("#F44336")
+                    )
+
                     patientId = data.patientId
-                }
-
-                override fun onFailure(call: Call<ContainerDetailsResponse>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Не вдалося завантажити контейнер", Toast.LENGTH_SHORT).show()
-                }
-            })
-
-        RetrofitClient.containerApi.getFilledCompartments(mapOf("containerId" to containerId))
-            .enqueue(object : Callback<List<FilledCompartmentResponse>> {
-                override fun onResponse(
-                    call: Call<List<FilledCompartmentResponse>>,
-                    response: Response<List<FilledCompartmentResponse>>
-                ) {
-                    val list = response.body() ?: return
                     compartmentList.removeAllViews()
 
-                    list.forEach { item ->
-                        val view = layoutInflater.inflate(R.layout.item_compartment, compartmentList, false)
+                    data.compartments.forEach { item ->
+                        val itemView = layoutInflater.inflate(R.layout.item_compartment, compartmentList, false)
 
-                        val number = view.findViewById<TextView>(R.id.compartmentTitle)
-                        val status = view.findViewById<TextView>(R.id.compartmentStatus)
-                        val medInfo = view.findViewById<TextView>(R.id.medicationInfo)
-                        val btnAdd = view.findViewById<Button>(R.id.btnAddMed)
-                        val btnClear = view.findViewById<Button>(R.id.btnClearMed)
+                        val number = itemView.findViewById<TextView>(R.id.compartmentTitle)
+                        val status = itemView.findViewById<TextView>(R.id.compartmentStatus)
+                        val medInfo = itemView.findViewById<TextView>(R.id.medicationInfo)
+                        val btnAdd = itemView.findViewById<Button>(R.id.btnAddMed)
+                        val btnClear = itemView.findViewById<Button>(R.id.btnClearMed)
 
-                        number.text = "№${item.compartment_number}"
+                        number.text = "Відсік №${item.compartment_number}"
 
-                        if (item.isFilled) {
-                            val time = item.intake_time?.substring(11, 16) ?: "??:??"
-                            medInfo.text = "${item.medication} - ${item.quantity} табл. - $time"
+                        if (item.is_filled && item.medication_name != null) {
+                            val formattedTime = if (item.intake_at != null) utcToLocalTime(item.intake_at) else "??:??"
+                            medInfo.text = "${item.medication_name} (${item.quantity} шт.) — Прийом: $formattedTime"
                             medInfo.visibility = View.VISIBLE
-
-                            status.text = "заповнено о ${item.fill_time?.substring(11, 16)} ✅"
+                            status.text = "Заповнено"
                             btnAdd.visibility = View.GONE
                             btnClear.visibility = View.VISIBLE
                         } else {
-                            status.text = "не заповнено 😕"
+                            status.text = "Вільний"
                             medInfo.visibility = View.GONE
                             btnAdd.visibility = View.VISIBLE
                             btnClear.visibility = View.GONE
                         }
 
+                        btnAdd.isEnabled = rfidAuthenticated
+                        btnAdd.alpha = if (rfidAuthenticated) 1.0f else 0.5f
+                        btnClear.isEnabled = rfidAuthenticated
+                        btnClear.alpha = if (rfidAuthenticated) 1.0f else 0.5f
+
+                        // ➕ ДОДАВАННЯ ПРЕПАРАТУ
                         btnAdd.setOnClickListener {
-                            if (patientId == null) {
-                                Toast.makeText(requireContext(), "Пацієнт не закріплений", Toast.LENGTH_SHORT).show()
+                            val pid = patientId ?: run {
+                                Toast.makeText(requireContext(), "Помилка: за даним пристроєм не закріплено пацієнта.", Toast.LENGTH_LONG).show()
                                 return@setOnClickListener
                             }
-                            val dialog = AddMedicationDialogFragment(
-                                patientId = patientId!!,
-                                compartmentId = item.compartment_id,
-                                containerId = containerId
-                            )
-                            dialog.show(parentFragmentManager, "AddMedicationDialog")
+
+                            android.app.AlertDialog.Builder(requireContext())
+                                .setTitle("Підготовка до заповнення відсіку №${item.compartment_number}")
+                                .setMessage("1. Барабан смарт-контейнера автоматично прокрутиться до вибраного відсіку.\n\n" +
+                                        "2. Після завершення стабілізації механізму відкриється форма призначення ліків.\n\n" +
+                                        "Запустити процес повороту каруселі?")
+                                .setPositiveButton("Підтвердити") { _, _ ->
+                                    RetrofitClient.containerApi.rotateToCompartment(
+                                        mapOf("containerId" to containerId, "compartmentNumber" to item.compartment_number)
+                                    ).enqueue(object : Callback<Unit> {
+                                        override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                                            if (!response.isSuccessful) {
+                                                Toast.makeText(requireContext(), "Пристрій зайнятий або не відповідає на команду.", Toast.LENGTH_SHORT).show()
+                                                return
+                                            }
+                                            val dialog = AddMedicationDialogFragment(
+                                                patientId = pid,
+                                                compartmentNumber = item.compartment_number,
+                                                containerId = containerId,
+                                                onSuccess = { loadContainerAndCompartments(containerId) }
+                                            )
+                                            dialog.show(parentFragmentManager, "AddMedDialog")
+                                        }
+                                        override fun onFailure(call: Call<Unit>, t: Throwable) {
+                                            Toast.makeText(requireContext(), "Апаратний збій калібрування пристрою.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    })
+                                }
+                                .setNegativeButton("Скасувати", null)
+                                .show()
                         }
 
                         btnClear.setOnClickListener {
-                            RetrofitClient.containerApi.clearCompartment(mapOf("compartmentId" to item.compartment_id))
-                                .enqueue(object : Callback<Map<String, String>> {
-                                    override fun onResponse(
-                                        call: Call<Map<String, String>>,
-                                        response: Response<Map<String, String>>
-                                    ) {
-                                        if (response.isSuccessful) {
-                                            Toast.makeText(requireContext(), "Відсік №${item.compartment_number} очищено", Toast.LENGTH_SHORT).show()
+                            android.app.AlertDialog.Builder(requireContext())
+                                .setTitle("Скасування призначення відсіку №${item.compartment_number}")
+                                .setMessage("Увага! У цій комірці зафіксовано препарат:\n" +
+                                        "• Назва: ${item.medication_name}\n" +
+                                        "• Кількість: ${item.quantity} шт.\n\n" +
+                                        "Для безпечного вилучення система проверне карусель до сервісного вікна видачі. Продовжити?")
+                                .setPositiveButton("Прокрутити") { _, _ ->
+                                    RetrofitClient.containerApi.rotateToCompartment(
+                                        mapOf("containerId" to containerId, "compartmentNumber" to item.compartment_number)
+                                    ).enqueue(object : Callback<Unit> {
+                                        override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                                            if (!response.isSuccessful) {
+                                                Toast.makeText(requireContext(), "Помилка синхронізації з пристроєм.", Toast.LENGTH_SHORT).show()
+                                                return
+                                            }
 
-                                            findNavController().popBackStack()
-                                            findNavController().navigate(
-                                                R.id.containerCompartmentFragment,
-                                                Bundle().apply {
-                                                    putInt("containerId", containerId)
+                                            android.app.AlertDialog.Builder(requireContext())
+                                                .setTitle("Фізичне вилучення ліків")
+                                                .setMessage("Будь ласка, дістаньте всі наявні таблетки з віконця органайзера.\n\n" +
+                                                        "Переконайтеся, що відсік №${item.compartment_number} повністю порожній, щоб запобігти змішуванню ліків у майбутньому.")
+                                                .setPositiveButton("Очищено, відсік порожній") { _, _ ->
+                                                    RetrofitClient.containerApi.clearCompartmentWithRotate(
+                                                        ClearCompartmentRequest(
+                                                            containerId = containerId,
+                                                            compartmentId = item.compartment_number,
+                                                            compartmentNumber = item.compartment_number
+                                                        )
+                                                    ).enqueue(object : Callback<Unit> {
+                                                        override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                                                            if (response.isSuccessful) {
+                                                                Toast.makeText(requireContext(), "Статус відсіку №${item.compartment_number} успішно скинуто", Toast.LENGTH_SHORT).show()
+                                                                loadContainerAndCompartments(containerId)
+                                                            } else {
+                                                                Toast.makeText(requireContext(), "Помилка сервера під час скидання статусу.", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        }
+                                                        override fun onFailure(call: Call<Unit>, t: Throwable) {
+                                                            Toast.makeText(requireContext(), "Помилка мережі: зміни не збережено.", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    })
                                                 }
-                                            )
-                                        } else {
-                                            Toast.makeText(requireContext(), "Помилка при очищенні", Toast.LENGTH_SHORT).show()
+                                                .setNegativeButton("Скасувати", null)
+                                                .setCancelable(false)
+                                                .show()
                                         }
-                                    }
-
-                                    override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {
-                                        Toast.makeText(requireContext(), "Помилка мережі: ${t.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                })
+                                        override fun onFailure(call: Call<Unit>, t: Throwable) {
+                                            Toast.makeText(requireContext(), "Пристрій не відповідає на запит прокрутки.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    })
+                                }
+                                .setNegativeButton("Скасувати", null)
+                                .show()
                         }
-                        compartmentList.addView(view)
+
+                        compartmentList.addView(itemView)
                     }
                 }
-                override fun onFailure(call: Call<List<FilledCompartmentResponse>>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Помилка завантаження", Toast.LENGTH_SHORT).show()
+
+                override fun onFailure(call: Call<ContainerDetailsResponse>, t: Throwable) {
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(requireContext(), "Помилка завантаження даних", Toast.LENGTH_SHORT).show()
                 }
             })
     }

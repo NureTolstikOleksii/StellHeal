@@ -1,16 +1,13 @@
 package com.example.healthyhelper.fragments
 
-import android.app.AlertDialog
-import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.view.ViewGroup
+import android.widget.*
 import androidx.fragment.app.DialogFragment
 import com.example.healthyhelper.R
 import com.example.healthyhelper.network.RetrofitClient
@@ -20,114 +17,190 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class ChangePasswordDialogFragment : DialogFragment() {
-    private fun togglePasswordVisibility(editText: EditText, icon: ImageView, visible: Boolean) {
-        if (visible) {
-            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            icon.setImageResource(R.drawable.ic_eye_on)
-        } else {
-            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            icon.setImageResource(R.drawable.ic_eye_off)
-        }
-        editText.setSelection(editText.text.length)
-    }
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog?.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireContext())
-        val inflater = requireActivity().layoutInflater
-        val view = inflater.inflate(R.layout.dialog_change_password, null)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = inflater.inflate(R.layout.dialog_change_password, container, false)
 
-        val editCurrentPassword = view.findViewById<EditText>(R.id.editCurrentPassword)
-        val editNewPassword = view.findViewById<EditText>(R.id.editNewPassword)
-        val editConfirmPassword = view.findViewById<EditText>(R.id.editConfirmPassword)
-        val confirmButton = view.findViewById<Button>(R.id.btnConfirmChange)
-        val textError = view.findViewById<TextView>(R.id.textError)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        val toggleCurrent = view.findViewById<ImageView>(R.id.toggleCurrentPassword)
-        val toggleNew = view.findViewById<ImageView>(R.id.toggleNewPassword)
-        val toggleConfirm = view.findViewById<ImageView>(R.id.toggleConfirmPassword)
+        val editCurrent  = view.findViewById<EditText>(R.id.editCurrentPassword)
+        val editNew      = view.findViewById<EditText>(R.id.editNewPassword)
+        val editConfirm  = view.findViewById<EditText>(R.id.editConfirmPassword)
 
-        var visibleCurrent = false
-        var visibleNew = false
-        var visibleConfirm = false
+        val errorCurrent = view.findViewById<TextView>(R.id.errorCurrentPassword)
+        val errorNew     = view.findViewById<TextView>(R.id.errorNewPassword)
+        val errorConfirm = view.findViewById<TextView>(R.id.errorConfirmPassword)
+        val errorServer  = view.findViewById<TextView>(R.id.textError)
 
-        toggleCurrent.setOnClickListener {
-            visibleCurrent = !visibleCurrent
-            togglePasswordVisibility(editCurrentPassword, toggleCurrent, visibleCurrent)
+        val strengthBar   = view.findViewById<ProgressBar>(R.id.passwordStrengthBar)
+        val strengthLabel = view.findViewById<TextView>(R.id.textStrengthLabel)
+        val btnConfirm    = view.findViewById<Button>(R.id.btnConfirmChange)
+
+        setupToggle(view, R.id.toggleCurrentPassword, editCurrent)
+        setupToggle(view, R.id.toggleNewPassword,     editNew)
+        setupToggle(view, R.id.toggleConfirmPassword, editConfirm)
+
+        editCurrent.onTextChanged { clearError(editCurrent, errorCurrent) }
+        editConfirm.onTextChanged { clearError(editConfirm, errorConfirm) }
+
+        editNew.onTextChanged { text ->
+            clearError(editNew, errorNew)
+            val score = passwordStrength(text)
+            if (text.isEmpty()) {
+                strengthBar.visibility = View.GONE
+                strengthLabel.visibility = View.GONE
+            } else {
+                strengthBar.visibility = View.VISIBLE
+                strengthBar.progress = score
+
+                val (label, color) = when (score) {
+                    1    -> "Слабкий"   to "#EF5350"
+                    2    -> "Середній"  to "#FF9800"
+                    3    -> "Добрий"    to "#FFC107"
+                    else -> "Надійний"  to "#4CAF50"
+                }
+                strengthLabel.text = label
+                strengthLabel.setTextColor(android.graphics.Color.parseColor(color))
+                strengthLabel.visibility = View.VISIBLE
+
+                (strengthBar.progressDrawable as? android.graphics.drawable.LayerDrawable)
+                    ?.findDrawableByLayerId(android.R.id.progress)
+                    ?.setColorFilter(
+                        android.graphics.Color.parseColor(color),
+                        android.graphics.PorterDuff.Mode.SRC_IN
+                    )
+            }
         }
-        toggleNew.setOnClickListener {
-            visibleNew = !visibleNew
-            togglePasswordVisibility(editNewPassword, toggleNew, visibleNew)
-        }
-        toggleConfirm.setOnClickListener {
-            visibleConfirm = !visibleConfirm
-            togglePasswordVisibility(editConfirmPassword, toggleConfirm, visibleConfirm)
-        }
 
-        builder.setView(view)
-        val dialog = builder.create()
+        btnConfirm.setOnClickListener {
+            errorServer.visibility = View.GONE
 
-        confirmButton.setOnClickListener {
-            textError.visibility = View.GONE
+            val current  = editCurrent.text.toString()
+            val newPass  = editNew.text.toString()
+            val confirm  = editConfirm.text.toString()
 
-            val current = editCurrentPassword.text.toString().trim()
-            val newPass = editNewPassword.text.toString().trim()
-            val confirmPass = editConfirmPassword.text.toString().trim()
+            var hasError = false
 
-            if (current.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-                textError.text = "Усі поля обов'язкові"
-                textError.visibility = View.VISIBLE
-                return@setOnClickListener
+            if (current.isEmpty()) {
+                showError(editCurrent, errorCurrent, "Введіть поточний пароль")
+                hasError = true
             }
 
-            if (newPass != confirmPass) {
-                textError.text = "Нові паролі не співпадають"
-                textError.visibility = View.VISIBLE
-                return@setOnClickListener
+            if (newPass.isEmpty()) {
+                showError(editNew, errorNew, "Введіть новий пароль")
+                hasError = true
+            } else if (newPass.length < 8) {
+                showError(editNew, errorNew, "Мінімум 8 символів")
+                hasError = true
+            } else if (passwordStrength(newPass) < 2) {
+                showError(editNew, errorNew, "Пароль занадто простий — додайте цифри або символи")
+                hasError = true
             }
 
-            val prefs = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE)
-            val token = prefs.getString("jwt_token", null)
-
-            if (token == null) {
-                textError.text = "Користувач не авторизований"
-                textError.visibility = View.VISIBLE
-                return@setOnClickListener
+            if (confirm.isEmpty()) {
+                showError(editConfirm, errorConfirm, "Повторіть новий пароль")
+                hasError = true
+            } else if (newPass != confirm) {
+                showError(editConfirm, errorConfirm, "Паролі не співпадають")
+                hasError = true
             }
 
-            val payload = mapOf(
-                "currentPassword" to current,
-                "newPassword" to newPass
-            )
+            if (hasError) return@setOnClickListener
 
-            RetrofitClient.profileApi.changePassword("Bearer $token", payload)
-                .enqueue(object : Callback<Void> {
-                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                        if (response.isSuccessful) {
-                            Toast.makeText(context, "Пароль змінено успішно", Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                        } else {
-                            val msg = try {
-                                val json = JSONObject(response.errorBody()?.string() ?: "")
-                                json.getString("message")
-                            } catch (e: Exception) {
-                                "Помилка при зміні пароля"
-                            }
-                            textError.text = msg
-                            textError.visibility = View.VISIBLE
+            btnConfirm.isEnabled = false
+
+            RetrofitClient.profileApi.changePassword(
+                mapOf("currentPassword" to current, "newPassword" to newPass)
+            ).enqueue(object : Callback<Void> {
+
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    btnConfirm.isEnabled = true
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Пароль успішно змінено", Toast.LENGTH_SHORT).show()
+                        dismiss()
+                    } else {
+                        val msg = extractMessage(response.errorBody()?.string())
+                        errorServer.text = msg
+                        errorServer.visibility = View.VISIBLE
+
+                        if (response.code() == 400) {
+                            showError(editCurrent, errorCurrent, " ")
                         }
                     }
+                }
 
-                    override fun onFailure(call: Call<Void>, t: Throwable) {
-                        textError.text = "Помилка з'єднання: ${t.message}"
-                        textError.visibility = View.VISIBLE
-                    }
-                })
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    btnConfirm.isEnabled = true
+                    errorServer.text = "Помилка з'єднання: ${t.message}"
+                    errorServer.visibility = View.VISIBLE
+                }
+            })
         }
-        return dialog
     }
+
+    private fun setupToggle(view: View, toggleId: Int, field: EditText) {
+        var visible = false
+        view.findViewById<ImageView>(toggleId).setOnClickListener {
+            visible = !visible
+            field.inputType = if (visible)
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            else
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            field.setSelection(field.text.length)
+            (it as ImageView).setImageResource(
+                if (visible) R.drawable.ic_eye_on else R.drawable.ic_eye_off
+            )
+        }
+    }
+
+    private fun showError(field: EditText, errorView: TextView, message: String) {
+        field.background = requireContext().getDrawable(R.drawable.input_field_background_error)
+        if (message.isNotBlank()) {
+            errorView.text = message
+            errorView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun clearError(field: EditText, errorView: TextView) {
+        field.background = requireContext().getDrawable(R.drawable.input_field_background)
+        errorView.visibility = View.GONE
+        errorView.text = ""
+    }
+
+    private fun passwordStrength(password: String): Int {
+        if (password.length < 6) return 0
+        var score = 1
+        if (password.any { it.isUpperCase() }) score++
+        if (password.any { it.isDigit() })     score++
+        if (password.any { !it.isLetterOrDigit() }) score++
+        return score
+    }
+
+    private fun extractMessage(errorBody: String?): String {
+        return try {
+            JSONObject(errorBody ?: "").getString("message")
+        } catch (e: Exception) {
+            "Не вдалося змінити пароль"
+        }
+    }
+}
+
+private fun EditText.onTextChanged(block: (String) -> Unit) {
+    addTextChangedListener(object : TextWatcher {
+        override fun afterTextChanged(s: Editable?) = block(s.toString())
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+    })
 }

@@ -24,7 +24,7 @@
             android:id="@+id/medName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vitamin D"
+            android:text="Назва препарату"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/black" />
@@ -33,7 +33,7 @@
             android:id="@+id/medQuantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1 pill"
+            android:text="1 табл."
             android:textSize="14sp"
             android:textColor="#888888" />
     </LinearLayout>

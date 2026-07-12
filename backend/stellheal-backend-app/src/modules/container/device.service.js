@@ -126,30 +126,32 @@ export class DeviceService {
 
         const now = new Date();
 
-        await prisma.prescription_medications.update({
-            where: { prescription_med_id: prescriptionMedId },
-            data:  { intake_status: true }
+        await prisma.$transaction(async (tx) => {
+            await tx.prescription_medications.update({
+                where: { prescription_med_id: prescriptionMedId },
+                data:  { intake_status: true }
+            });
+
+            const compartmentMed = await tx.compartment_medications.findFirst({
+                where: { prescription_med_id: prescriptionMedId }
+            });
+
+            if (compartmentMed) {
+                await tx.compartment_medications.update({
+                    where: { compartment_med_id: compartmentMed.compartment_med_id },
+                    data:  { open_time: now }
+                });
+
+                await tx.compartments.update({
+                    where: { compartment_id: compartmentMed.compartment_id },
+                    data:  { is_filled: false, last_filled_at: null }
+                });
+
+                await tx.compartment_medications.delete({
+                    where: { compartment_med_id: compartmentMed.compartment_med_id }
+                });
+            }
         });
-
-        const compartmentMed = await prisma.compartment_medications.findFirst({
-            where: { prescription_med_id: prescriptionMedId }
-        });
-
-        if (compartmentMed) {
-            await prisma.compartment_medications.update({
-                where: { compartment_med_id: compartmentMed.compartment_med_id },
-                data:  { open_time: now }
-            });
-
-            await prisma.compartments.update({
-                where: { compartment_id: compartmentMed.compartment_id },
-                data:  { is_filled: false, last_filled_at: null }
-            });
-
-            await prisma.compartment_medications.delete({
-                where: { compartment_med_id: compartmentMed.compartment_med_id }
-            });
-        }
 
         await this.logDeviceEvent(containerId, "info", "INTAKE_CONFIRMED", `Acceptance confirmed: prescription_med_id=${prescriptionMedId}`);
 
@@ -214,19 +216,21 @@ export class DeviceService {
 
         const now = new Date();
 
-        await prisma.compartment_medications.create({
-            data: {
-                compartment_id:      compartment.compartment_id,
-                prescription_med_id: prescriptionMedId,
-                filled_by:           userId,
-                fill_time:           now,
-                fill_session_id:     activeSession?.session_id ?? null,
-            }
-        });
+        await prisma.$transaction(async (tx) => {
+            await tx.compartment_medications.create({
+                data: {
+                    compartment_id:      compartment.compartment_id,
+                    prescription_med_id: prescriptionMedId,
+                    filled_by:           userId,
+                    fill_time:           now,
+                    fill_session_id:     activeSession?.session_id ?? null,
+                }
+            });
 
-        await prisma.compartments.update({
-            where: { compartment_id: compartment.compartment_id },
-            data:  { is_filled: true, last_filled_at: now }
+            await tx.compartments.update({
+                where: { compartment_id: compartment.compartment_id },
+                data:  { is_filled: true, last_filled_at: now }
+            });
         });
 
         await this.logDeviceEvent(containerId, "info", "COMPARTMENT_FILLED", `Compartment ${compartmentNumber} filled (med_id=${prescriptionMedId}, session=${activeSession?.session_id ?? 'none'})`);
@@ -313,13 +317,15 @@ export class DeviceService {
             throw new AppError(ERROR_CODES.NOT_FOUND, "Compartment already empty", 400);
         }
 
-        await prisma.compartment_medications.delete({
-            where: { compartment_med_id: latest.compartment_med_id }
-        });
+        await prisma.$transaction(async (tx) => {
+            await tx.compartment_medications.delete({
+                where: { compartment_med_id: latest.compartment_med_id }
+            });
 
-        await prisma.compartments.update({
-            where: { compartment_id: compartmentId },
-            data:  { is_filled: false, last_filled_at: null }
+            await tx.compartments.update({
+                where: { compartment_id: compartmentId },
+                data:  { is_filled: false, last_filled_at: null }
+            });
         });
 
         await this.logDeviceEvent(containerId, "info", "COMPARTMENT_CLEARED", `Compartment ${compartmentNumber} cleared`);
@@ -381,17 +387,19 @@ export class DeviceService {
     }
 
     async startFillSession(containerId, userId) {
-        await prisma.fill_sessions.updateMany({
-            where: { container_id: containerId, status: "active" },
-            data:  { status: "finished", finished_at: new Date() }
-        });
+        const session = await prisma.$transaction(async (tx) => {
+            await tx.fill_sessions.updateMany({
+                where: { container_id: containerId, status: "active" },
+                data:  { status: "finished", finished_at: new Date() }
+            });
 
-        const session = await prisma.fill_sessions.create({
-            data: {
-                container_id: containerId,
-                started_by:   userId,
-                status:       "active"
-            }
+            return tx.fill_sessions.create({
+                data: {
+                    container_id: containerId,
+                    started_by:   userId,
+                    status:       "active"
+                }
+            });
         });
 
         await this.logDeviceEvent(containerId, "info", "FILL_SESSION_STARTED", `Fill session started by user_id=${userId} (session_id=${session.session_id})`);

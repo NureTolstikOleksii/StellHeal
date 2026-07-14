@@ -258,14 +258,15 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        await prisma.users.update({
-            where: { user_id: record.user_id },
-            data: { password: hashedPassword }
-        });
-
-        await prisma.password_reset_tokens.delete({
-            where: { token }
-        });
+        await prisma.$transaction([
+            prisma.users.update({
+                where: { user_id: record.user_id },
+                data: { password: hashedPassword }
+            }),
+            prisma.password_reset_tokens.delete({
+                where: { token }
+            })
+        ]);
 
         await logAction({
             userId: record.user_id,

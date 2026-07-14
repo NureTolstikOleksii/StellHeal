@@ -58,30 +58,34 @@ export class StaffService {
         const plainPassword  = nanoid(10);
         const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-        const createdUser = await prisma.users.create({
-            data: {
-                first_name:    data.first_name,
-                last_name:     data.last_name,
-                patronymic:    data.patronymic,
-                login:         data.login,
-                phone:         data.phone,
-                contact_info:  data.contact_info,
-                password:      hashedPassword,
-                role_id:       Number(data.role_id),
-                date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
-            }
-        });
-
-        if (data.specialization) {
-            await prisma.medical_staff.create({
+        const createdUser = await prisma.$transaction(async (tx) => {
+            const user = await tx.users.create({
                 data: {
-                    staff_id:       createdUser.user_id,
-                    specialization: data.specialization,
-                    shift:          data.shift || null,
-                    admission_date: new Date()
+                    first_name:    data.first_name,
+                    last_name:     data.last_name,
+                    patronymic:    data.patronymic,
+                    login:         data.login,
+                    phone:         data.phone,
+                    contact_info:  data.contact_info,
+                    password:      hashedPassword,
+                    role_id:       Number(data.role_id),
+                    date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
                 }
             });
-        }
+
+            if (data.specialization) {
+                await tx.medical_staff.create({
+                    data: {
+                        staff_id:       user.user_id,
+                        specialization: data.specialization,
+                        shift:          data.shift || null,
+                        admission_date: new Date()
+                    }
+                });
+            }
+
+            return user;
+        });
 
         await sendStaffCredentialsEmail(data.login, plainPassword);
 

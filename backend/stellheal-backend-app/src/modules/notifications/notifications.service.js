@@ -102,30 +102,34 @@ export class NotificationService {
     async sendWeightAlert(containerId, prescriptionMedId) {
         const now = new Date();
 
-        await prisma.prescription_medications.update({
-            where: { prescription_med_id: prescriptionMedId },
-            data:  { intake_status: false }
+        // Атомарно: позначаємо пропуск прийому і звільняємо відсік пристрою —
+        // це одна логічна дія, стан прийому і стан відсіку не повинні розійтися.
+        await prisma.$transaction(async (tx) => {
+            await tx.prescription_medications.update({
+                where: { prescription_med_id: prescriptionMedId },
+                data:  { intake_status: false }
+            });
+
+            const compartmentMed = await tx.compartment_medications.findFirst({
+                where: { prescription_med_id: prescriptionMedId }
+            });
+
+            if (compartmentMed) {
+                await tx.compartment_medications.update({
+                    where: { compartment_med_id: compartmentMed.compartment_med_id },
+                    data:  { open_time: now }
+                });
+
+                await tx.compartments.update({
+                    where: { compartment_id: compartmentMed.compartment_id },
+                    data:  { is_filled: false, last_filled_at: null }
+                });
+
+                await tx.compartment_medications.delete({
+                    where: { compartment_med_id: compartmentMed.compartment_med_id }
+                });
+            }
         });
-
-        const compartmentMed = await prisma.compartment_medications.findFirst({
-            where: { prescription_med_id: prescriptionMedId }
-        });
-
-        if (compartmentMed) {
-            await prisma.compartment_medications.update({
-                where: { compartment_med_id: compartmentMed.compartment_med_id },
-                data:  { open_time: now }
-            });
-
-            await prisma.compartments.update({
-                where: { compartment_id: compartmentMed.compartment_id },
-                data:  { is_filled: false, last_filled_at: null }
-            });
-
-            await prisma.compartment_medications.delete({
-                where: { compartment_med_id: compartmentMed.compartment_med_id }
-            });
-        }
 
         await logAction({
             action:      ACTIONS.UPDATE,
